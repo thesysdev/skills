@@ -1,3 +1,8 @@
+---
+name: thesys-c1-genui
+description: Provides comprehensive guidance for building AI-powered Generative UI applications with the Thesys C1 API and GenUI SDK. Use it when developing interactive UI components, chat interfaces, dashboards, or any application that benefits from dynamically generated React interfaces from natural language prompts.
+---
+
 # Thesys C1 Generative UI Development
 
 This skill provides comprehensive guidance for developing applications with the Thesys C1 API and GenUI SDK, enabling AI-powered Generative UI applications.
@@ -30,6 +35,11 @@ Thesys C1 is a Generative UI API that dynamically generates interactive UI compo
 
 - Node.js 18+ or Python 3.8+
 - Thesys API key from [app.thesys.dev](https://app.thesys.dev)
+- Install the required packages:
+
+```bash
+npm install @thesysai/genui-sdk@latest @crayonai/react-ui@latest @crayonai/react-core@latest @crayonai/stream@latest openai@latest next@latest react@^19.0.0 react-dom@^19.0.0
+```
 
 ### Next.js Setup
 
