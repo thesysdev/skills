@@ -44,11 +44,11 @@ import { useC1State } from '@thesysai/genui-sdk';
 
 function CustomToggle() {
   // 'toggle-enabled' is the unique key for this state value
-  const [value, setValue] = useC1State('toggle-enabled');
+  const { getValue, setValue } = useC1State('toggle-enabled');
 
   return (
-    <button onClick={() => setValue(!value)}>
-      {value ? 'On' : 'Off'}
+    <button onClick={() => setValue(!getValue())}>
+      {getValue() ? 'On' : 'Off'}
     </button>
   );
 }
@@ -154,15 +154,154 @@ const threadListManager = useThreadListManager({
 
 ---
 
+## Conversational API (Basic Setup)
+
+Create a chat API endpoint that handles streaming responses from the C1 model. This section shows the basic setup with an in-memory message store.
+
+### Step 1: Install Required Dependencies
+
+```bash
+npm install openai @crayonai/stream
+```
+
+### Step 2: Create the Message Store
+
+Create a simple in-memory message store to manage conversation history. This store maintains the list of messages for a given `threadId`, including messages that are not sent to the client like tool call messages.
+
+```typescript
+// app/api/chat/messageStore.ts
+import OpenAI from "openai";
+
+export type DBMessage = OpenAI.Chat.ChatCompletionMessageParam & {
+  id?: string;
+};
+
+const messagesStore: {
+  [threadId: string]: DBMessage[];
+} = {};
+
+export const getMessageStore = (threadId: string) => {
+  if (!messagesStore[threadId]) {
+    messagesStore[threadId] = [];
+  }
+  const messageList = messagesStore[threadId];
+  return {
+    addMessage: (message: DBMessage) => {
+      messageList.push(message);
+    },
+    getOpenAICompatibleMessageList: () => {
+      return messageList.map((m) => {
+        const message = { ...m };
+        delete message.id;
+        return message;
+      });
+    },
+  };
+};
+```
+
+### Step 3: Create the Chat Endpoint
+
+Create the main API endpoint that handles incoming chat requests with streaming:
+
+```typescript
+// app/api/chat/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
+import { transformStream } from "@crayonai/stream";
+import { DBMessage, getMessageStore } from "./messageStore";
+
+export async function POST(req: NextRequest) {
+  const { prompt, threadId, responseId } = (await req.json()) as {
+    prompt: DBMessage;
+    threadId: string;
+    responseId: string;
+  };
+
+  // Initialize the OpenAI client
+  const client = new OpenAI({
+    baseURL: "https://api.thesys.dev/v1/embed/",
+    apiKey: process.env.THESYS_API_KEY,
+  });
+
+  // Get message store and add user message
+  const messageStore = getMessageStore(threadId);
+  messageStore.addMessage(prompt);
+
+  // Create streaming chat completion
+  const llmStream = await client.chat.completions.create({
+    model: "c1/anthropic/claude-sonnet-4/v-20251230",
+    messages: messageStore.getOpenAICompatibleMessageList(),
+    stream: true,
+  });
+
+  // Transform the response stream
+  const responseStream = transformStream(
+    llmStream,
+    (chunk) => {
+      return chunk.choices[0].delta.content;
+    },
+    {
+      onEnd: ({ accumulated }) => {
+        const message = accumulated.filter((message) => message).join("");
+        messageStore.addMessage({
+          role: "assistant",
+          content: message,
+          id: responseId,
+        });
+      },
+    }
+  ) as ReadableStream;
+
+  // Return the streaming response
+  return new NextResponse(responseStream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+    },
+  });
+}
+```
+
+### Step 4: Set Your API Key
+
+Set your Thesys API key as an environment variable:
+
+```bash
+export THESYS_API_KEY=<your-api-key>
+```
+
+Or in Next.js `.env.local`:
+
+```bash
+THESYS_API_KEY=<your-api-key>
+```
+
+Your API endpoint is now ready to handle streaming chat conversations with the C1 model!
+
+---
+
 ## Conversation Persistence with Firebase
 
-### Step 1: Set Up Firebase
+This section provides step-by-step instructions to implement chat persistence using Firebase Firestore. By following this guide, you'll learn how to store, retrieve, and manage chat threads and messages, enabling a seamless user experience across sessions.
+
+### Step 1: Set Up Firebase Project & SDK
+
+First, ensure your Firebase project is ready:
+
+1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project (or use existing)
+2. Navigate to "Firestore Database" and click "Create database"
+3. Choose **Test mode** for easier setup (note: not for production)
+4. Go to "Project settings" > "General" > "Your apps" > Add Web app
+5. Copy the `firebaseConfig` object
 
 ```typescript
 // src/firebaseConfig.ts
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
+// IMPORTANT: Replace these with your actual Firebase project configuration!
 const firebaseConfig = {
   apiKey: "YOUR_FIREBASE_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
@@ -170,8 +309,10 @@ const firebaseConfig = {
   storageBucket: "YOUR_STORAGE_BUCKET",
   messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
   appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID",
 };
 
+// Initialize Firebase
 let app;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
@@ -179,21 +320,32 @@ if (!getApps().length) {
   app = getApp();
 }
 
-export const db = getFirestore(app);
+const db = getFirestore(app);
+export { db };
 ```
 
-### Step 2: Create Thread Service
+### Step 2: Create Thread Service for Firebase
+
+Implement a service layer that handles persistence logic using Firestore:
 
 ```typescript
 // src/services/threadService.ts
 import { db } from "../firebaseConfig";
-import { collection, addDoc, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  getDoc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 
 const THREADS_COLLECTION = "threads";
 
+// Create a new thread
 export const createThread = async (name: string): Promise<Thread> => {
   const newThreadRef = await addDoc(collection(db, THREADS_COLLECTION), {
-    name,
+    name: name,
     messages: [],
     createdAt: serverTimestamp(),
   });
@@ -204,38 +356,48 @@ export const createThread = async (name: string): Promise<Thread> => {
   };
 };
 
+// Add messages to a thread
 export const addMessages = async (threadId: string, ...messages: Message[]) => {
+  if (!threadId) throw new Error("threadId is required for addMessages");
   const threadRef = doc(db, THREADS_COLLECTION, threadId);
   const threadSnap = await getDoc(threadRef);
-  
+
   if (!threadSnap.exists()) {
-    throw new Error(`Thread ${threadId} not found`);
+    throw new Error(`Thread with id ${threadId} not found.`);
   }
-  
-  const existingMessages = threadSnap.data()?.messages ?? [];
+
+  const existingMessages = (threadSnap.data()?.messages as Message[]) ?? [];
+  const newMessages = existingMessages.concat(messages);
+
   await updateDoc(threadRef, {
-    messages: existingMessages.concat(messages),
+    messages: newMessages,
   });
 };
 
+// Get messages for UI display
 export const getUIThreadMessages = async (threadId: string) => {
   const threadRef = doc(db, THREADS_COLLECTION, threadId);
   const threadSnap = await getDoc(threadRef);
   return threadSnap.data()?.messages ?? [];
 };
 
+// Get messages in OpenAI-compatible format for LLM
 export const getLLMThreadMessages = async (threadId: string) => {
-  // Return messages in OpenAI-compatible format
   const messages = await getUIThreadMessages(threadId);
   return messages.map(({ id, ...rest }) => rest);
 };
 ```
 
-### Step 3: Integrate with Frontend
+### Step 3: Integrate Service with Frontend
+
+Configure the C1Chat component to use the `threadService` functions for data operations:
 
 ```tsx
 // src/app/page.tsx
+"use client";
+
 import { useThreadManager, useThreadListManager, C1Chat } from "@thesysai/genui-sdk";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   createThread,
   deleteThread,
@@ -246,13 +408,24 @@ import {
 } from "@/services/threadService";
 
 export default function Home() {
+  const { replace } = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const threadListManager = useThreadListManager({
     fetchThreadList: () => getThreadList(),
     deleteThread: (threadId) => deleteThread(threadId),
     updateThread: (t) => updateThread({ threadId: t.threadId, name: t.title }),
-    onSwitchToNew: () => router.push('/'),
-    onSelectThread: (threadId) => router.push(`?threadId=${threadId}`),
-    createThread: (message) => createThread(message.message!),
+    onSwitchToNew: () => {
+      replace(`${pathname}`);
+    },
+    onSelectThread: (threadId) => {
+      const newSearch = `?threadId=${threadId}`;
+      replace(`${pathname}${newSearch}`);
+    },
+    createThread: (message) => {
+      return createThread(message.message!);
+    },
   });
 
   const threadManager = useThreadManager({
@@ -273,7 +446,9 @@ export default function Home() {
 }
 ```
 
-### Step 4: Backend API with Persistence
+### Step 4: Add Backend Chat API Route
+
+Add the chat API route that uses the Thesys C1 API along with `threadService` functions for fetching historical messages and saving new ones:
 
 ```typescript
 // app/api/chat/route.ts
@@ -290,32 +465,57 @@ export async function POST(req: NextRequest) {
     apiKey: process.env.THESYS_API_KEY,
   });
 
-  // Fetch existing messages
+  // Fetch existing messages for the thread
   const llmMessages = await getLLMThreadMessages(threadId);
 
-  const llmStream = await client.chat.completions.create({
+  const runToolsResponse = client.beta.chat.completions.runTools({
     model: "c1/anthropic/claude-sonnet-4/v-20251230",
     messages: [
-      ...llmMessages,
-      { role: "user", content: prompt.content },
+      ...llmMessages, // Add previous messages
+      {
+        role: "user",
+        content: prompt.content!,
+      },
     ],
     stream: true,
+    tools: [], // Add your tools here if needed
+  });
+
+  // Track all messages generated during this turn
+  const allRunToolsMessages: any[] = [];
+  let isError = false;
+
+  runToolsResponse.on("message", (message) => {
+    allRunToolsMessages.push(message);
+  });
+
+  runToolsResponse.on("error", () => {
+    isError = true;
+  });
+
+  // Save messages when stream ends
+  runToolsResponse.on("end", async () => {
+    if (isError) {
+      return;
+    }
+    // Assign IDs to messages, using responseId for the final assistant message
+    const runToolsMessagesWithId = allRunToolsMessages.map((m, index) => {
+      const id =
+        allRunToolsMessages.length - 1 === index // For last message (shown to user), use responseId
+          ? responseId
+          : crypto.randomUUID();
+      return {
+        ...m,
+        id,
+      };
+    });
+    const messagesToStore = [prompt, ...runToolsMessagesWithId];
+    await addMessages(threadId, ...messagesToStore);
   });
 
   const responseStream = transformStream(
-    llmStream,
-    (chunk) => chunk.choices[0].delta.content,
-    {
-      onEnd: async ({ accumulated }) => {
-        const message = accumulated.filter(Boolean).join("");
-        // Save user prompt and assistant response
-        await addMessages(threadId, prompt, {
-          role: "assistant",
-          content: message,
-          id: responseId,
-        });
-      },
-    }
+    runToolsResponse,
+    (chunk) => chunk.choices[0].delta.content
   ) as ReadableStream;
 
   return new NextResponse(responseStream, {
@@ -327,6 +527,14 @@ export async function POST(req: NextRequest) {
   });
 }
 ```
+
+### Running and Testing
+
+1. Ensure your Firebase credentials are correctly set in `src/firebaseConfig.ts`
+2. Ensure your `THESYS_API_KEY` is set in `.env`
+3. Run `npm run dev`
+4. Test creating new chats, sending messages, switching between chats, and refreshing the page to verify history persists
+5. Check the Firebase console to see data being written to Firestore
 
 ---
 

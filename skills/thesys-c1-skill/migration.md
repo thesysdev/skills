@@ -1,84 +1,61 @@
 # Migrating to Generative UI
 
-This guide walks through migrating an existing text-based LLM application to Thesys C1 Generative UI.
+This is an advanced guide that assumes you already have a working text-based LLM application. If you are starting from scratch, see the Quickstart guide in the main skill.md file.
+
+C1 by Thesys is designed to be a drop-in replacement for OpenAI's API. By making a few changes to your existing application, you can start using C1 to upgrade your regular LLM workflows to Generative UI.
 
 ---
 
-## Overview
+## Step 1: Change baseURL to C1
 
-C1 is designed as a drop-in replacement for OpenAI's API. Migration typically requires:
-
-1. Change the API base URL
-2. Replace Markdown rendering with `<C1Component>`
-3. Add streaming support (optional but recommended)
-4. Enable interactivity with `onAction`
-5. Persist form values with `updateMessage`
-
----
-
-## Step 1: Change Base URL
-
-Update your OpenAI client to point to C1:
-
-### Before
-
-```typescript
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const response = await client.chat.completions.create({
-  model: "gpt-4o",
-  messages: [{ role: "user", content: "Hello" }],
-});
-```
-
-### After
+The first step is to change the OpenAI SDK instantiation to point to C1 rather than the default OpenAI endpoint. This change is generally only required in one place in your application - where you instantiate the Gateway LLM (the first LLM that is invoked when the user interacts with your application).
 
 ```typescript
 const client = new OpenAI({
   baseURL: "https://api.thesys.dev/v1/embed",
   apiKey: process.env.THESYS_API_KEY,
 });
+```
 
+And then change the model name to use one of the supported models:
+
+```typescript
 const response = await client.chat.completions.create({
-  model: "c1/anthropic/claude-sonnet-4/v-20251230",
+  // model: "gpt-4o",  // Old model
+  model: "c1/anthropic/claude-sonnet-4/v-20251230",  // New C1 model
   messages: [{ role: "user", content: "Hello" }],
 });
 ```
 
-At this point, your application will display C1 DSL responses as plain text.
+Once you've done this successfully, you will be able to see your application rendering Thesys DSL responses as plain text.
 
 ---
 
-## Step 2: Add C1Component
+## Step 2: Add the C1Component to Your Application
 
-Replace your Markdown renderer with `<C1Component>`:
+Now that we are able to see the DSL responses, we can add the C1Component to our application to render the DSL responses as a live UI.
 
-### Install Dependencies
+First, install the necessary packages for C1 integration:
 
 ```bash
-npm install @thesysai/genui-sdk @crayonai/react-ui @crayonai/stream @crayonai/react-core
+npm install --save @thesysai/genui-sdk @crayonai/react-ui @crayonai/stream @crayonai/react-core
 ```
 
-### Before
+Now simply replace the `Markdown` component with the `C1Component` component:
 
 ```tsx
+// Before
 import { Markdown } from "react-markdown";
 
-export default function App() {
-  return <Markdown>{response}</Markdown>;
-}
-```
-
-### After
-
-```tsx
+// After
 import { C1Component, ThemeProvider } from "@thesysai/genui-sdk";
 import "@crayonai/react-ui/styles/index.css";
 
 export default function App() {
+  // other app related logic
+
   return (
+    // <Markdown>{response}</Markdown>  // Old approach
     <ThemeProvider>
       <C1Component c1Response={response} />
     </ThemeProvider>
@@ -86,48 +63,32 @@ export default function App() {
 }
 ```
 
-### Add Inter Font
-
-C1 uses Inter by default. Add to your CSS:
+The preferred font family for C1 is `Inter`. You can import this font in your CSS file as follows:
 
 ```css
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap");
 ```
 
-Now you'll see C1-generated UIs instead of raw DSL text.
+At this point, you should be able to see your application rendering the DSL responses as a live micro-frontend.
 
 ---
 
-## Step 3: Enable Streaming (Recommended)
+## Step 3: Streaming the Responses (Optional)
 
-Streaming improves perceived performance by progressively rendering UI.
+To improve the user experience, you can stream the responses from the backend to the frontend. This reduces the perceived latency of the application and makes it feel more responsive.
 
-### Backend: Stream Responses
+`<C1Component />` supports streaming the responses and progressively rendering the UI by passing the `isStreaming` prop. This prop should be set to `true` when the response is being streamed and `false` when the response is done streaming.
 
-```typescript
-import { transformStream } from "@crayonai/stream";
-
-const llmStream = await client.chat.completions.create({
-  model: "c1/anthropic/claude-sonnet-4/v-20251230",
-  messages: [...],
-  stream: true,
-});
-
-const responseStream = transformStream(
-  llmStream,
-  (chunk) => chunk.choices[0].delta.content,
-) as ReadableStream;
-
-return new Response(responseStream, {
-  headers: {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache, no-transform",
-    Connection: "keep-alive",
-  },
-});
+```tsx
+<C1Component
+  c1Response={response}
+  isStreaming={isStreaming}
+/>
 ```
 
-### Frontend: Handle Streaming
+You can easily implement this by storing `isStreaming` as a state variable that is set to `true` when the `fetch` request is made and set to `false` when the request is complete.
+
+### Example Implementation
 
 ```tsx
 function Chat() {
@@ -166,63 +127,59 @@ function Chat() {
 }
 ```
 
+At this point, you should be able to see your application streaming the responses and progressively rendering the UI.
+
 ---
 
-## Step 4: Enable Interactivity
+## Step 4: Enabling Interactivity
 
-C1 generates buttons and forms, but they need `onAction` to function:
+At this stage, you should be able to see the application rendering buttons and forms but they won't be functional. In order to make them functional, you need to pass the `onAction` callback to the `C1Component` and implement the logic to handle the action.
+
+In most cases, you will want to treat the `onAction` callback as a way to trigger the next turn of the conversation. This means it will function as if the user had typed in a query and hit enter.
 
 ```tsx
 <C1Component
   c1Response={response}
   isStreaming={isStreaming}
   onAction={({ llmFriendlyMessage, humanFriendlyMessage }) => {
-    // llmFriendlyMessage: Send to LLM for next turn
-    // humanFriendlyMessage: Display in chat UI
-    
-    // Trigger next conversation turn
-    sendMessage(llmFriendlyMessage);
-    
-    // Optionally show user message
-    addToMessageHistory({
-      role: "user",
-      content: humanFriendlyMessage,
-    });
+    // - Trigger the next turn of the LLM
+    // - Send llmFriendlyMessage to the LLM so that the next turn can be triggered
+    // - Show humanFriendlyMessage in the chat UI as the user's message
   }}
 />
 ```
 
 ### Understanding Message Types
 
-- **`llmFriendlyMessage`**: Technical message for the LLM (e.g., form data as JSON)
-- **`humanFriendlyMessage`**: User-friendly text for display
+It is important to have this distinction to improve the user experience:
 
-Store `llmFriendlyMessage` for conversation history, but display `humanFriendlyMessage`.
+- **`llmFriendlyMessage`**: Technical message for the LLM (e.g., form data as JSON). Would not be suitable for humans to read in most cases.
+- **`humanFriendlyMessage`**: User-friendly text for display in the chat UI.
+
+Your message store probably won't have the `llmFriendlyMessage` in it, but in the long term, it is a good idea to store it in the message store.
+
+Once you've implemented this, all the buttons and forms should be functional.
 
 ---
 
-## Step 5: Persist Form Values
+## Step 5: Saving Form Values
 
-Form values are stored in the C1 response. Use `updateMessage` to persist:
+While your chat interface is working, the form values don't persist when you refresh the page. This is because the form values are also stored in the `c1Response` object. To enable persistence, you can pass the `updateMessage` callback to the `C1Component` and implement the logic to persist the form values.
+
+Typically `PUT` or `PATCH` requests are used to update the message in the database. You might have to implement this endpoint in your backend if it's not already implemented.
 
 ```tsx
 <C1Component
   c1Response={response}
   isStreaming={isStreaming}
-  onAction={...}
-  updateMessage={(updatedResponse) => {
-    // updatedResponse contains form values merged into DSL
-    saveToDatabase({
-      messageId: currentMessageId,
-      content: updatedResponse,
-    });
+  onAction={({ llmFriendlyMessage, humanFriendlyMessage }) => {...}}
+  updateMessage={(message) => {
+    // Update the message to the database
   }}
 />
 ```
 
-### Database Update Endpoint
-
-Create a PATCH/PUT endpoint for message updates:
+### Example Database Update Endpoint
 
 ```typescript
 // app/api/messages/[id]/route.ts
@@ -235,6 +192,8 @@ export async function PATCH(req, { params }) {
   return Response.json({ success: true });
 }
 ```
+
+Once you've implemented this, you should be able to see UI generations, have functional buttons and forms, and the form values would persist when you refresh the page.
 
 ---
 
@@ -384,6 +343,12 @@ Use `<ThemeProvider>` with custom theme object.
 ### Components Not Rendering
 
 Check that SDK version matches model version. See API changelog for minimum SDK versions.
+
+---
+
+## Example: HuggingFace Chat UI with C1
+
+C1Component is a powerful abstraction that can be used to embed Generative UI within your application. Below is an example of HuggingFace Chat UI integrated with C1Component, demonstrating how existing chat interfaces can be enhanced with Generative UI capabilities.
 
 ---
 

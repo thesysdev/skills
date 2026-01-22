@@ -2,42 +2,183 @@
 
 This guide covers theming, chart customization, and CSS overrides for C1-generated UIs.
 
+C1 is designed to be highly customizable. Here are the main ways to customize C1 UI to your requirements.
+
 ---
 
-## Styling Overview
+## Customizing C1Chat
 
-C1 uses a layered styling approach:
+### Step 1: Choosing a Form Factor
 
-1. **Theming** (Primary): Global styles via `<ThemeProvider>`
-2. **Component-Specific**: Chart palettes and component options
-3. **CSS Overrides** (Advanced): Direct CSS targeting
+C1 offers flexibility in its form factor:
+
+- **Full Page**: A complete page conversation interface, similar to ChatGPT
+- **Side Panel**: A copilot-style conversation interface
+
+```tsx
+import { C1Chat } from "@thesysai/genui-sdk";
+import "@crayonai/react-ui/styles/index.css";
+
+export default function Home() {
+  return (
+    <C1Chat
+      apiUrl="/api/chat"
+      formFactor="full-page"  // or "side-panel"
+    />
+  );
+}
+```
+
+### Step 2: Using Theme Presets
+
+C1 can easily be customized through a variety of pre-built themes. Import `themePresets` from `@crayonai/react-ui` and pass it to the `theme` prop:
+
+```tsx
+import { C1Chat } from "@thesysai/genui-sdk";
+import "@crayonai/react-ui/styles/index.css";
+import { themePresets } from "@crayonai/react-ui";
+
+export default function Home() {
+  return (
+    <C1Chat
+      apiUrl="/api/chat"
+      theme={themePresets.candy}
+    />
+  );
+}
+```
+
+### Step 3: Switching Between Light and Dark Mode
+
+Toggle between light and dark modes by setting the `mode` property in the theme object. All Crayon theme presets fully support both modes:
+
+```tsx
+import { C1Chat } from "@thesysai/genui-sdk";
+import "@crayonai/react-ui/styles/index.css";
+import { themePresets } from "@crayonai/react-ui";
+
+export default function Home() {
+  return (
+    <C1Chat
+      apiUrl="/api/chat"
+      theme={{ ...themePresets.candy, mode: "dark" }}
+    />
+  );
+}
+```
+
+### Step 4: Setting Agent Name and Logo
+
+Set the agent name and logo using the `agentName` and `logoUrl` props. These control the agent's display name in the sidebar and the avatar shown next to its messages:
+
+```tsx
+import { C1Chat } from "@thesysai/genui-sdk";
+import "@crayonai/react-ui/styles/index.css";
+import { themePresets } from "@crayonai/react-ui";
+import { ThemeProvider } from "@crayonai/react-ui";
+import { useSystemTheme } from "./useSystemTheme";
+
+export default function Home() {
+  const systemTheme = useSystemTheme();
+  return (
+    <ThemeProvider {...themePresets.candy} mode={systemTheme}>
+      <C1Chat
+        agentName="Legal Assistant"
+        logoUrl="https://placehold.co/100"
+        apiUrl="/api/chat"
+      />
+    </ThemeProvider>
+  );
+}
+```
+
+### Step 5: Overriding Crayon CSS Classes
+
+For advanced customization, override the CSS classes applied to UI components. For example, to hide the AI agent's logo next to its messages:
+
+```css
+/* custom.css */
+.crayon-shell-thread-message-assistant__logo {
+  display: none;
+}
+```
+
+You can find the classes attached to different UI components by inspecting the elements through the browser's developer tools.
+
+Then import those styles in your component:
+
+```tsx
+import { C1Chat } from "@thesysai/genui-sdk";
+import "@crayonai/react-ui/styles/index.css";
+import { themePresets, ThemeProvider } from "@crayonai/react-ui";
+import { useSystemTheme } from "./useSystemTheme";
+import "./custom.css";
+
+export default function Home() {
+  const systemTheme = useSystemTheme();
+  return (
+    <ThemeProvider {...themePresets.candy} mode={systemTheme}>
+      <C1Chat
+        agentName="Legal Assistant"
+        logoUrl="https://placehold.co/100"
+        apiUrl="/api/chat"
+      />
+    </ThemeProvider>
+  );
+}
+```
+
+### C1Chat Props Reference
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `apiUrl` | `string` | Backend endpoint for chat API |
+| `formFactor` | `'full-page' \| 'side-panel'` | Layout style |
+| `theme` | `Theme` | Theme configuration or preset |
+| `agentName` | `string` | Display name in chat |
+| `logoUrl` | `string` | Agent logo URL |
+| `scrollVariant` | `'once' \| 'user-message-anchor' \| 'always'` | Scroll behavior |
+| `customizeC1` | `CustomizeC1Props` | Custom components (e.g., `thinkComponent`) |
+| `threadManager` | `ThreadManager` | Custom thread management |
+| `threadListManager` | `ThreadListManager` | Thread list management |
+
+### Custom Components in C1Chat
+
+```tsx
+<C1Chat
+  customizeC1={{
+    thinkComponent: CustomThinkComponent,
+    responseFooterComponent: CustomFooter,
+    customComponents: { MyComponent },
+    onAction: handleAction,
+  }}
+/>
+```
 
 ---
 
 ## Theming with `<ThemeProvider>`
 
+For more control, use `ThemeProvider` to wrap your components:
+
 ### Basic Usage
 
 ```tsx
-import { ThemeProvider } from "@thesysai/genui-sdk";
+import { ThemeProvider } from "@crayonai/react-ui";
+import { C1Component } from "@thesysai/genui-sdk";
 
-<ThemeProvider mode="dark" theme={lightTheme} darkTheme={darkTheme}>
+<ThemeProvider mode="dark" {...themeConfig}>
   <C1Component c1Response={response} />
 </ThemeProvider>
 ```
-
-### Props
-
-| Prop | Type | Description |
-|------|------|-------------|
-| `mode` | `'light' \| 'dark'` | Theme mode |
-| `theme` | `Theme` | Light theme configuration |
-| `darkTheme` | `Theme` | Dark theme configuration (falls back to `theme`) |
 
 ### Theme Object Properties
 
 ```typescript
 interface Theme {
+  // Mode
+  mode?: 'light' | 'dark';
+  
   // Colors
   primaryColor?: string;
   backgroundColor?: string;
@@ -79,15 +220,13 @@ Set a default palette for all chart types:
 
 ```tsx
 <ThemeProvider
-  theme={{
-    defaultChartPalette: [
-      "#34495e",
-      "#16a085",
-      "#f39c12",
-      "#e74c3c",
-      "#8e44ad",
-    ],
-  }}
+  defaultChartPalette={[
+    "#34495e",
+    "#16a085",
+    "#f39c12",
+    "#e74c3c",
+    "#8e44ad",
+  ]}
 >
   {/* All charts use this palette */}
 </ThemeProvider>
@@ -99,70 +238,62 @@ Override specific chart types:
 
 ```tsx
 <ThemeProvider
-  theme={{
-    // Bar charts get custom colors
-    barChartPalette: ["#1f77b4", "#ff7f0e", "#2ca02c"],
-    
-    // All other charts use default
-    defaultChartPalette: ["#34495e", "#16a085", "#f39c12"],
-  }}
+  barChartPalette={["#1f77b4", "#ff7f0e", "#2ca02c"]}
+  defaultChartPalette={["#34495e", "#16a085", "#f39c12"]}
 >
-  {/* ... */}
+  {/* Bar charts get custom colors, others use default */}
 </ThemeProvider>
 ```
 
 ### Available Palette Keys
 
-```typescript
-interface ChartColorPalette {
-  defaultChartPalette?: string[];  // Fallback for all charts
-  barChartPalette?: string[];      // Bar charts
-  lineChartPalette?: string[];     // Line charts
-  areaChartPalette?: string[];     // Area charts
-  pieChartPalette?: string[];      // Pie charts
-  radarChartPalette?: string[];    // Radar charts
-  radialChartPalette?: string[];   // Radial charts
-}
-```
+| Key | Description |
+|-----|-------------|
+| `defaultChartPalette` | Fallback for all charts |
+| `barChartPalette` | Bar charts |
+| `lineChartPalette` | Line charts |
+| `areaChartPalette` | Area charts |
+| `pieChartPalette` | Pie charts |
+| `radarChartPalette` | Radar charts |
+| `radialChartPalette` | Radial charts |
 
 ### Light/Dark Mode Palettes
 
-Define different palettes per mode:
+Define different palettes per mode using theme presets:
 
 ```tsx
+import { themePresets, ThemeProvider } from "@crayonai/react-ui";
+
 const lightTheme = {
+  ...themePresets.candy,
+  mode: "light" as const,
   areaChartPalette: ["#2563eb", "#dc2626", "#16a34a"],
-  defaultChartPalette: ["#374151", "#111827", "#1f2937"],
 };
 
 const darkTheme = {
+  ...themePresets.candy,
+  mode: "dark" as const,
   areaChartPalette: ["#3b82f6", "#ef4444", "#22c55e"],
-  defaultChartPalette: ["#d1d5db", "#f3f4f6", "#e5e7eb"],
 };
 
-<ThemeProvider
-  mode="dark"
-  theme={lightTheme}
-  darkTheme={darkTheme}
->
-  {/* Charts adapt to mode */}
-</ThemeProvider>
+function App() {
+  const [isDark, setIsDark] = useState(false);
+  
+  return (
+    <ThemeProvider {...(isDark ? darkTheme : lightTheme)}>
+      {/* Charts adapt to mode */}
+    </ThemeProvider>
+  );
+}
 ```
 
 ---
 
 ## CSS Overrides
 
-> ⚠️ **Advanced Technique**: Class names may change between SDK versions. Review overrides after updates.
+> **Note**: Class names may change between SDK versions. Review overrides after updates.
 
-Use CSS for precise, specific tweaks not covered by theming.
-
-### Good Use Cases
-
-- Font weight of specific card titles
-- Unique borders on elements
-- Margin adjustments on buttons
-- Custom hover states
+Use CSS for precise tweaks not covered by theming.
 
 ### Finding CSS Classes
 
@@ -170,10 +301,15 @@ Use CSS for precise, specific tweaks not covered by theming.
 2. Select "Inspect"
 3. Find class names in the `class` attribute
 
-### Example Override
+### Example Overrides
 
 ```css
-/* styles/custom.css */
+/* custom.css */
+
+/* Hide agent logo next to messages */
+.crayon-shell-thread-message-assistant__logo {
+  display: none;
+}
 
 /* Make card titles uppercase */
 .crayon-header {
@@ -199,77 +335,6 @@ Use CSS for precise, specific tweaks not covered by theming.
 - **Target Stable Classes**: Use `.crayon-header` not generated IDs
 - **Start with Theming**: Only use CSS for what themes can't handle
 - **Document Overrides**: Note SDK version and purpose
-
----
-
-## `<C1Chat>` Theming
-
-Apply themes directly to C1Chat:
-
-```tsx
-<C1Chat
-  apiUrl="/api/chat"
-  theme={{
-    mode: "dark",
-    theme: lightTheme,
-    darkTheme: darkTheme,
-  }}
-/>
-```
-
-Or wrap with ThemeProvider:
-
-```tsx
-<ThemeProvider mode="dark" theme={lightTheme} darkTheme={darkTheme}>
-  <C1Chat apiUrl="/api/chat" />
-</ThemeProvider>
-```
-
----
-
-## Customizing `<C1Chat>` Layout
-
-### Form Factors
-
-```tsx
-<C1Chat
-  formFactor="full-page"    // Default: Full screen chat
-  // formFactor="side-panel" // Sidebar style
-  // formFactor="bottom-tray" // Widget at bottom
-/>
-```
-
-### Agent Branding
-
-```tsx
-<C1Chat
-  agentName="My AI Assistant"
-  logoUrl="/path/to/logo.png"
-/>
-```
-
-### Scroll Behavior
-
-```tsx
-<C1Chat
-  scrollVariant="once"              // Scroll once per interaction
-  // scrollVariant="user-message-anchor" // Anchor to user messages
-  // scrollVariant="always"          // Continuous scrolling
-/>
-```
-
-### Custom Components
-
-```tsx
-<C1Chat
-  customizeC1={{
-    thinkComponent: CustomThinkComponent,
-    responseFooterComponent: CustomFooter,
-    exportAsPdf: handleExport,
-    onAction: handleAction,
-  }}
-/>
-```
 
 ---
 
@@ -311,28 +376,23 @@ Useful for:
 ## Complete Theme Example
 
 ```tsx
-import { ThemeProvider, C1Chat } from "@thesysai/genui-sdk";
+import { useState } from "react";
+import { C1Chat } from "@thesysai/genui-sdk";
+import { ThemeProvider, themePresets } from "@crayonai/react-ui";
+import "@crayonai/react-ui/styles/index.css";
 
-const brandTheme = {
-  primaryColor: "#6366f1",
-  backgroundColor: "#ffffff",
-  textColor: "#1f2937",
-  fontFamily: "'Inter', sans-serif",
-  borderRadius: "8px",
-  
-  // Charts
+// Extend a preset with custom chart palettes
+const brandLightTheme = {
+  ...themePresets.candy,
+  mode: "light" as const,
   defaultChartPalette: ["#6366f1", "#8b5cf6", "#a855f7", "#d946ef"],
   barChartPalette: ["#3b82f6", "#10b981", "#f59e0b"],
   pieChartPalette: ["#ef4444", "#f97316", "#eab308", "#22c55e", "#14b8a6"],
 };
 
-const darkBrandTheme = {
-  primaryColor: "#818cf8",
-  backgroundColor: "#111827",
-  textColor: "#f9fafb",
-  fontFamily: "'Inter', sans-serif",
-  borderRadius: "8px",
-  
+const brandDarkTheme = {
+  ...themePresets.candy,
+  mode: "dark" as const,
   defaultChartPalette: ["#818cf8", "#a78bfa", "#c084fc", "#e879f9"],
   barChartPalette: ["#60a5fa", "#34d399", "#fbbf24"],
   pieChartPalette: ["#f87171", "#fb923c", "#facc15", "#4ade80", "#2dd4bf"],
@@ -342,11 +402,7 @@ function App() {
   const [isDark, setIsDark] = useState(false);
   
   return (
-    <ThemeProvider
-      mode={isDark ? "dark" : "light"}
-      theme={brandTheme}
-      darkTheme={darkBrandTheme}
-    >
+    <ThemeProvider {...(isDark ? brandDarkTheme : brandLightTheme)}>
       <button onClick={() => setIsDark(!isDark)}>
         Toggle Theme
       </button>
@@ -357,6 +413,32 @@ function App() {
         formFactor="full-page"
       />
     </ThemeProvider>
+  );
+}
+```
+
+Or use the simpler approach with C1Chat's `theme` prop:
+
+```tsx
+import { useState } from "react";
+import { C1Chat } from "@thesysai/genui-sdk";
+import { themePresets } from "@crayonai/react-ui";
+import "@crayonai/react-ui/styles/index.css";
+
+function App() {
+  const [isDark, setIsDark] = useState(false);
+  
+  return (
+    <C1Chat
+      apiUrl="/api/chat"
+      agentName="Brand Assistant"
+      logoUrl="/logo.svg"
+      formFactor="full-page"
+      theme={{
+        ...themePresets.candy,
+        mode: isDark ? "dark" : "light",
+      }}
+    />
   );
 }
 ```
