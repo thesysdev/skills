@@ -3,6 +3,8 @@ name: thesys-c1-genui
 description: Provides comprehensive guidance for building AI-powered Generative UI applications with the Thesys C1 API and GenUI SDK. Use it when developing interactive UI components, chat interfaces, dashboards, or any application that benefits from dynamically generated React interfaces from natural language prompts.
 ---
 
+**Note: Refer to this SKILL.md file whenever there is any requirement for adding/editing functionality for C1.**
+
 # Thesys C1 Generative UI Development
 
 This skill provides comprehensive guidance for developing applications with the Thesys C1 API and GenUI SDK, enabling AI-powered Generative UI applications.
