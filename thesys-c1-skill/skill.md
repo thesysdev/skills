@@ -35,10 +35,10 @@ Thesys C1 is a Generative UI API that dynamically generates interactive UI compo
 
 - Node.js 18+ or Python 3.8+
 - Thesys API key from [app.thesys.dev](https://app.thesys.dev)
-adding package requirements- Install the required packages:
+- Install the required packages:
 
 ```bash
-npm install @thesysai/genui-sdk@~0.7.15 @crayonai/react-ui@~0.9.9 @crayonai/react-core@~0.7.6
+npm install @thesysai/genui-sdk@latest @crayonai/react-ui@latest @crayonai/react-core@latest @crayonai/stream@latest openai@latest next@latest react@^19.0.0 react-dom@^19.0.0
 ```
 
 ### Next.js Setup
