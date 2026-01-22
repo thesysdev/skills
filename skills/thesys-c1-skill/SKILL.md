@@ -34,7 +34,7 @@ Thesys C1 is a Generative UI API that dynamically generates interactive UI compo
 ### Prerequisites
 
 - Node.js 18+ or Python 3.8+
-- Thesys API key from [app.thesys.dev](https://app.thesys.dev)
+- Thesys API key from [console.thesys.dev](https://console.thesys.dev)
 - Install the required packages:
 
 ```bash
