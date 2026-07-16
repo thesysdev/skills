@@ -4,6 +4,10 @@ This repository contains custom skills for AI coding assistants.
 
 ## Available Skills
 
+### [OpenUI](/skills/openui/SKILL.md)
+
+Guidance for building, debugging, integrating, or documenting OpenUI—its streaming-first OpenUI Lang, Agent Interface, OpenUI Cloud, and `@openuidev/*` packages.
+
 ### [Thesys C1 Generative UI](/thesys-c1-skill/)
 
 A comprehensive skill for developing applications with the **Thesys C1 API** and **GenUI SDK**—enabling AI-powered Generative UI applications that dynamically create interactive interfaces from natural language prompts.
