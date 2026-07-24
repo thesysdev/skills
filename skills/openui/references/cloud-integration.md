@@ -59,10 +59,9 @@ zustand@^4.5.5
 
 `@openuidev/react-ui` re-exports headless APIs, but keep `@openuidev/react-headless` installed when required as a peer dependency. Import the re-exported APIs from `@openuidev/react-ui` in React UI applications.
 
-Configure server-only environment values:
+Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value.
 
 ```bash
-THESYS_API_KEY=sk-th-your-key
 OPENUI_MODEL=google/gemini-3.1-pro-free
 ```
 
