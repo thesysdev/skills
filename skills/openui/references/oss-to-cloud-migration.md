@@ -52,7 +52,7 @@ artifacts, custom slots/theme, and tests.
 | `openAIMessageFormat`                                | `openAIConversationMessageFormat`                                                                      |
 | In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })`                                              |
 | `openuiLibrary`/`openuiChatLibrary`                  | `chatLibrary` from `@openuidev/thesys` when the user chooses Cloud components                          |
-| `library.prompt(...)` in the provider route          | `createResponsesInstructions()` in the Cloud route                                                     |
+| `generateSystemPrompt({ library, promptOptions })` in the provider route | `generateSystemPrompt()` from `@openuidev/thesys-server` in the Cloud route |
 | App-owned artifact loop/renderers                    | Managed `artifactTool({ artifacts: ["slides", "report"] })` plus managed renderers for stock artifacts |
 | No browser storage credential                        | Short-lived frontend token scoped to the authenticated `user_id`                                       |
 
