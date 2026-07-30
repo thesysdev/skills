@@ -218,6 +218,22 @@ Validate input, authorize the untrusted `threadId` for the authenticated user,
 keep the key server-side, forward the abort signal, and return Responses SSE
 without converting protocols.
 
+### User-input trust boundary
+
+The generation proxy accepts only text authored directly by the authenticated
+user for that user's authorized conversation. This is the product's intended
+chat input; the route does not fetch or ingest content from arbitrary URLs,
+public websites, social media, shared feeds, or other third-party sources.
+
+Treat the text as untrusted application input and preserve it strictly as a
+`role: "user"` message. Never concatenate it into system, developer, or
+`instructions` content, and never use it to select credentials, models, tool
+definitions, or authorization policy. Authenticate and rate-limit the route,
+bound and validate the request, authorize the conversation independently, and
+enforce tool permissions outside the model. If a future feature accepts URLs,
+files, search results, or tool output, handle that content as a separate
+untrusted-data path with explicit source, size, and capability controls.
+
 Create a server-only `parseCloudChatRequest(req)` helper before enabling the
 route. Require JSON, accept a bounded `threadId`, allow exactly one bounded text item with
 `{ type: "message", role: "user" }`, and reconstruct the provider item from
