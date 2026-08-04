@@ -1,36 +1,16 @@
-# Custom Skills
+# OpenUI Skill
 
-This repository contains custom skills for AI coding assistants.
+Agent-ready guidance for building generative interfaces with [OpenUI](https://www.openui.com/). This repository contains one focused skill that helps AI coding assistants work with OpenUI Lang, the OpenUI runtimes, Agent Interface, and OpenUI Cloud.
 
-## Available Skills
+## What the Skill Covers
 
-### [OpenUI](/skills/openui/SKILL.md)
-
-Guidance for building, debugging, integrating, or documenting OpenUI—its streaming-first OpenUI Lang, Agent Interface, OpenUI Cloud, and `@openuidev/*` packages.
-
-### [Thesys C1 Generative UI](/thesys-c1-skill/)
-
-A comprehensive skill for developing applications with the **Thesys C1 API** and **GenUI SDK**—enabling AI-powered Generative UI applications that dynamically create interactive interfaces from natural language prompts.
-
-**What's Included:**
-
-| File | Description |
-|------|-------------|
-| [`SKILL.md`](/skills/thesys-c1-skill/SKILL.md) | Main skill file with quickstart and core concepts |
-| [`conversational-ui-and-persistence.md`](/skills/thesys-c1-skill/conversational-ui-and-persistence.md) | State management & database persistence |
-| [`custom-actions-components-thinking-states.md`](/skills/thesys-c1-skill/custom-actions-components-thinking-states.md) | Custom actions, components & loading states |
-| [`artifacts.md`](/skills/thesys-c1-skill/artifacts.md) | Generating reports, presentations & documents |
-| [`customizations-and-styling.md`](/skills/thesys-c1-skill/customizations-and-styling.md) | Theming, charts & CSS overrides |
-| [`migration.md`](/skills/thesys-c1-skill/migration.md) | Migrating from text-based LLM apps |
-
-**Key Capabilities:**
-- Interactive UI generation (forms, charts, tables, buttons)
-- Real-time streaming with progressive rendering
-- OpenAI-compatible API (drop-in replacement)
-- State persistence across sessions
-- Custom actions and components
-- Artifact generation (slides, reports)
-- Full theming and styling control
+- Scaffold new OpenUI applications with `@openuidev/cli`.
+- Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
+- Build custom component libraries with typed schemas, state, actions, queries, and mutations.
+- Add `AgentInterface` to new or existing chat applications.
+- Choose between self-hosted OpenUI and OpenUI Cloud, then integrate the selected backend safely.
+- Migrate legacy JSON UI or self-hosted OpenUI implementations.
+- Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
 
 ## Installation
 
@@ -38,11 +18,32 @@ A comprehensive skill for developing applications with the **Thesys C1 API** and
 npx skills add thesysdev/skills
 ```
 
-### Compatible Tools
+Once installed, try prompts such as:
 
-- [Cursor](https://cursor.com)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-- [Codex](https://chatgpt.com/features/codex)
-- [Antigravity](https://antigravity.dev)
-- [Gemini CLI](https://geminicli.com/)
-- [OpenCode](https://opencode.ai)
+- “Create a streaming OpenUI dashboard from this API.”
+- “Add Agent Interface to my existing Next.js app.”
+- “Build a custom OpenUI component library for these domain objects.”
+- “Migrate this self-hosted OpenUI chat to OpenUI Cloud.”
+
+## Skill Contents
+
+| Resource | Purpose |
+| --- | --- |
+| [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
+| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Production-minded OpenUI Cloud integration runbook |
+| [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
+| [`oss-to-cloud-migration.md`](skills/openui/references/oss-to-cloud-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
+
+## OpenUI Building Blocks
+
+- **OpenUI Lang** — a compact, streaming-first language for model-generated interfaces.
+- **Runtime packages** — framework-agnostic core plus React, Vue, Svelte, and browser renderers.
+- **Component libraries** — built-in or custom components exposed to the model through typed schemas.
+- **Agent Interface** — a complete chat application shell with pluggable model and storage backends.
+- **OpenUI Cloud** — managed generation, persistence, tools, artifacts, and production infrastructure.
+
+## Learn More
+
+- [OpenUI documentation](https://www.openui.com/docs)
+- [OpenUI source and examples](https://github.com/thesysdev/openui)
+- [OpenUI Lang specification](https://www.openui.com/docs/openui-lang/specification-v05)
