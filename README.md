@@ -8,7 +8,7 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 - Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
 - Add `AgentInterface` to new or existing chat applications.
-- Choose between self-hosted OpenUI and OpenUI Cloud, including Cloud BYOK with OpenAI, Anthropic, or Google keys on any plan, including the free tier.
+- Choose between self-hosted OpenUI and OpenUI Cloud, including Cloud BYOK with OpenAI or Anthropic API keys, or Google Cloud service-account credentials, on any plan, including the free tier.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
 - Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
 

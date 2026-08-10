@@ -61,7 +61,9 @@ zustand@^4.5.5
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
 
-OpenUI Cloud also supports bringing an OpenAI, Anthropic, or Google API key on every plan, including the free tier. Add the provider key from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
+OpenUI Cloud supports bringing an OpenAI or Anthropic API key on every plan, including the free tier. Google-hosted Gemini models use a different credential shape: the console expects the full GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. Use a dedicated, least-privilege service account and follow the console's current required fields; do not reproduce a service-account JSON template in generated output.
+
+Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. An agent may navigate to the page, but if login or credential entry is required, it must pause and ask the user to take over. Never ask the user to put an API key or service-account JSON in chat, and never move one from model context into the form with computer use. Treat a credential that already appeared in model context as exposed and recommend rotation. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
 
 ```bash
 OPENUI_MODEL=google/gemini-3.1-pro-free

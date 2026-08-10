@@ -56,7 +56,7 @@ OpenUI Cloud speaks the OpenAI Responses API (`POST https://api.thesys.dev/v1/em
 | Generative UI (OpenUI Lang) | Default response format, streamed in Responses-compatible events |
 | Output validation & correction | Invalid model output detected and corrected in-stream; sanitized fallback — no broken UI reaches the renderer |
 | Managed model access | Leading providers behind one API (billed at cost), automatic model/provider fallbacks; models list endpoint |
-| Bring your own model key (BYOK) | Add an OpenAI, Anthropic, or Google API key from the [BYOK page in the Thesys console](https://console.thesys.dev/byok); available on every plan, including the free tier |
+| Bring your own model credentials (BYOK) | Add an OpenAI or Anthropic API key, or Google Cloud service-account credentials, from the [BYOK page in the Thesys console](https://console.thesys.dev/byok); available on every plan, including the free tier |
 | Artifacts: slides + reports | `artifactTool({ artifacts: ["slides", "report"] })` — generated server-side; **editing is automatically enabled** (the model edits existing artifacts on follow-up asks, no extra config), rendered in the managed viewer |
 | Web search | `{ type: "web_search" }` — runs server-side |
 | Image search | `{ type: "image_search" }` — runs server-side |
@@ -124,7 +124,8 @@ Version-sensitive: verify exact Cloud template env vars, `@openuidev/thesys*` ex
 - `AgentInterface` connects to Cloud with `llm` and `storage` props. `llm` points to an app route that proxies Cloud's Responses endpoint, usually with `openAIResponsesAdapter()` and `openAIConversationMessageFormat`. `storage` uses `useOpenuiCloudStorage()` from `@openuidev/thesys` with a short-lived frontend token.
 - Cloud-provided component sets, artifact renderers, and categories come from `@openuidev/thesys`.
 - Generate keys in the Thesys console: `https://console.thesys.dev/keys`.
-- To use your own model provider, add an OpenAI, Anthropic, or Google API key from `https://console.thesys.dev/byok`. BYOK is available on every plan, including the free tier; configure provider keys in the console rather than adding them to the application.
+- To use your own model provider, add an OpenAI or Anthropic API key from `https://console.thesys.dev/byok`. For Google-hosted Gemini models, the console expects GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. BYOK is available on every plan, including the free tier.
+- Configure provider credentials in the console rather than adding them to the application. An agent may navigate to the BYOK page, but if login or credential entry is required, it must stop and ask the user to take over. Never ask for, accept, print, or type an API key or service-account JSON through model context or computer-use actions. If a credential already appeared in model context, treat it as exposed and recommend rotation.
 
 For existing-project Cloud work, keep these invariants intact:
 
