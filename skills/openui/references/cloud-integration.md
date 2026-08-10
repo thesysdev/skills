@@ -63,7 +63,13 @@ Configure server-only environment values through the deployment secret manager o
 
 OpenUI Cloud supports bringing an OpenAI or Anthropic API key on every plan, including the free tier. Google-hosted Gemini models use a different credential shape: the console expects the full GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. Use a dedicated, least-privilege service account and follow the console's current required fields; do not reproduce a service-account JSON template in generated output.
 
-Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. An agent may navigate to the page, but if login or credential entry is required, it must pause and ask the user to take over. Never ask the user to put an API key or service-account JSON in chat, and never move one from model context into the form with computer use. Treat a credential that already appeared in model context as exposed and recommend rotation. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
+Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. Use this human-in-the-loop handoff:
+
+1. **Prepare:** Explain the provider-specific credential shape, the Google `region` requirement when applicable, and the console URL without requesting any sensitive value. Do not invent IAM roles, credential fields, or region values; use current first-party console or provider instructions.
+2. **Human checkpoint:** Ask the user to log in and enter and save the provider credential directly in the console. Wait for the user to confirm completion; never ask them to put an API key or service-account JSON in chat.
+3. **Resume:** After confirmation, continue only with non-secret verification, such as checking the selected model or testing a request. Never inspect or reproduce the stored credential.
+
+Treat a credential that already appeared in model context as exposed and recommend rotation before setup. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
 
 ```bash
 OPENUI_MODEL=google/gemini-3.1-pro-free

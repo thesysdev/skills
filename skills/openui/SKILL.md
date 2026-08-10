@@ -125,7 +125,7 @@ Version-sensitive: verify exact Cloud template env vars, `@openuidev/thesys*` ex
 - Cloud-provided component sets, artifact renderers, and categories come from `@openuidev/thesys`.
 - Generate keys in the Thesys console: `https://console.thesys.dev/keys`.
 - To use your own model provider, add an OpenAI or Anthropic API key from `https://console.thesys.dev/byok`. For Google-hosted Gemini models, the console expects GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. BYOK is available on every plan, including the free tier.
-- Configure provider credentials in the console rather than adding them to the application. An agent may navigate to the BYOK page, but if login or credential entry is required, it must stop and ask the user to take over. Never ask for, accept, print, or type an API key or service-account JSON through model context or computer-use actions. If a credential already appeared in model context, treat it as exposed and recommend rotation.
+- Use a human-in-the-loop handoff for provider credentials: explain the provider-specific credential shape and give the user the BYOK console URL, then ask them to log in, enter, and save the credential directly. Never ask for or accept an API key or service-account JSON in chat, and do not invent IAM roles, credential fields, or region values that are not verified by current first-party instructions. After the user confirms the credential is saved, resume only with non-secret verification such as checking the selected model or testing a request. If a credential already appeared in model context, treat it as exposed and recommend rotation before setup.
 
 For existing-project Cloud work, keep these invariants intact:
 
