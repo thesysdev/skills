@@ -61,6 +61,8 @@ zustand@^4.5.5
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
 
+OpenUI Cloud also supports bringing an OpenAI, Anthropic, or Google API key on every plan, including the free tier. Add the provider key from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
+
 ```bash
 OPENUI_MODEL=google/gemini-3.1-pro-free
 ```
