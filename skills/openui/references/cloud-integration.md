@@ -90,24 +90,21 @@ BYOK is provider-specific. A request to the provider whose credential the organi
 
 ### Model selection
 
-Managed model access and BYOK use the same `provider/model` identifiers. The current first-party BYOK list is:
+Managed model access and BYOK use the same `provider/model` identifiers. All models available from Anthropic, Google, and OpenAI are supported with BYOK; this table is a non-exhaustive list of current examples:
 
 | Provider | Model | Identifier |
 |---|---|---|
+| Anthropic | Claude Opus 5 | `anthropic/claude-opus-5` |
 | Anthropic | Claude Sonnet 5 | `anthropic/claude-sonnet-5` |
-| Anthropic | Claude Sonnet 4.6 | `anthropic/claude-sonnet-4.6` |
 | Anthropic | Claude Opus 4.7 | `anthropic/claude-opus-4-7` |
 | Google | Gemini 3.6 Flash | `google/gemini-3.6-flash` |
 | Google | Gemini 3.5 Flash | `google/gemini-3.5-flash` |
 | Google | Gemini 3.1 Pro Preview | `google/gemini-3.1-pro-preview` |
+| OpenAI | GPT-5.6 Sol | `openai/gpt-5.6-sol` |
 | OpenAI | GPT-5.5 | `openai/gpt-5.5` |
 | OpenAI | GPT-5.4 | `openai/gpt-5.4` |
-| OpenAI | GPT-5.4 mini | `openai/gpt-5.4-mini` |
-| OpenAI | GPT-5.2 | `openai/gpt-5.2` |
-| OpenAI | GPT-5.1 | `openai/gpt-5.1` |
-| OpenAI | GPT-5 | `openai/gpt-5` |
 
-Model availability is version-sensitive. Verify identifiers against the [first-party Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok), the console, or the generated template before changing `OPENUI_MODEL` or a production allowlist.
+Model availability is version-sensitive. Do not treat the example table as an exhaustive allowlist. Verify current identifiers against the [first-party Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok), the console, or the generated template before changing `OPENUI_MODEL` or a production allowlist.
 
 A generated scaffold may use a managed/free model by default, for example:
 
