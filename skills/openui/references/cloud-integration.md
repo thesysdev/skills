@@ -7,14 +7,15 @@ Use this runbook to add the stock OpenUI Cloud Agent Interface to an existing Re
 1. [Supported Contract](#supported-contract)
 2. [Audit the Host](#audit-the-host)
 3. [Install and Configure](#install-and-configure)
-4. [Wire the Client](#wire-the-client)
-5. [Authorize Cloud Conversations](#authorize-cloud-conversations)
-6. [Add the Generation Proxy](#add-the-generation-proxy)
-7. [Add the Frontend Token Route](#add-the-frontend-token-route)
-8. [Add Tools and MCP](#add-tools-and-mcp)
-9. [Multi-User and Multi-App Convention](#multi-user-and-multi-app-convention)
-10. [Adapt Beyond Next.js](#adapt-beyond-nextjs)
-11. [Verify](#verify)
+4. [Configure BYOK](#configure-byok)
+5. [Wire the Client](#wire-the-client)
+6. [Authorize Cloud Conversations](#authorize-cloud-conversations)
+7. [Add the Generation Proxy](#add-the-generation-proxy)
+8. [Add the Frontend Token Route](#add-the-frontend-token-route)
+9. [Add Tools and MCP](#add-tools-and-mcp)
+10. [Multi-User and Multi-App Convention](#multi-user-and-multi-app-convention)
+11. [Adapt Beyond Next.js](#adapt-beyond-nextjs)
+12. [Verify](#verify)
 
 ## Supported Contract
 
@@ -61,21 +62,33 @@ zustand@^4.5.5
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
 
-OpenUI Cloud supports bringing an OpenAI or Anthropic API key on every plan, including the free tier. Google-hosted Gemini models use a different credential shape: the console expects the full GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. Use a dedicated, least-privilege service account and follow the console's current required fields; do not reproduce a service-account JSON template in generated output.
+## Configure BYOK
 
-Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code. Use this human-in-the-loop handoff:
+BYOK is available on every plan, including the free tier. Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application's environment or client code.
 
-1. **Prepare:** Explain the provider-specific credential shape, the Google `region` requirement when applicable, and the console URL without requesting any sensitive value. Do not invent IAM roles, credential fields, or region values; use current first-party console or provider instructions.
+### Provider credentials
+
+OpenAI and Anthropic accept API keys. Google-hosted Gemini models use a different credential shape: the console expects the full GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. Use a dedicated, least-privilege service account and follow the console's current required fields; do not reproduce a service-account JSON template in generated output.
+
+Do not invent IAM roles, credential fields, or region values. Use the current first-party console or provider instructions.
+
+### Human checkpoint
+
+Use this human-in-the-loop handoff:
+
+1. **Prepare:** Explain the provider-specific credential shape, the Google `region` requirement when applicable, and the console URL without requesting any sensitive value.
 2. **Human checkpoint:** Ask the user to log in and enter and save the provider credential directly in the console. Wait for the user to confirm completion; never ask them to put an API key or service-account JSON in chat.
 3. **Resume:** After confirmation, continue only with non-secret verification, such as checking the selected model or testing a request. Never inspect or reproduce the stored credential.
 
 Treat a credential that already appeared in model context as exposed and recommend rotation before setup. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
 
-### BYOK access, billing, and model selection
+### Organization access and billing
 
 Only organization admins can add or update provider credentials. After an admin saves a credential, every member of that organization can use BYOK models from the matching provider.
 
 BYOK is provider-specific. A request to the provider whose credential the organization added uses that credential. A request to a different provider uses OpenUI Cloud credits instead; when the organization has no credits, the unmatched-provider request fails with an out-of-credits error. Do not imply that adding one provider credential enables BYOK billing for other providers.
+
+### Model selection
 
 Managed model access and BYOK use the same `provider/model` identifiers. The current first-party BYOK list is:
 

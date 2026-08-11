@@ -56,8 +56,7 @@ OpenUI Cloud speaks the OpenAI Responses API (`POST https://api.thesys.dev/v1/em
 | Generative UI (OpenUI Lang) | Default response format, streamed in Responses-compatible events |
 | Output validation & correction | Invalid model output detected and corrected in-stream; sanitized fallback — no broken UI reaches the renderer |
 | Managed model access | Leading providers behind one API (billed at cost), automatic model/provider fallbacks; models list endpoint |
-| Bring your own model credentials (BYOK) | Organization admins add an OpenAI or Anthropic API key, or Google Cloud service-account credentials, from the [BYOK page in the Thesys console](https://console.thesys.dev/byok); every organization member can then use that provider on every plan, including the free tier |
-| Cloud model selection | Managed access and BYOK use the same `provider/model` identifiers; verify the current list on the [Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok) before hardcoding one |
+| Bring your own model credentials (BYOK) | Available on every plan; read [Configure BYOK](references/cloud-integration.md#configure-byok) for provider credential formats, organization access, billing, model identifiers, and the required human handoff |
 | Artifacts: slides + reports | `artifactTool({ artifacts: ["slides", "report"] })` — generated server-side; **editing is automatically enabled** (the model edits existing artifacts on follow-up asks, no extra config), rendered in the managed viewer |
 | Web search | `{ type: "web_search" }` — runs server-side |
 | Image search | `{ type: "image_search" }` — runs server-side |
@@ -69,7 +68,7 @@ OpenUI Cloud speaks the OpenAI Responses API (`POST https://api.thesys.dev/v1/em
 | Standard OpenAI Responses params | Being Responses-compatible, `previous_response_id`, `stream: false`, `instructions`, `tool_choice`, `parallel_tool_calls`, `safety_identifier` work as documented by OpenAI — production setups here use `conversation` + `store: true` + streaming |
 | Responsive managed UI | `AgentInterface` + `chatLibrary` |
 
-Tools/MCP and multi-user are steps 8-9 of [references/cloud-integration.md](references/cloud-integration.md).
+Tools/MCP and multi-user are steps 9-10 of [references/cloud-integration.md](references/cloud-integration.md).
 
 ## Route Cloud Integration and Migration Tasks
 
@@ -125,11 +124,7 @@ Version-sensitive: verify exact Cloud template env vars, `@openuidev/thesys*` ex
 - `AgentInterface` connects to Cloud with `llm` and `storage` props. `llm` points to an app route that proxies Cloud's Responses endpoint, usually with `openAIResponsesAdapter()` and `openAIConversationMessageFormat`. `storage` uses `useOpenuiCloudStorage()` from `@openuidev/thesys` with a short-lived frontend token.
 - Cloud-provided component sets, artifact renderers, and categories come from `@openuidev/thesys`.
 - Generate keys in the Thesys console: `https://console.thesys.dev/keys`.
-- To use your own model provider, add an OpenAI or Anthropic API key from `https://console.thesys.dev/byok`. For Google-hosted Gemini models, the console expects GCP service-account JSON plus a `region` field, not a single Google AI Studio/Gemini API key. BYOK is available on every plan, including the free tier.
-- Only organization admins can add or update provider credentials. After an admin saves one, every organization member can use BYOK models from that provider.
-- BYOK is provider-specific: requests to the matching provider use the organization's credential. Requests to another provider use OpenUI Cloud credits and fail with an out-of-credits error when no credits remain.
-- Managed access and BYOK share the same `provider/model` identifiers. Verify the current supported BYOK model list on the first-party Models and BYOK page before changing `OPENUI_MODEL` or hardcoding an allowlist.
-- Use a human-in-the-loop handoff for provider credentials: explain the provider-specific credential shape and give the user the BYOK console URL, then ask them to log in, enter, and save the credential directly. Never ask for or accept an API key or service-account JSON in chat, and do not invent IAM roles, credential fields, or region values that are not verified by current first-party instructions. After the user confirms the credential is saved, resume only with non-secret verification such as checking the selected model or testing a request. If a credential already appeared in model context, treat it as exposed and recommend rotation before setup.
+- Before assisting with model-provider credentials, read [Configure BYOK](references/cloud-integration.md#configure-byok) completely. Keep the credential entry human-in-the-loop.
 
 For existing-project Cloud work, keep these invariants intact:
 
