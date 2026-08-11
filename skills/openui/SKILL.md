@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, existing-project Cloud integration, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
+description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, existing-project Cloud integration, Cloud BYOK, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
 ---
 
 # OpenUI
@@ -56,6 +56,7 @@ OpenUI Cloud speaks the OpenAI Responses API (`POST https://api.thesys.dev/v1/em
 | Generative UI (OpenUI Lang) | Default response format, streamed in Responses-compatible events |
 | Output validation & correction | Invalid model output detected and corrected in-stream; sanitized fallback — no broken UI reaches the renderer |
 | Managed model access | Leading providers behind one API (billed at cost), automatic model/provider fallbacks; models list endpoint |
+| Bring your own model credentials (BYOK) | Available on every plan; read [Configure BYOK](references/cloud-integration.md#configure-byok) for provider credential formats, organization access, billing, model identifiers, and the required human handoff |
 | Artifacts: slides + reports | `artifactTool({ artifacts: ["slides", "report"] })` — generated server-side; **editing is automatically enabled** (the model edits existing artifacts on follow-up asks, no extra config), rendered in the managed viewer |
 | Web search | `{ type: "web_search" }` — runs server-side |
 | Image search | `{ type: "image_search" }` — runs server-side |
@@ -67,7 +68,7 @@ OpenUI Cloud speaks the OpenAI Responses API (`POST https://api.thesys.dev/v1/em
 | Standard OpenAI Responses params | Being Responses-compatible, `previous_response_id`, `stream: false`, `instructions`, `tool_choice`, `parallel_tool_calls`, `safety_identifier` work as documented by OpenAI — production setups here use `conversation` + `store: true` + streaming |
 | Responsive managed UI | `AgentInterface` + `chatLibrary` |
 
-Tools/MCP and multi-user are steps 8-9 of [references/cloud-integration.md](references/cloud-integration.md).
+Tools/MCP and multi-user are steps 9-10 of [references/cloud-integration.md](references/cloud-integration.md).
 
 ## Route Cloud Integration and Migration Tasks
 
@@ -110,7 +111,7 @@ For self-hosted template build checks, set `OPENAI_API_KEY` even if no real mode
 
 ### Choose OpenUI Cloud or self-hosted
 
-OpenUI Cloud is the managed backend for Agent Interface. It uses the open-source OpenUI rendering engine and adds production layers: persisted conversations, production-grade generative UI, prebuilt report/presentation artifacts, theming/white-labeling, output correction, model/provider resilience, versioning, observability, and audit trails.
+OpenUI Cloud is the managed backend for Agent Interface. It uses the open-source OpenUI rendering engine and adds production layers: persisted conversations, production-grade generative UI, managed models or BYOK, prebuilt report/presentation artifacts, theming/white-labeling, output correction, model/provider resilience, versioning, observability, and audit trails.
 
 Use Cloud when the user wants managed production infrastructure for an Agent Interface app. Use self-hosted OpenUI when the user wants to own the model route, storage, tools, component library, and runtime behavior.
 
@@ -123,6 +124,7 @@ Version-sensitive: verify exact Cloud template env vars, `@openuidev/thesys*` ex
 - `AgentInterface` connects to Cloud with `llm` and `storage` props. `llm` points to an app route that proxies Cloud's Responses endpoint, usually with `openAIResponsesAdapter()` and `openAIConversationMessageFormat`. `storage` uses `useOpenuiCloudStorage()` from `@openuidev/thesys` with a short-lived frontend token.
 - Cloud-provided component sets, artifact renderers, and categories come from `@openuidev/thesys`.
 - Generate keys in the Thesys console: `https://console.thesys.dev/keys`.
+- Before assisting with model-provider credentials, read [Configure BYOK](references/cloud-integration.md#configure-byok) completely. Keep the credential entry human-in-the-loop.
 
 For existing-project Cloud work, keep these invariants intact:
 
