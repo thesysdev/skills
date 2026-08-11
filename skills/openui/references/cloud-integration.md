@@ -71,11 +71,38 @@ Add provider credentials from the [BYOK page in the Thesys console](https://cons
 
 Treat a credential that already appeared in model context as exposed and recommend rotation before setup. The application still uses its server-side `THESYS_API_KEY` to call OpenUI Cloud; BYOK changes the model-provider billing path, not the application authentication boundary.
 
+### BYOK access, billing, and model selection
+
+Only organization admins can add or update provider credentials. After an admin saves a credential, every member of that organization can use BYOK models from the matching provider.
+
+BYOK is provider-specific. A request to the provider whose credential the organization added uses that credential. A request to a different provider uses OpenUI Cloud credits instead; when the organization has no credits, the unmatched-provider request fails with an out-of-credits error. Do not imply that adding one provider credential enables BYOK billing for other providers.
+
+Managed model access and BYOK use the same `provider/model` identifiers. The current first-party BYOK list is:
+
+| Provider | Model | Identifier |
+|---|---|---|
+| Anthropic | Claude Sonnet 5 | `anthropic/claude-sonnet-5` |
+| Anthropic | Claude Sonnet 4.6 | `anthropic/claude-sonnet-4.6` |
+| Anthropic | Claude Opus 4.7 | `anthropic/claude-opus-4-7` |
+| Google | Gemini 3.6 Flash | `google/gemini-3.6-flash` |
+| Google | Gemini 3.5 Flash | `google/gemini-3.5-flash` |
+| Google | Gemini 3.1 Pro Preview | `google/gemini-3.1-pro-preview` |
+| OpenAI | GPT-5.5 | `openai/gpt-5.5` |
+| OpenAI | GPT-5.4 | `openai/gpt-5.4` |
+| OpenAI | GPT-5.4 mini | `openai/gpt-5.4-mini` |
+| OpenAI | GPT-5.2 | `openai/gpt-5.2` |
+| OpenAI | GPT-5.1 | `openai/gpt-5.1` |
+| OpenAI | GPT-5 | `openai/gpt-5` |
+
+Model availability is version-sensitive. Verify identifiers against the [first-party Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok), the console, or the generated template before changing `OPENUI_MODEL` or a production allowlist.
+
+A generated scaffold may use a managed/free model by default, for example:
+
 ```bash
 OPENUI_MODEL=google/gemini-3.1-pro-free
 ```
 
-Use a current supported `provider/model` value for `OPENUI_MODEL`; prefer the generated template or console over a stale hardcoded list. A scaffold may also use `DEMO_USER_ID=demo-user`, but production must derive the user id from authenticated server state.
+For BYOK, replace that value with a current supported BYOK identifier. A scaffold may also use `DEMO_USER_ID=demo-user`, but production must derive the user id from authenticated server state.
 
 ## Wire the Client
 
