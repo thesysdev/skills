@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, existing-project Cloud integration, Cloud BYOK, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
+description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, ThemeProvider/theming, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, existing-project Cloud integration, Cloud BYOK, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
 ---
 
 # OpenUI
@@ -44,6 +44,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the user wants a new OpenUI/GenUI app, use `@openuidev/cli`; it is the easiest scaffolding path.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
+- If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
 - If the host app is Vue or Svelte, use `@openuidev/vue-lang` or `@openuidev/svelte-lang`. Use `@openuidev/lang-core` for framework-agnostic parsing, prompt generation, schemas, or backend/runtime work.
 
@@ -427,52 +428,16 @@ Useful React UI exports:
 - `AgentInterface`: full chat app shell with backend `llm` and optional `storage` channels.
 - `fetchLLM`, `restStorage`, stream adapters, and message formats: self-hosted Agent Interface backend wiring.
 - `FullScreen`, `Copilot`, `BottomTray`: prebuilt chat surfaces.
-- `ThemeProvider`, `createTheme`: theming.
+- `ThemeProvider`, `createTheme`, `useTheme`, `ThemeProps`, and `ThemeMode`: theming. Read [references/theme-provider.md](references/theme-provider.md) before integrating them.
 - `@openuidev/react-ui/components.css`: component-level CSS used by React UI components.
 - `@openuidev/react-ui/styles/index.css`: default unlayered styles.
 - `@openuidev/react-ui/layered/styles/index.css`: cascade-layered styles for easier CSS overrides.
 
-## Theme Agent Interface
+## Theme React UI
 
-Map host-company design tokens into `AgentInterface` with a `ThemeProps` object. Prefer `lightTheme`/`darkTheme` with `createTheme`; the old `theme` prop on `ThemeProvider` is a deprecated alias for `lightTheme`.
+Read [references/theme-provider.md](references/theme-provider.md) completely before adding or changing OpenUI theming. Choose exactly one provider owner by default: pass a `ThemeProps` envelope to `AgentInterface.theme`, or wrap a broader tree in `ThemeProvider` and set `disableThemeProvider` on `AgentInterface`. Keep both providers only for an intentional nested theme scope.
 
-Treat `createTheme()` tokens as installed-version-specific. In development it validates keys against the runtime's default theme keys; unknown keys are warned and ignored. Verify custom keys against installed `node_modules/@openuidev/react-ui`; if package source is unavailable, consult first-party GitHub source from `https://github.com/thesysdev/openui/tree/main/packages` rather than relying on type-only fields such as chart palette options.
-
-```tsx
-import { AgentInterface, createTheme, type ThemeProps } from "@openuidev/react-ui";
-
-const companyChatTheme: ThemeProps = {
-  lightTheme: createTheme({
-    background: "oklch(0.98 0.01 250)",
-    interactiveAccentDefault: "oklch(0.55 0.18 255)",
-    chatUserResponseBg: "oklch(0.55 0.18 255)",
-    chatUserResponseText: "oklch(0.99 0 0)",
-    radiusM: "10px",
-    fontBody: "Inter, system-ui, sans-serif",
-  }),
-  darkTheme: createTheme({
-    background: "oklch(0.16 0.02 255)",
-    interactiveAccentDefault: "oklch(0.72 0.14 255)",
-    chatUserResponseBg: "oklch(0.72 0.14 255)",
-    chatUserResponseText: "oklch(0.12 0.01 255)",
-  }),
-};
-
-const starters = [
-  { displayText: "Summarize pipeline", prompt: "Summarize the current sales pipeline." },
-];
-
-<AgentInterface
-  llm={llm}
-  theme={companyChatTheme}
-  logoUrl="/brand/logo.svg"
-  agentName="Acme Assistant"
-  starters={starters}
-  starterVariant="long"
-/>;
-```
-
-Use `disableThemeProvider` only when the app already wraps the chatbot in a compatible OpenUI `ThemeProvider`; otherwise leave the built-in provider enabled.
+Treat theme keys as installed-version-specific. Do not invent a `"system"` mode, a provider-owned mode setter, or token names; verify the installed public exports and ThemeProvider source first.
 
 ## First-Party Sources
 
