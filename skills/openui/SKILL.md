@@ -23,7 +23,7 @@ Do not use this skill for general React UI questions, generic design system advi
 
 | Package | Use for |
 | --- | --- |
-| `@openuidev/lang-core` | Framework-agnostic parser, streaming parser, prompt generation, runtime evaluation, `Query`/`Mutation`, stores, bindings, JSON schema/types |
+| `@openuidev/lang-core` | Framework-agnostic parser, streaming parser, prompt generation, runtime evaluation, `Query`/`Mutation`, stores, bindings, rule-driven form validation, JSON schema/types |
 | `@openuidev/react-lang` | React `defineComponent`, `createLibrary`, `<Renderer />`, hooks, parser/prompt re-exports |
 | `@openuidev/vue-lang` | Vue 3 `defineComponent`, `createLibrary`, `<Renderer />`, composables, parser re-exports |
 | `@openuidev/svelte-lang` | Svelte 5 `defineComponent`, `createLibrary`, `<Renderer />`, context helpers, parser re-exports |
@@ -373,6 +373,12 @@ Queries and mutations must be top-level statements, not inline component argumen
 ### Built-ins and actions
 
 Built-ins require `@`; bare names such as `Count(...)` are invalid. Common built-ins include `@Count`, `@Sum`, `@Avg`, `@Min`, `@Max`, `@First`, `@Last`, `@Filter`, `@Sort`, `@Round`, `@Each`, `@Run`, `@Set`, `@Reset`, `@ToAssistant`, and `@OpenUrl`.
+
+### Validate form values
+
+Use [`validate`](https://github.com/thesysdev/openui/blob/main/packages/lang-core/src/utils/validation.ts) from `@openuidev/lang-core` for rule-driven field validation. Convert string-array rules such as `["required", "minLength:3"]` with `parseRules`, or structured rules such as `{ required: true, minLength: 3 }` with `parseStructuredRules`. Built-in rule names are `required`, `email`, `url`, `numeric`, `min`, `max`, `minLength`, `maxLength`, and `pattern`.
+
+Call `validate(value, rules, customValidators?)`; it stops at and returns the first error string, or returns `undefined` when the value passes. Custom validators take precedence over built-ins with the same name; unknown rule names warn and are skipped. Empty optional values pass the built-ins unless the rules also include `required`.
 
 ## Renderer Notes
 
