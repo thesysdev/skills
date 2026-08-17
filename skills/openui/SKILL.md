@@ -200,6 +200,12 @@ const llm: ChatLLM = {
 - Import React UI CSS once, normally `@openuidev/react-ui/components.css` plus `@openuidev/react-ui/styles/index.css`; use `@openuidev/react-ui/layered/styles/index.css` when the app needs cascade-layered overrides.
 - Examples/docs may import adapters from `@openuidev/react-headless`; React UI apps can also import those adapters from `@openuidev/react-ui` because it re-exports headless APIs.
 
+For Tailwind v4, import React UI's layered stylesheet. See the [React UI API reference](https://www.openui.com/docs/api-reference/react-ui#tailwind-v4) for the complete CSS setup.
+
+```css
+@import "@openuidev/react-ui/layered/styles/index.css";
+```
+
 For an existing chat app that already owns message state, render only assistant GenUI responses with `Renderer` and `openuiChatLibrary`:
 
 ```tsx
