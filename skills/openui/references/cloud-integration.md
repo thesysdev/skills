@@ -538,7 +538,7 @@ export function initializeOpenUIObservability(reliabilityClientKey: string) {
 }
 ```
 
-Have the user create and configure the reliability client API key directly in the Thesys Console or deployment configuration. Never invent, print, log, or request its value in chat. Keep it distinct from `THESYS_API_KEY`: `THESYS_RELIABILITY_KEY` is the logical name for the browser instrumentation key, while `THESYS_API_KEY` is the server-side Cloud credential and must never enter the client bundle. Use the framework's required public prefix when reading the reliability key in browser code; do not add a public prefix to `THESYS_API_KEY`.
+Have the user create and configure the reliability client API key directly in the Thesys Console or deployment configuration. Never invent, print, log, or request its value in chat. Configure this browser instrumentation key using the host framework's public environment-variable convention, such as `NEXT_PUBLIC_THESYS_RELIABILITY_KEY` in Next.js or `VITE_THESYS_RELIABILITY_KEY` in Vite. The reliability client key will be visible in the built browser code. Keep `THESYS_API_KEY` server-only and never expose it to browser code.
 
 After deployment, confirm observability initializes only once and that captured events appear in the Reliability dashboard. Use the most frequent error types to decide whether to simplify the component schema, add a targeted prompt rule or valid example, or change models. Re-run the representative prompt set to verify the intervention instead of inferring success from one generation.
 
