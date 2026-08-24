@@ -62,7 +62,7 @@ zustand@^4.5.5
 
 `@openuidev/react-ui` re-exports headless APIs, but keep `@openuidev/react-headless` installed when required as a peer dependency. Import the re-exported APIs from `@openuidev/react-ui` in React UI applications.
 
-Add `@openuidev/observability-cloud` when the application needs production UI-generation monitoring. It is not required for Cloud's streaming validation and correction; those are part of the managed generation path. Generate a separate client API key in the Thesys Console and treat `THESYS_RELIABILITY_KEY` as its framework-agnostic configuration name. Because observability initializes in browser code, expose it through the host framework's public-runtime convention, such as `NEXT_PUBLIC_THESYS_RELIABILITY_KEY` in Next.js or `VITE_THESYS_RELIABILITY_KEY` in Vite.
+Add `@openuidev/observability-cloud` when the application needs production UI-generation monitoring. It is not required for Cloud's streaming validation and correction; those are part of the managed generation path. Generate a separate client API key in the Thesys Console and use `CLIENT_API_KEY` as its framework-agnostic configuration name. Because observability initializes in browser code, expose it through the host framework's public-runtime convention, such as `NEXT_PUBLIC_CLIENT_API_KEY` in Next.js or `VITE_CLIENT_API_KEY` in Vite.
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
 
@@ -538,7 +538,7 @@ export function initializeOpenUIObservability(clientApiKey: string) {
 }
 ```
 
-Have the user create and configure the client API key directly in the Thesys Console or deployment configuration. Never invent, print, log, or request its value in chat. Configure this browser instrumentation key using the host framework's public environment-variable convention, such as `NEXT_PUBLIC_THESYS_RELIABILITY_KEY` in Next.js or `VITE_THESYS_RELIABILITY_KEY` in Vite. The client API key will be visible in the built browser code. Keep `THESYS_API_KEY` server-only and never expose it to browser code.
+Have the user create and configure the client API key directly in the Thesys Console or deployment configuration. Never invent, print, log, or request its value in chat. Configure this browser instrumentation key using the host framework's public environment-variable convention, such as `NEXT_PUBLIC_CLIENT_API_KEY` in Next.js or `VITE_CLIENT_API_KEY` in Vite. The client API key will be visible in the built browser code. Keep `THESYS_API_KEY` server-only and never expose it to browser code.
 
 After deployment, confirm observability initializes only once and that captured events appear in the Reliability dashboard. Use the most frequent error types to decide whether to simplify the component schema, add a targeted prompt rule or valid example, or change models. Re-run the representative prompt set to verify the intervention instead of inferring success from one generation.
 
@@ -574,4 +574,4 @@ The managed client packages are React packages. Do not promise a Vue, Svelte, Re
 12. If MCP is declared, confirm `mcp_list_tools` appears on the stream and that an unreachable server surfaces its `error` instead of failing silently.
 13. Confirm two different `APP_ID`s sharing one org key produce disjoint thread lists.
 14. Run representative UI prompts multiple times and inspect partial renders as well as blank screens; do not declare reliability from one successful generation.
-15. If production observability is enabled, confirm initialization occurs once, captured events reach the Reliability dashboard, the configured public client API key corresponds to `THESYS_RELIABILITY_KEY`, and `THESYS_API_KEY` is absent from the browser bundle.
+15. If production observability is enabled, confirm initialization occurs once, captured events reach the Reliability dashboard, the configured public client API key corresponds to `CLIENT_API_KEY`, and `THESYS_API_KEY` is absent from the browser bundle.
