@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, ThemeProvider/theming, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, existing-project Cloud integration, Cloud BYOK, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
+description: "Use for building, debugging, integrating, migrating, or documenting OpenUI, OpenUI Lang, Agent Interface, ThemeProvider/theming, OpenUI Cloud, @openuidev packages, streaming generative UI rendering, component libraries, reliability testing and observability, existing-project Cloud integration, Cloud BYOK, self-hosted-to-Cloud migration, migrations from JSON UI formats, Cloud tools (web/image search, artifacts), remote MCP servers, custom function tools and tool loops, and multi-user or multi-app identity (frontend tokens, app_id/user_id, conversation APIs, Responses metadata)."
 ---
 
 # OpenUI
@@ -31,6 +31,8 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/react-headless` | Bring-your-own React chat state, hooks, storage/LLM adapter primitives, streaming adapters, message converters, and artifact primitives without OpenUI's visual components |
 | `@openuidev/react-email` | React Email component library and prompt options for generated email |
 | `@openuidev/browser-bundle` | CDN/iframe/no-build React renderer bundle exposed as `window.__OpenUI` |
+| `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
+| `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
 | `@openuidev/cli` | `openui create` scaffolding and `openui generate` prompt/schema generation from a library export |
 | `@openuidev/thesys` | Version-sensitive client-side OpenUI Cloud helpers such as `useOpenuiCloudStorage()`, Cloud component sets, and Cloud artifact components/renderers/categories; verify current exports |
 | `@openuidev/thesys-server` | Version-sensitive server-side OpenUI Cloud helpers such as `artifactTool` and `createResponsesInstructions` for Cloud-backed `/api/chat` routes |
@@ -44,6 +46,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the user wants a new OpenUI/GenUI app, use `@openuidev/cli`; it is the easiest scaffolding path.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
+- If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Cloud validation, fallbacks, and production monitoring, also read [Cloud reliability and observability](references/cloud-integration.md#cloud-reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
 - If the host app is Vue or Svelte, use `@openuidev/vue-lang` or `@openuidev/svelte-lang`. Use `@openuidev/lang-core` for framework-agnostic parsing, prompt generation, schemas, or backend/runtime work.
@@ -389,12 +392,29 @@ During streaming, unresolved forward refs are expected. After the stream ends, i
 
 Version-sensitive: verify renderer props against installed exports; there is no current `nodePlaceholder` renderer prop in the inspected source.
 
+## Improve and measure reliability
+
+LLM-generated interfaces are nondeterministic. A response that renders correctly once can fail on a later run by inventing a component, using an invalid value, leaving a reference unresolved, or ending before the component graph is complete. Establish a baseline with representative user prompts and multiple generations per prompt; measure structural errors and partial or blank renders alongside latency and cost. Repeat the same evaluation after every change.
+
+Use the measured failure types to choose the intervention:
+
+1. Simplify the component schema. Prefer distinct component names, clear descriptions, focused props, and unambiguous enum values. Remove overlapping components and use `componentGroups` to group related components.
+2. Refine the generated system prompt. Add narrow rules for recurring errors and valid examples for combinations the model struggles with. Test every rule and example against the baseline; an incorrect example can cause broad regressions.
+3. Evaluate models with the application's actual component library and prompts. Run each prompt repeatedly and compare reliability, latency, and cost instead of trusting a single successful generation or a generic benchmark.
+4. Validate and correct output before users see it. In a self-hosted flow, capture parser and renderer errors and feed precise, actionable errors into a bounded correction attempt. For Cloud, follow [Cloud reliability and observability](references/cloud-integration.md#cloud-reliability-and-observability) instead of adding a second repair layer.
+
+### During development
+
+Use OpenUI DevTools to inspect the response text, parser issues, validation errors, and timing for each stream, including failures hidden by a partially rendered interface. `@openuidev/react-lang` auto-mounts DevTools in browser development builds, and apps scaffolded by `@openuidev/cli` include it. To configure or manually mount the widget in another app, install `@openuidev/devtools` as a development dependency and mount one `OpenUIDevtools` instance; a manual instance replaces the auto-mounted one. Do not enable the widget in production merely to collect telemetry.
+
 ## Verification
 
 - Run `openui generate` against the library file before using a custom library in an app.
 - Run the host app's TypeScript/build checks after existing-app integrations, especially when adding React UI CSS imports or Next client components.
 - Validate canned OpenUI Lang with `createParser(...).parse(...)` and inspect `result.meta.errors`; do not look for top-level `result.errors`.
 - Treat parse/runtime errors surfaced through `Renderer` `onError` or parser results as LLM-correctable feedback: unknown components, missing required props, excess positional args, inline `Query`/`Mutation`, runtime errors, or unresolved refs should be fed back into the next model turn.
+- Run representative prompts multiple times before and after reliability changes. Track partial renders and structural errors, not only fully blank screens, and do not claim a reliability improvement from one successful run.
+- In development, use DevTools Inspect to review settled streams and Debug to replay failing output against the same component library without calling the model again.
 - For Cloud, confirm the server key never appears in client code, the client sends only the latest message, the adapter/format pair matches, and the frontend token uses a scoped authenticated identity.
 - Test invalid request bodies and provider-item injection, missing configuration, upstream failures, abort handling, and stream closure without a real key when possible.
 - Verify logged-out requests cannot use either Cloud route and one authenticated user cannot address another user's conversation id.
@@ -462,6 +482,8 @@ Remote first-party OpenUI sources:
 - `https://www.openui.com/docs/openui-lang/syntax`
 - `https://www.openui.com/docs/openui-lang/defining-components`
 - `https://www.openui.com/docs/openui-lang/renderer`
+- `https://www.openui.com/docs/openui-lang/reliability`
+- `https://www.openui.com/docs/openui-lang/developer-tools`
 - `https://www.openui.com/docs/openui-lang/reactive-state`
 - `https://www.openui.com/docs/openui-lang/queries-mutations`
 - `https://www.openui.com/docs/openui-lang/builtins`

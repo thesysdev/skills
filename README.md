@@ -7,6 +7,7 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 - Scaffold new OpenUI applications with `@openuidev/cli`.
 - Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
+- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
 - Add `AgentInterface` to new or existing chat applications.
 - Choose between self-hosted OpenUI and OpenUI Cloud, including Cloud BYOK with OpenAI or Anthropic API keys, or Google Cloud service-account credentials, on any plan, including the free tier.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
@@ -30,7 +31,7 @@ Once installed, try prompts such as:
 | Resource | Purpose |
 | --- | --- |
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
-| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Production-minded OpenUI Cloud integration runbook |
+| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Production-minded OpenUI Cloud integration, reliability, and observability runbook |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
 | [`oss-to-cloud-migration.md`](skills/openui/references/oss-to-cloud-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
 

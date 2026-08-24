@@ -14,8 +14,9 @@ Use this runbook to add the stock OpenUI Cloud Agent Interface to an existing Re
 8. [Add the Frontend Token Route](#add-the-frontend-token-route)
 9. [Add Tools and MCP](#add-tools-and-mcp)
 10. [Multi-User and Multi-App Convention](#multi-user-and-multi-app-convention)
-11. [Adapt Beyond Next.js](#adapt-beyond-nextjs)
-12. [Verify](#verify)
+11. [Cloud Reliability and Observability](#cloud-reliability-and-observability)
+12. [Adapt Beyond Next.js](#adapt-beyond-nextjs)
+13. [Verify](#verify)
 
 ## Supported Contract
 
@@ -25,6 +26,7 @@ The verified happy path provides:
 - Cloud conversation and artifact persistence.
 - The managed `chatLibrary` component set.
 - Managed report and presentation artifacts.
+- Streaming validation and correction of malformed OpenUI output, with model/provider fallbacks.
 - A server-side Responses proxy and a server-side frontend-token mint.
 - Server-side Cloud tools (artifacts, web/image search, remote MCP) and app-owned function tools via the documented loop ([Add Tools and MCP](#add-tools-and-mcp)).
 
@@ -59,6 +61,8 @@ zustand@^4.5.5
 ```
 
 `@openuidev/react-ui` re-exports headless APIs, but keep `@openuidev/react-headless` installed when required as a peer dependency. Import the re-exported APIs from `@openuidev/react-ui` in React UI applications.
+
+Add `@openuidev/observability-cloud` when the application needs production UI-generation monitoring. It is not required for Cloud's streaming validation and correction; those are part of the managed generation path.
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
 
@@ -518,6 +522,26 @@ Brownfield recipe (existing app, real users):
 4. Generation route: enforce thread ownership per [Authorize Cloud Conversations](#authorize-cloud-conversations).
 5. Verify isolation: two signed-in users see disjoint thread lists, and two apps with different `APP_ID`s on one org key see disjoint thread lists.
 
+## Cloud Reliability and Observability
+
+The first-party [Reliability guide](https://www.openui.com/docs/openui-lang/reliability) describes OpenUI Cloud as the managed reliability layer between the application and the model. On the managed generation path, it validates generated UI while streaming, corrects malformed output and schema violations, and recovers from model or provider failures with fallbacks. Preserve the Cloud response stream and the matching OpenUI adapter; do not parse, rewrite, or wrap the SSE in a second blind correction layer.
+
+Managed correction reduces failures but does not make model output deterministic. Build a representative prompt set for the application's actual component library, run each prompt multiple times, and compare structural errors, partial or blank renders, latency, and cost before and after changing the schema, prompt, or selected model. In development, use OpenUI DevTools to inspect parser and renderer errors that a partially rendered interface might otherwise hide.
+
+For production traffic, install `@openuidev/observability-cloud` and initialize it once in browser code so captured UI-generation errors can be reviewed in the Thesys Console Reliability dashboard:
+
+```ts
+import * as Observability from "@openuidev/observability-cloud";
+
+export function initializeOpenUIObservability(clientApiKey: string) {
+  Observability.init({ apiKey: clientApiKey });
+}
+```
+
+Have the user create and configure the observability client API key directly in the Thesys Console or deployment configuration. Never invent, print, log, or request its value in chat. Keep it distinct from `THESYS_API_KEY`: the observability key is a client key used by browser instrumentation, while `THESYS_API_KEY` is the server-side Cloud credential and must never enter the client bundle.
+
+After deployment, confirm observability initializes only once and that captured events appear in the Reliability dashboard. Use the most frequent error types to decide whether to simplify the component schema, add a targeted prompt rule or valid example, or change models. Re-run the representative prompt set to verify the intervention instead of inferring success from one generation.
+
 ## Adapt Beyond Next.js
 
 Keep the same contracts in other server frameworks:
@@ -549,3 +573,5 @@ The managed client packages are React packages. Do not promise a Vue, Svelte, Re
 11. Ask a weather-style question: confirm the declared function tool executes, its result reaches the model's final answer, and no `thesys_*` function_call is ever executed or answered by the app's loop.
 12. If MCP is declared, confirm `mcp_list_tools` appears on the stream and that an unreachable server surfaces its `error` instead of failing silently.
 13. Confirm two different `APP_ID`s sharing one org key produce disjoint thread lists.
+14. Run representative UI prompts multiple times and inspect partial renders as well as blank screens; do not declare reliability from one successful generation.
+15. If production observability is enabled, confirm initialization occurs once, captured events reach the Reliability dashboard, and `THESYS_API_KEY` is absent from the browser bundle.
