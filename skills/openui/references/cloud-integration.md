@@ -1,6 +1,6 @@
 # Integrate OpenUI Cloud into an Existing Project
 
-Use this runbook to add the stock OpenUI Cloud Agent Interface to an existing React application. Use the host application's framework, package manager, route conventions, authentication, layout, and design system. Verify version-sensitive details against the installed packages, generated templates, and current first-party OpenUI sources before editing.
+Use this runbook to add OpenUI Cloud Agent Interface to an existing React application using the Responses API. Use the host application's framework, package manager, route conventions, authentication, layout, and design system. Verify version-sensitive details against the installed packages, generated templates, and current first-party OpenUI sources before editing. If Responses is not already the right API, read [cloud-api-selection.md](cloud-api-selection.md) before applying this runbook.
 
 ## Contents
 
@@ -24,13 +24,13 @@ The verified happy path provides:
 
 - React `AgentInterface` backed by OpenUI Cloud.
 - Cloud conversation and artifact persistence.
-- The managed `chatLibrary` component set.
+- The managed `chatLibrary` component set or a custom library paired with its generated server-side spec.
 - Managed report and presentation artifacts.
 - Streaming validation and correction of malformed OpenUI output, with model/provider fallbacks.
 - A server-side Responses proxy and a server-side frontend-token mint.
 - Server-side Cloud tools (artifacts, web/image search, remote MCP) and app-owned function tools via the documented loop ([Add Tools and MCP](#add-tools-and-mcp)).
 
-Do not imply that a browser-only app can safely integrate Cloud: it needs a trusted server boundary. Custom tool execution is supported via the documented function-tool loop ([Add Tools and MCP](#add-tools-and-mcp)). Treat historical data import and generation with a custom component library as separate capabilities that require current first-party support. Do not assume the installed SDK exports a conversation-ownership helper; a production generation proxy needs the explicit ownership design below.
+Do not imply that a browser-only app can safely integrate Cloud: it needs a trusted server boundary. Custom tool execution is supported via the documented function-tool loop ([Add Tools and MCP](#add-tools-and-mcp)). Custom component libraries are supported through a generated library spec and `generateSystemPrompt()`; keep the backend spec and client renderer library synchronized. Treat historical data import as a separate capability that requires current first-party support. Do not assume the installed SDK exports a conversation-ownership helper; a production generation proxy needs the explicit ownership design below.
 
 ## Audit the Host
 
@@ -50,7 +50,6 @@ Add only missing packages using the host package manager. The canonical Cloud te
 
 ```text
 @openuidev/lang-core
-@openuidev/react-headless
 @openuidev/react-lang
 @openuidev/react-ui
 @openuidev/thesys
@@ -60,11 +59,13 @@ zod
 zustand@^4.5.5
 ```
 
-`@openuidev/react-ui` re-exports headless APIs, but keep `@openuidev/react-headless` installed when required as a peer dependency. Import the re-exported APIs from `@openuidev/react-ui` in React UI applications.
+`@openuidev/react-ui` re-exports headless APIs. Add `@openuidev/react-headless` directly only when the installed peer-dependency contract requires it or the application intentionally uses the headless package.
 
 Add `@openuidev/observability-cloud` when the application needs production UI-generation monitoring. It is not required for Cloud's streaming validation and correction; those are part of the managed generation path. Generate a separate client API key in the Thesys Console and use `CLIENT_API_KEY` as its framework-agnostic configuration name. Because observability initializes in browser code, expose it through the host framework's public-runtime convention, such as `NEXT_PUBLIC_CLIENT_API_KEY` in Next.js or `VITE_CLIENT_API_KEY` in Vite.
 
 Configure server-only environment values through the deployment secret manager or an untracked `.env.local` file. Define `THESYS_API_KEY` there without printing, echoing, or committing its value. Never output a credential `NAME=value` example, even with a placeholder value.
+
+For the fixed-model route example below, configure `OPENUI_MODEL` to a current `{provider}/{model}` identifier. If the host keeps a model selector, replace that fixed setting with a server-maintained allowlist and reject browser values outside it.
 
 ## Configure BYOK
 
@@ -94,29 +95,9 @@ BYOK is provider-specific. A request to the provider whose credential the organi
 
 ### Model selection
 
-Managed model access and BYOK use the same `provider/model` identifiers. All models available from Anthropic, Google, and OpenAI are supported with BYOK; this table is a non-exhaustive list of current examples:
+Managed model access and BYOK use the same `provider/model` identifiers. Model availability and identifiers change independently of this skill, so do not maintain a static model table here. Verify the current identifier against the [first-party Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok), the console, and the generated template before changing a production allowlist.
 
-| Provider | Model | Identifier |
-|---|---|---|
-| Anthropic | Claude Opus 5 | `anthropic/claude-opus-5` |
-| Anthropic | Claude Sonnet 5 | `anthropic/claude-sonnet-5` |
-| Anthropic | Claude Opus 4.7 | `anthropic/claude-opus-4-7` |
-| Google | Gemini 3.6 Flash | `google/gemini-3.6-flash` |
-| Google | Gemini 3.5 Flash | `google/gemini-3.5-flash` |
-| Google | Gemini 3.1 Pro Preview | `google/gemini-3.1-pro-preview` |
-| OpenAI | GPT-5.6 Sol | `openai/gpt-5.6-sol` |
-| OpenAI | GPT-5.5 | `openai/gpt-5.5` |
-| OpenAI | GPT-5.4 | `openai/gpt-5.4` |
-
-Model availability is version-sensitive. Do not treat the example table as an exhaustive allowlist. Verify current identifiers against the [first-party Models and BYOK page](https://www.openui.com/docs/openui-cloud/models-and-byok), the console, or the generated template before changing `OPENUI_MODEL` or a production allowlist.
-
-A generated scaffold may use a managed/free model by default, for example:
-
-```bash
-OPENUI_MODEL=google/gemini-3.1-pro-free
-```
-
-For BYOK, replace that value with a current supported BYOK identifier. A scaffold may also use `DEMO_USER_ID=demo-user`, but production must derive the user id from authenticated server state.
+The current Cloud template keeps its curated model allowlist in application code and validates the browser's requested model against that list on the server. Preserve that boundary. A scaffold may use `DEMO_USER_ID=demo-user`, but production must derive the user id from authenticated server state.
 
 ## Wire the Client
 
@@ -152,9 +133,9 @@ by the host framework.
 import {
   AgentInterface,
   defineArtifactCategories,
+  fetchLLM,
   openAIConversationMessageFormat,
   openAIResponsesAdapter,
-  type ChatLLM,
 } from "@openuidev/react-ui";
 import {
   chatLibrary,
@@ -168,19 +149,11 @@ const artifacts = defineArtifactCategories([
   { name: "Reports", renderers: [reportArtifactRenderer] },
 ]);
 
-const llm: ChatLLM = {
-  send: ({ threadId, messages, signal }) =>
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        threadId,
-        input: openAIConversationMessageFormat.toApi(messages.slice(-1)),
-      }),
-      signal,
-    }),
-  streamProtocol: openAIResponsesAdapter(),
-};
+const llm = fetchLLM({
+  url: "/api/chat",
+  streamAdapter: openAIResponsesAdapter(),
+  messageFormat: openAIConversationMessageFormat,
+});
 
 export default function CloudAgent() {
   const storage = useOpenuiCloudStorage({
@@ -202,6 +175,8 @@ export default function CloudAgent() {
 ```
 
 Preserve the host's routing, slots, theme, logo, starters, and layout. The Cloud-specific changes are the `llm`, `storage`, component library, artifact props, and Cloud stylesheet.
+
+For a custom component library, generate its serialized spec with `openui generate --spec`, pass that spec to `generateSystemPrompt({ library, ... })` in the generation route, and pass the matching runtime library to `AgentInterface.componentLibrary`. Follow [cloud-api-selection.md#use-a-custom-component-library](cloud-api-selection.md#use-a-custom-component-library); do not combine a custom client library with the built-in server prompt.
 
 ## Authorize Cloud Conversations
 
@@ -252,6 +227,7 @@ export async function mintCloudFrontendToken(userId: string): Promise<FrontendTo
   if (!response.ok) {
     throw new Error(`Cloud frontend-token mint failed with ${response.status}`);
   }
+
   return (await response.json()) as FrontendToken;
 }
 ```
@@ -286,10 +262,9 @@ files, search results, or tool output, handle that content as a separate
 untrusted-data path with explicit source, size, and capability controls.
 
 Create a server-only `parseCloudChatRequest(req)` helper before enabling the
-route. Require JSON, accept a bounded `threadId`, allow exactly one bounded text item with
+route. Require JSON, accept a bounded `threadId`, and require a bounded `messages` array whose latest item is one bounded user-authored text message with
 `{ type: "message", role: "user" }`, and reconstruct the provider item from
-those allowlisted fields. Do not forward the browser's `ResponseInputItem[]`
-verbatim: it could contain system, developer, function-call, or oversized input.
+those allowlisted fields. Ignore the earlier browser-supplied items because Cloud owns history for this flow. Do not forward the browser's complete `ResponseInputItem[]` verbatim: it could contain system, developer, function-call, or oversized input.
 If the product supports images or files, extend the allowlist and size limits
 deliberately instead of weakening it to the entire Responses union.
 
@@ -301,7 +276,7 @@ allowlisted shape rather than returning the parsed browser object directly:
 ```ts
 type CloudChatRequest = {
   threadId: string;
-  input: [{ type: "message"; role: "user"; content: string }];
+  latestMessage: { type: "message"; role: "user"; content: string };
 };
 ```
 
@@ -322,7 +297,7 @@ of weakening the check.
 import { getAuthenticatedUserId } from "@/lib/auth.server";
 import { parseCloudChatRequest } from "@/lib/cloud-request";
 import { userOwnsCloudConversation } from "@/lib/conversation-ownership.server";
-import { artifactTool, createResponsesInstructions } from "@openuidev/thesys-server";
+import { artifactTool, generateSystemPrompt } from "@openuidev/thesys-server";
 import OpenAI from "openai";
 
 export async function POST(req: Request) {
@@ -333,7 +308,8 @@ export async function POST(req: Request) {
   if (!request.ok) {
     return Response.json({ error: { message: request.message } }, { status: request.status });
   }
-  const { threadId, input } = request.value;
+  const { threadId, latestMessage } = request.value;
+  const input = [latestMessage];
 
   let authorized: boolean;
   try {
@@ -357,6 +333,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const model = process.env.OPENUI_MODEL;
+  if (!model) {
+    return Response.json(
+      { error: { message: "OPENUI_MODEL is not configured" } },
+      { status: 500 },
+    );
+  }
+
   const client = new OpenAI({
     baseURL: "https://api.thesys.dev/v1/embed",
     apiKey,
@@ -366,13 +350,13 @@ export async function POST(req: Request) {
   try {
     stream = (await client.responses.create(
       {
-        model: process.env.OPENUI_MODEL || "google/gemini-3.1-pro-free",
+        model,
         conversation: threadId,
         input,
         stream: true,
         store: true,
         tools: [artifactTool({ artifacts: ["slides", "report"] })],
-        instructions: createResponsesInstructions(),
+        instructions: generateSystemPrompt(),
         // The Cloud artifact tool extends the stock OpenAI Responses tool union.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any,
@@ -491,7 +475,7 @@ MCP servers do not auto-attach; every request declares its own. The stream carri
 
 ### App-owned function tools
 
-The model emits a `function_call`; the app executes it and posts a `function_call_output` back on a continuation request, looping until the model answers. **Do not write this loop from scratch.** `runFunctionToolLoop` is not published as a package — copy the template's `src/lib/tool-loop.ts` plus `src/lib/tools/get-weather.ts` (a complete, no-auth reference tool) from a current scaffold or `packages/openui-cli/src/templates/openui-cloud/` in the openui repository, and register executors keyed by tool name. In a non-TypeScript stack, port the file and keep its two rules below intact.
+The model emits a `function_call`; the app executes it and posts a `function_call_output` back on a continuation request, looping until the model answers. **Do not write this loop from scratch.** `runFunctionToolLoop` is not published as a package — copy the template's `src/lib/tool-loop.ts` plus `src/lib/tools/get-weather.ts` (a complete, no-auth reference tool) from a current scaffold or `templates/openui-cloud/` in the OpenUI repository, and register executors keyed by tool name. In a non-TypeScript stack, port the file and keep its two rules below intact.
 
 Two rules make any such loop safe next to Cloud's server-side tools; the template loop enforces both internally:
 
@@ -546,7 +530,7 @@ After deployment, confirm observability initializes only once and that captured 
 
 Keep the same contracts in other server frameworks:
 
-- Client `ChatLLM.send` posts `{ threadId, input }` to the host server.
+- Client `fetchLLM` posts `{ threadId, messages }` to the host server using `openAIConversationMessageFormat`.
 - The generation endpoint validates input, calls `POST https://api.thesys.dev/v1/embed/responses` or the equivalent OpenAI SDK base URL, and streams SSE unchanged.
 - The token endpoint resolves the user from trusted server auth, calls `POST https://api.thesys.dev/v1/frontend-tokens`, and returns `{ token, expires_at }`.
 - The generation endpoint verifies the untrusted conversation id through a host mapping or a documented Cloud membership contract for the installed version.

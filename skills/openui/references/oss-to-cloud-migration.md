@@ -1,6 +1,6 @@
 # OSS to Cloud Migration
 
-Use this runbook for application-code migration from OSS (open-source or self-hosted) OpenUI to the managed Cloud backend. Read [cloud-integration.md](cloud-integration.md) as well; it contains the canonical Cloud client and server contracts.
+Use this runbook for application-code migration from OSS (open-source or self-hosted) OpenUI to the managed Cloud backend. Read [cloud-api-selection.md](cloud-api-selection.md) to choose the target API and state model, then read [cloud-integration.md](cloud-integration.md) for the production Responses client and server contracts.
 
 ## Contents
 
@@ -34,9 +34,9 @@ Inventory the project before editing:
 | ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Self-hosted `AgentInterface` | `fetchLLM`, `ChatLLM`, `restStorage`, `openuiLibrary` or `openuiChatLibrary` | Mostly mechanical adapter/storage/library swap                                |
 | Legacy flat-prop chat        | `apiUrl`, `threadApiUrl`, `processMessage`, old renderer names               | First migrate to current `AgentInterface`, then migrate backend               |
-| Renderer-only GenUI          | `Renderer`, `library.prompt()`, app-owned messages and model stream          | Architectural change; not a backend-only swap                                 |
-| Custom component library     | `defineComponent`, `createLibrary`, custom prompt options                    | Rendering may be reusable; Cloud generation instructions require verification |
-| Tool-heavy agent             | provider tool loop or AG-UI tool events                                      | Preserve self-hosted until the Cloud custom-tool loop is documented           |
+| Renderer-only GenUI          | `Renderer`, `library.prompt()`, app-owned messages and model stream          | Keep the renderer or adopt Agent Interface; choose Cloud state and generation APIs explicitly |
+| Custom component library     | `defineComponent`, `createLibrary`, custom prompt options                    | Reuse the runtime library and generate the matching serialized spec for Cloud |
+| Tool-heavy agent             | provider tool loop or AG-UI tool events                                      | Map hosted tools to Responses and keep app-owned function execution in the documented loop |
 
 Record the current provider, model selector, message wire format, attachments,
 storage ownership, user identity, route behavior, tools, component library,
@@ -52,7 +52,7 @@ artifacts, custom slots/theme, and tests.
 | `openAIMessageFormat`                                | `openAIConversationMessageFormat`                                                                      |
 | In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })`                                              |
 | `openuiLibrary`/`openuiChatLibrary`                  | `chatLibrary` from `@openuidev/thesys` when the user chooses Cloud components                          |
-| `library.prompt(...)` in the provider route          | `createResponsesInstructions()` in the Cloud route                                                     |
+| `library.prompt(...)` in the provider route          | `generateSystemPrompt()` from `@openuidev/thesys-server`; pass a generated spec when preserving a custom library |
 | App-owned artifact loop/renderers                    | Managed `artifactTool({ artifacts: ["slides", "report"] })` plus managed renderers for stock artifacts |
 | No browser storage credential                        | Short-lived frontend token scoped to the authenticated `user_id`                                       |
 
@@ -61,36 +61,37 @@ Preserve branding, theme, starters, slots, navigation, route placement, error bo
 ## Migrate AgentInterface Apps
 
 1. Read [cloud-integration.md](cloud-integration.md) and add the missing Cloud packages and server-only configuration.
-2. Replace the client `llm` with a direct `ChatLLM` that sends only the latest formatted message and parses Responses SSE.
+2. Replace the client `llm` with `fetchLLM({ streamAdapter: openAIResponsesAdapter(), messageFormat: openAIConversationMessageFormat })` or an equivalent direct `ChatLLM`. The server must forward only the latest allowlisted user message to the stored Cloud conversation.
 3. In Next.js, move the Cloud UI into a separate client component and match the
    installed first-party template's dynamic-rendering boundary. Add an
    `ssr: false` client loader only when the production build requires it.
 4. Replace self-hosted storage with `useOpenuiCloudStorage()` and add the frontend-token route.
-5. If the user chose Cloud components, replace the stock OSS library with `chatLibrary` and register the managed report/presentation renderers. If they chose OSS components, keep them and verify that managed generation receives compatible component instructions; otherwise retain that generation path in OSS or dual mode.
+5. If the user chose Cloud components, replace the stock OSS library with `chatLibrary` and register the managed report/presentation renderers. If they keep a custom library, generate its serialized spec, pass it to Cloud `generateSystemPrompt({ library, ... })`, and render with the matching runtime library.
 6. Replace the provider `/api/chat` implementation with the Cloud proxy while preserving independent API authentication, conversation authorization, rate limiting, request validation, abort propagation, error handling, and the route URL expected by the client.
 7. Keep the previous provider/storage code until the Cloud path builds and passes tests. Remove it only for an explicitly confirmed replacement migration.
 8. Remove provider dependencies, environment variables, storage routes, and dead adapters only when no other application path uses them.
 9. Update environment examples and deployment configuration without committing secrets.
 
-Do not send both full history and a Cloud conversation id. Doing so can duplicate context. Do not leave `library.prompt()` in the stock Cloud route; `createResponsesInstructions()` supplies the managed instructions.
+Do not send both full history and a Cloud conversation id. Doing so can duplicate context. Do not leave `library.prompt()` in the managed Cloud route; `generateSystemPrompt()` from `@openuidev/thesys-server` supplies the managed instructions for the built-in library or the provided serialized custom-library spec.
 
 ## Handle Renderer-Only and Custom-Library Apps
 
-A Renderer-only app owns its messages, model stream, and layout. OpenUI Cloud's verified managed path is `AgentInterface` plus Cloud storage, so migration is not a drop-in provider URL change.
+A Renderer-only app owns its messages, model stream, and layout. It can keep its client renderer while moving generation to the appropriate Cloud API, or adopt `AgentInterface` plus Cloud storage. Treat renderer, generation, and persistence as separate migration choices.
 
-For a stock Cloud migration:
+For an Agent Interface migration:
 
 1. Introduce `AgentInterface` at the requested route or surface.
 2. Move reusable branding and surrounding layout into `AgentInterface` props/slots.
 3. Add the two Cloud server routes and managed library/artifacts from [cloud-integration.md](cloud-integration.md).
 4. Retain the old Renderer surface until behavior parity is verified; then remove it only for replacement migrations.
 
-For a custom component library, separate two questions:
+For a renderer-preserving or custom component-library migration:
 
-- **Can the client render it?** `AgentInterface` accepts a `componentLibrary` prop.
-- **Will Cloud generation receive matching component instructions?** Verify the installed `@openuidev/thesys-server` API and current first-party docs. Client-side composition alone does not prove that the managed model knows the custom signatures.
+- **Can the client render it?** Keep the existing `Renderer.library` or pass the library through `AgentInterface.componentLibrary`.
+- **Will Cloud generation receive matching component instructions?** Generate a serialized spec with `openui generate --spec` and pass it to `generateSystemPrompt({ library, ... })` from `@openuidev/thesys-server`.
+- **Who owns history?** Use Responses with `conversation` plus `store: true` for Cloud persistence, or choose Embed Chat Completions when the application should continue resending its own history.
 
-If there is no verified Cloud instruction-composition API, do not pretend the custom library migrated. Keep that generation path self-hosted, migrate only the stock Cloud surface, or report the unsupported boundary.
+Regenerate the spec whenever the runtime library contract changes. Do not pair the built-in Cloud prompt with a custom client library; the model and renderer must use the same component contract. Read [cloud-api-selection.md](cloud-api-selection.md) for endpoint and prompt-helper selection.
 
 ## Handle Dual Mode
 
