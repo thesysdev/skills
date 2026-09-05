@@ -35,8 +35,12 @@ Once installed, try prompts such as:
 | --- | --- |
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
 | [`cloud-quickstart.md`](skills/openui/references/cloud-quickstart.md) | Cloud-first scaffolding, generated-template workflow, and launch verification |
-| [`cloud-api-selection.md`](skills/openui/references/cloud-api-selection.md) | Cloud endpoint, state model, adapter, prompt-helper, and custom-library routing |
-| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Production-minded OpenUI Cloud integration, reliability, and observability runbook |
+| [`examples.md`](skills/openui/references/examples.md) | Complete current first-party example catalog with exact paths and integration seams |
+| [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
+| [`cloud-api-selection.md`](skills/openui/references/cloud-api-selection.md) | Cloud endpoint, state model, adapter, and prompt-mode selection |
+| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Shared brownfield Cloud discovery, configuration, security, BYOK, and protocol routing |
+| [`cloud-responses-integration.md`](skills/openui/references/cloud-responses-integration.md) | Responses, Cloud Conversations, hosted tools, artifacts, identity, and persistence runbook |
+| [`cloud-chat-completions-integration.md`](skills/openui/references/cloud-chat-completions-integration.md) | Existing Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
 | [`oss-to-cloud-migration.md`](skills/openui/references/oss-to-cloud-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
 

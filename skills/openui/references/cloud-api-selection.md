@@ -1,76 +1,64 @@
 # Choose an OpenUI Cloud API
 
-Read this reference before selecting a Cloud endpoint, history model, stream adapter, or prompt helper. Prefer the current generated template when it differs from this guide.
+Read this reference before selecting a Cloud endpoint, history model, stream adapter, prompt mode, or integration runbook. Prefer the host application's existing protocol unless the user requests migration or needs a capability available only on another surface.
 
 ## API Matrix
 
-| Surface | Endpoint | Use when | History owner |
-| --- | --- | --- | --- |
-| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app with managed UI, hosted tools, persistent conversations, or in-stream artifacts | Cloud when using `conversation` plus `store: true`; otherwise the application can send full input or use `previous_response_id` |
-| Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing OpenAI Chat Completions integration, using plain text passthrough, or running app-owned function tools with message history | Application |
-| Artifact Chat Completions | `POST https://api.thesys.dev/v1/artifact/chat/completions` | Generating or explicitly editing a standalone slide deck or report outside an agent conversation | Application sends the current artifact program on edits |
-| Conversations | `https://api.thesys.dev/v1/conversations` | Creating, listing, updating, or deleting persistent Responses threads and items | Cloud |
+| Surface | Endpoint | Use when | History owner | Runbook |
+| --- | --- | --- | --- | --- |
+| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app, using Responses already, or needing hosted tools, persistent Cloud conversations, or artifacts inside the agent stream | Cloud with `conversation` plus `store: true`; otherwise the app can send full `input` or use `previous_response_id` | [cloud-responses-integration.md](cloud-responses-integration.md) |
+| Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, using plain text passthrough, or retaining app-owned messages and function tools | Application resends `messages` | [cloud-chat-completions-integration.md](cloud-chat-completions-integration.md) |
+| Artifact Chat Completions | `POST https://api.thesys.dev/v1/artifact/chat/completions` | Generating or explicitly editing a standalone slide deck or report outside an agent conversation | Application sends the current artifact program on edits | Current first-party artifact guide |
+| Conversations | `https://api.thesys.dev/v1/conversations` | Creating, listing, updating, or deleting persistent Responses threads and items | Cloud | [cloud-responses-integration.md](cloud-responses-integration.md) |
 
-Use Responses for new agent applications unless the user's existing protocol or desired artifact lifecycle calls for another surface. Do not use Embed Chat Completions with the Conversations API; Chat Completions applications resend their own `messages` history.
+Responses is the recommended starting point for new agent applications, not a mandatory migration target for existing Chat Completions applications. Do not use Embed Chat Completions with the Conversations API.
+
+## Choose the State Model Independently
+
+Responses supports three history patterns:
+
+- Full `input` history owned by the application.
+- `previous_response_id` chains stored responses without a named conversation.
+- `conversation` plus `store: true` creates a persistent thread managed through the Conversations API.
+
+Embed Chat Completions always uses application-owned `messages` history. Artifact Chat Completions receives the current artifact program explicitly for edits.
+
+Do not introduce Cloud Conversations merely because the application calls the Cloud generation endpoint. Persistence changes require their own authorization, storage, and migration decisions.
 
 ## Match the Client Contract
 
 | Server response | Agent Interface stream adapter | Message format |
 | --- | --- | --- |
-| Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` when using Cloud conversations |
+| Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` for Cloud conversations; verify the installed format for other Responses history modes |
 | Raw Chat Completions `data:` SSE | `openAIAdapter()` | `openAIMessageFormat` |
-| OpenAI SDK `.toReadableStream()` | `openAIReadableStreamAdapter()` | `openAIMessageFormat` |
+| OpenAI SDK Chat Completions `.toReadableStream()` | `openAIReadableStreamAdapter()` | `openAIMessageFormat` |
 
-For Responses with `conversation: threadId` and `store: true`, send only the latest user turn. Do not also resend full history. Preserve the upstream event shape when proxying the stream.
+For Responses with `conversation: threadId` and `store: true`, send only the latest user turn. Do not also resend full history. For Chat Completions, retain the complete relevant `messages` array. Preserve the upstream event shape when proxying either stream.
 
-The Conversations API is the storage plane used by `useOpenuiCloudStorage()`. Browser access requires a short-lived frontend token minted by the application server for an authenticated `user_id` and optional stable `app_id`; never expose `THESYS_API_KEY` to browser code.
+The Conversations API is the storage plane used by `useOpenuiCloudStorage()`. Browser access requires a short-lived frontend token minted by the application server for an authenticated `user_id` and optional stable `app_id`; never expose `THESYS_API_KEY` to browser code. This storage path is for Responses conversations, not Embed Chat Completions history.
 
-## Choose the Prompt Helper
+## Choose the Prompt Mode
 
-Use `generateSystemPrompt()` from `@openuidev/thesys-server` for managed Cloud generative UI:
+Use `generateSystemPrompt()` from `@openuidev/lang-core` for current prompt compilation.
 
-- Responses: put the result in `instructions`.
-- Embed Chat Completions: put the result in a `role: "system"` message.
-- With the built-in `chatLibrary`, call `generateSystemPrompt()` with no library.
-- With a custom library, pass the serialized `library` spec and optional `instructions`/`promptOptions`.
+For managed Cloud generative UI:
 
-Use `generateSystemPrompt()` from `@openuidev/lang-core` only when the application owns prompt assembly and validation, including self-hosted generative UI sent through Embed Chat Completions.
+- Pass `{ cloud: true }`.
+- Responses: put the generated prompt in `instructions`.
+- Embed Chat Completions: put it in a `role: "system"` message.
+- With the built-in `chatLibrary`, omit `library`.
+- With a custom library, pass the serialized `library` spec and optional trusted `instructions`/`promptOptions`.
 
-## Use a Custom Component Library
+For application-owned/self-hosted generative UI sent through Embed Chat Completions, omit `cloud: true` and compile the full prompt from the application's serialized `library` and `promptOptions`. The application then owns validation and correction.
 
-Keep the renderer library and the backend library spec in sync:
+For plain text passthrough, omit the managed generative UI prompt and preserve the application's trusted system/developer instructions.
 
-1. Define or extend the client library with `defineComponent()` and `createLibrary()`.
-2. Generate the serializable spec at build time:
-
-   ```bash
-   npx @openuidev/cli@latest generate --spec ./src/lib/chat-library.tsx --out ./src/generated/library-spec.json
-   ```
-
-3. Import the spec in the server route and pass it to the Cloud helper:
-
-   ```ts
-   import librarySpec from "@/generated/library-spec.json";
-   import { generateSystemPrompt } from "@openuidev/thesys-server";
-
-   const instructions = generateSystemPrompt({
-     library: librarySpec,
-     instructions: "Optional application instructions.",
-     promptOptions: {
-       preamble: "Optional domain context.",
-     },
-   });
-   ```
-
-4. Pass the matching runtime library to `AgentInterface.componentLibrary` or `Renderer.library`.
-5. Regenerate the spec whenever the component names, descriptions, prop schemas, root, groups, or prompt options change.
-
-`promptOptions` is valid only when a custom `library` spec is supplied to the managed Cloud helper. Do not pass a JSON Schema generated with `--json-schema`; Cloud needs the serialized library spec generated with `--spec`.
+Read [build-component-library.md](build-component-library.md) before defining or migrating a custom library. Never pair a custom runtime library with the built-in model-facing prompt or a stale serialized spec.
 
 ## Tools and Artifacts
 
 - Responses supports hosted web search, image search, remote MCP, managed artifacts, and app-owned function tools.
-- Embed Chat Completions returns app-owned function calls for the application to execute; it does not provide Responses-hosted search, MCP, or artifact tools.
+- Embed Chat Completions accepts app-owned function tools but does not execute them; the application runs the standard tool loop.
 - Artifact Chat Completions is for standalone slide/report programs and explicit program-based edits.
 - Use Responses plus `artifactTool()` when artifacts should live inside a persistent agent conversation.
 

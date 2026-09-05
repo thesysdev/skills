@@ -31,17 +31,17 @@ After scaffolding:
 4. Preserve `openAIResponsesAdapter()` with `openAIConversationMessageFormat`, `conversation: threadId`, `store: true`, and latest-message-only forwarding.
 5. Keep managed tools on Cloud. Execute only explicitly declared app-owned function tools in the application loop.
 
-For production authentication, user isolation, request validation, and failure handling, read [cloud-integration.md](cloud-integration.md). For endpoint and state-model selection, read [cloud-api-selection.md](cloud-api-selection.md).
+For shared production configuration, authentication, and failure handling, read [cloud-integration.md](cloud-integration.md), then use [cloud-responses-integration.md](cloud-responses-integration.md) for the generated template's Responses and Conversations contracts. For endpoint and state-model selection, read [cloud-api-selection.md](cloud-api-selection.md).
 
 ## Extend the Starter
 
 - Starters and welcome content: edit the generated starter configuration and `AgentInterface.Welcome` slots rather than replacing the chat shell.
 - App-owned tools: register the declaration and executor in the generated tool loop; never execute Cloud-owned `thesys_*` calls.
 - Hosted tools: declare supported web search, image search, MCP, or `artifactTool()` entries in the Responses request.
-- Custom components: extend or replace `chatLibrary`, generate a library spec with `openui generate --spec`, pass it to the server-side Cloud `generateSystemPrompt()`, and render with the matching client library. Follow [cloud-api-selection.md#use-a-custom-component-library](cloud-api-selection.md#use-a-custom-component-library).
+- Custom components: extend or replace `chatLibrary`, generate a library spec with `openui generate --spec`, pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`, and render with the matching client library. Follow [build-component-library.md](build-component-library.md).
 - Backend framework overlays: edit the generated framework-specific agent or route instead of applying the default Next.js route recipe blindly.
 
-Use the current first-party examples before inventing an integration pattern. The repository organizes them under `examples/agent-frameworks`, `examples/app-frameworks`, `examples/design-systems`, `examples/harnesses`, and `examples/miscellaneous`.
+Use the current first-party examples before inventing an integration pattern. Read [examples.md](examples.md) for every catalogued example's exact path and primary integration seam.
 
 ## Verify
 
