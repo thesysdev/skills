@@ -43,29 +43,30 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 ## Choose The Starting Point
 
-- If the user wants a new production-ready OpenUI/GenUI agent app and does not require an app-owned model or storage layer, start with the Cloud CLI template and read [references/cloud-quickstart.md](references/cloud-quickstart.md).
+- If the user wants a new production-ready OpenUI/GenUI agent app and does not require an app-owned model or storage layer, start with the Cloud CLI template and read [references/cloud/quickstart.md](references/cloud/quickstart.md).
 - If the user explicitly wants to own the model route, message history, tools, component prompt, and runtime behavior, use the self-hosted CLI template.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
 - If the task can start from a maintained integration, runtime, design-system, harness, or specialized example, read [references/examples.md](references/examples.md) and choose the closest exact path.
 - If the user wants to define, extend, migrate, or validate a component library, read [references/build-component-library.md](references/build-component-library.md) completely before editing.
-- If the task requires choosing among Cloud Responses, Embed Chat Completions, Artifact Chat Completions, or Conversations, read [references/cloud-api-selection.md](references/cloud-api-selection.md).
-- For any existing-project Cloud integration, read [references/cloud-integration.md](references/cloud-integration.md), then read the Responses or Chat Completions runbook it selects.
-- If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Cloud validation, fallbacks, and production monitoring, also read [Reliability and observability](references/cloud-integration.md#reliability-and-observability).
+- If the task requires choosing among Cloud Responses, Embed Chat Completions, Artifact Chat Completions, or Conversations, read [references/cloud/api-selection.md](references/cloud/api-selection.md).
+- For any existing-project Cloud integration, read [references/cloud/existing-project.md](references/cloud/existing-project.md), then read the Responses or Chat Completions runbook it selects.
+- If the task involves Cloud-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/cloud/conversations.md](references/cloud/conversations.md).
+- If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Cloud validation, fallbacks, and production monitoring, also read [Reliability and observability](references/cloud/existing-project.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
 - If the host app is Vue or Svelte, use `@openuidev/vue-lang` or `@openuidev/svelte-lang`. Use `@openuidev/lang-core` for framework-agnostic parsing, prompt generation, schemas, or backend/runtime work.
 
 ## OpenUI Cloud Capabilities
 
-OpenUI Cloud exposes four related API surfaces: Responses, Embed Chat Completions, Artifact Chat Completions, and Conversations. Responses is recommended for new agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Read [references/cloud-api-selection.md](references/cloud-api-selection.md) before choosing an endpoint, state model, adapter, or prompt mode.
+OpenUI Cloud exposes four related API surfaces: Responses, Embed Chat Completions, Artifact Chat Completions, and Conversations. Responses is recommended for new agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Read [references/cloud/api-selection.md](references/cloud/api-selection.md) before choosing an endpoint, state model, adapter, or prompt mode.
 
 | Capability | Available through |
 |---|---|
 | Managed generative UI, output validation, repair, model routing, and fallbacks | Responses and Embed Chat Completions when using `generateSystemPrompt({ cloud: true })` |
-| Managed models or BYOK | Cloud generation endpoints; read [Configure BYOK](references/cloud-integration.md#configure-byok) before assisting with provider credentials |
+| Managed models or BYOK | Cloud generation endpoints; read [Configure BYOK](references/cloud/existing-project.md#configure-byok) before assisting with provider credentials |
 | Built-in or custom component libraries | Responses and Embed Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
-| Cloud-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token |
+| Cloud-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [cloud/conversations.md](references/cloud/conversations.md) |
 | Hosted web search, image search, remote MCP, and artifacts inside agent turns | Responses |
 | App-owned function tools | Responses or Embed Chat Completions, with different tool-result protocols and application-owned execution loops |
 | Standalone slide/report generation and explicit program-based edits | Artifact Chat Completions |
@@ -79,10 +80,11 @@ Choose the matching path:
 
 | Starting point and goal | Required runbooks |
 | --- | --- |
-| Existing Chat Completions application | Read [references/cloud-integration.md](references/cloud-integration.md) and [references/cloud-chat-completions-integration.md](references/cloud-chat-completions-integration.md); keep app-owned history unless migration is requested |
-| Existing Responses application or new persistent Cloud agent | Read [references/cloud-integration.md](references/cloud-integration.md) and [references/cloud-responses-integration.md](references/cloud-responses-integration.md); preserve the selected Responses history pattern |
-| Existing non-React client | Read [references/cloud-integration.md](references/cloud-integration.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
-| Existing self-hosted/open-source app moving to Cloud | Read [references/oss-to-cloud-migration.md](references/oss-to-cloud-migration.md), [references/cloud-integration.md](references/cloud-integration.md), and the protocol-specific runbook selected after inspecting the host |
+| Existing Chat Completions application | Read [references/cloud/existing-project.md](references/cloud/existing-project.md) and [references/cloud/chat-completions.md](references/cloud/chat-completions.md); keep app-owned history unless migration is requested |
+| Existing Responses application | Read [references/cloud/existing-project.md](references/cloud/existing-project.md) and [references/cloud/responses.md](references/cloud/responses.md); preserve the selected Responses history pattern |
+| New or existing Responses app using Cloud-managed threads | Also read [references/cloud/conversations.md](references/cloud/conversations.md) for the persistence, identity, token, and authorization plane |
+| Existing non-React client | Read [references/cloud/existing-project.md](references/cloud/existing-project.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
+| Existing self-hosted/open-source app moving to Cloud | Read [references/cloud/oss-migration.md](references/cloud/oss-migration.md), [references/cloud/existing-project.md](references/cloud/existing-project.md), and the protocol-specific runbook selected after inspecting the host |
 
 If “migrate” does not establish whether Cloud should replace the self-hosted path or run beside it, infer the intent from the project and request. Ask only when the choice remains material and ambiguous; never silently delete a working backend. Treat code migration and historical-data import as separate tasks, and do not claim a data migration without a verified first-party import API.
 
@@ -94,7 +96,7 @@ If “migrate” does not establish whether Cloud should replace the self-hosted
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
 ```
 
-For new agent applications, read [references/cloud-quickstart.md](references/cloud-quickstart.md) and let the interactive Cloud CLI flow own sign-in and setup. Use `--template openui-self-hosted` only when the user explicitly chooses an app-owned model/storage path or a verified requirement is not supported by Cloud.
+For new agent applications, read [references/cloud/quickstart.md](references/cloud/quickstart.md) and let the interactive Cloud CLI flow own sign-in and setup. Use `--template openui-self-hosted` only when the user explicitly chooses an app-owned model/storage path or a verified requirement is not supported by Cloud.
 
 Never generate, print, echo, or invent placeholder API key values, and never ask the user to paste credentials into chat. Require credentials to be configured outside the agent through the CLI sign-in flow, a secret manager, or an untracked environment file.
 
@@ -104,11 +106,11 @@ OpenUI Cloud is the managed generation and persistence backend for OpenUI applic
 
 Use Cloud when the user wants managed production infrastructure for an Agent Interface app. Use self-hosted OpenUI when the user wants to own the model route, storage, tools, component library, and runtime behavior.
 
-For a new Cloud app, use [references/cloud-quickstart.md](references/cloud-quickstart.md). For an existing app, read [references/cloud-integration.md](references/cloud-integration.md) and preserve its Chat Completions or Responses protocol unless the user requests migration. Do not assume Cloud generation also requires Cloud Conversations: Chat Completions applications retain their own messages and persistence.
+For a new Cloud app, use [references/cloud/quickstart.md](references/cloud/quickstart.md). For an existing app, read [references/cloud/existing-project.md](references/cloud/existing-project.md) and preserve its Chat Completions or Responses protocol unless the user requests migration. Do not assume Cloud generation also requires Cloud Conversations: Chat Completions applications retain their own messages and persistence.
 
 Version-sensitive: verify exact environment variables, prompt-helper options, `@openuidev/thesys*` exports, adapters, and route helpers against the installed package and current generated template. Current managed prompt compilation uses `generateSystemPrompt({ cloud: true })` from `@openuidev/lang-core`; current server artifact helpers such as `artifactTool()` come from `@openuidev/thesys-server`.
 
-Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model allowlist, and read [Configure BYOK](references/cloud-integration.md#configure-byok) before assisting with provider credentials. Use [references/build-component-library.md](references/build-component-library.md) when the client does not use the built-in managed library.
+Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model allowlist, and read [Configure BYOK](references/cloud/existing-project.md#configure-byok) before assisting with provider credentials. Use [references/build-component-library.md](references/build-component-library.md) when the client does not use the built-in managed library.
 
 ### Wire Agent Interface
 
@@ -318,7 +320,7 @@ Use the measured failure types to choose the intervention:
 1. Simplify the component schema. Prefer distinct component names, clear descriptions, focused props, and unambiguous enum values. Remove overlapping components and use `componentGroups` to group related components.
 2. Refine the generated system prompt. Add narrow rules for recurring errors and valid examples for combinations the model struggles with. Test every rule and example against the baseline; an incorrect example can cause broad regressions.
 3. Evaluate models with the application's actual component library and prompts. Run each prompt repeatedly and compare reliability, latency, and cost instead of trusting a single successful generation or a generic benchmark.
-4. Validate and correct output before users see it. In a self-hosted flow, capture parser and renderer errors and feed precise, actionable errors into a bounded correction attempt. For Cloud, follow [Reliability and observability](references/cloud-integration.md#reliability-and-observability) instead of adding a second repair layer.
+4. Validate and correct output before users see it. In a self-hosted flow, capture parser and renderer errors and feed precise, actionable errors into a bounded correction attempt. For Cloud, follow [Reliability and observability](references/cloud/existing-project.md#reliability-and-observability) instead of adding a second repair layer.
 
 ### During development
 

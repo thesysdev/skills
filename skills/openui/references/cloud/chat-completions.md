@@ -1,6 +1,6 @@
 # Integrate OpenUI Cloud with Chat Completions
 
-Read [cloud-integration.md](cloud-integration.md) first. Use this runbook when an existing application calls `chat.completions.create()`, owns a `messages` array, or should retain app-owned conversation persistence and function-tool execution.
+Read [existing-project.md](existing-project.md) first. Use this runbook when an existing application calls `chat.completions.create()`, owns a `messages` array, or should retain app-owned conversation persistence and function-tool execution.
 
 The central invariant is protocol preservation: moving model access or managed UI generation to OpenUI Cloud does not require moving the application to Responses or Cloud Conversations.
 
@@ -25,7 +25,7 @@ Chat Completions is message-based. Keep the application's existing persistence a
 - Do not replace the host database or `restStorage` with `useOpenuiCloudStorage()` merely to use the Cloud generation endpoint.
 - Preserve existing compaction, truncation, tool-result, and attachment behavior after checking Cloud/model compatibility.
 
-If the product explicitly wants Cloud-managed persistent threads, that is a protocol and storage migration. Read [cloud-responses-integration.md](cloud-responses-integration.md) and treat the migration as a separate user-visible change.
+If the product explicitly wants Cloud-managed persistent threads, that is a protocol and storage migration. Read [responses.md](responses.md) and [conversations.md](conversations.md), then treat the migration as a separate user-visible change.
 
 ## Configure Managed Generative UI
 
@@ -59,7 +59,7 @@ const stream = await embedClient.chat.completions.create({
 
 Move existing trusted system behavior into the helper's `instructions` or another currently documented trusted-instruction seam. Do not blindly append every prior system message, and never include user-authored content there. Avoid sending duplicate managed prompts on later turns.
 
-For a custom component library, follow [build-component-library.md](build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library.
+For a custom component library, follow [build-component-library.md](../build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library.
 
 ## Match the Client Stream
 
@@ -132,7 +132,7 @@ Preserve the host's framework and existing route contract. The route should:
 
 ## Verify
 
-1. Run the shared checks in [cloud-integration.md](cloud-integration.md#shared-verification).
+1. Run the shared checks in [existing-project.md](existing-project.md#shared-verification).
 2. Confirm the request uses `/v1/embed/chat/completions` and the expected `chat.completions.create()` shape.
 3. Confirm every turn includes the intended history and exactly one managed system prompt when managed UI is enabled.
 4. Confirm `openAIMessageFormat` is paired with `openAIAdapter()` or `openAIReadableStreamAdapter()` as required by the returned stream.

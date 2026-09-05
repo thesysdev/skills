@@ -2,10 +2,12 @@
 
 Read this reference first for any brownfield OpenUI Cloud integration. It owns shared discovery, configuration, and routing. Then read exactly one generation runbook for the selected protocol:
 
-- [Responses integration](cloud-responses-integration.md) for Responses events, Cloud-managed conversations, hosted tools, or artifacts in the agent stream.
-- [Chat Completions integration](cloud-chat-completions-integration.md) for an existing `chat.completions.create()` application that should retain app-owned messages, persistence, and function-tool execution.
+- [Responses integration](responses.md) for Responses events, hosted tools, or artifacts in the agent stream.
+- [Chat Completions integration](chat-completions.md) for an existing `chat.completions.create()` application that should retain app-owned messages, persistence, and function-tool execution.
 
-Read [cloud-api-selection.md](cloud-api-selection.md) when the correct surface is not already established. For standalone slide or report generation outside an agent stream, use the Artifact Chat Completions path described there instead of either general chat runbook.
+Also read [Conversations integration](conversations.md) when Responses should use persistent named threads, Cloud-managed items, frontend tokens, or browser storage.
+
+Read [api-selection.md](api-selection.md) when the correct surface is not already established. For standalone slide or report generation outside an agent stream, use the Artifact Chat Completions path described there instead of either general chat runbook.
 
 ## Preserve the Existing Protocol
 
@@ -13,10 +15,11 @@ Do not migrate an existing application from Chat Completions to Responses merely
 
 | Existing or requested shape | Continue with |
 | --- | --- |
-| `chat.completions.create()`, `messages[]`, app-owned history, or app-run function tools | [cloud-chat-completions-integration.md](cloud-chat-completions-integration.md) |
-| `responses.create()`, Responses events, `previous_response_id`, or full `input` history | [cloud-responses-integration.md](cloud-responses-integration.md); preserve the existing Responses history model |
-| New persistent agent app using Cloud conversations | [cloud-responses-integration.md](cloud-responses-integration.md) with `conversation` and `store: true` |
-| Standalone slide/report generation and explicit program-based edits | [cloud-api-selection.md](cloud-api-selection.md#tools-and-artifacts) |
+| `chat.completions.create()`, `messages[]`, app-owned history, or app-run function tools | [chat-completions.md](chat-completions.md) |
+| `responses.create()`, Responses events, `previous_response_id`, or full `input` history | [responses.md](responses.md); preserve the existing Responses history model |
+| New persistent agent app using Cloud conversations | [responses.md](responses.md) plus [conversations.md](conversations.md) with `conversation` and `store: true` |
+| Conversation/item CRUD, frontend tokens, identity scoping, or `useOpenuiCloudStorage()` | [conversations.md](conversations.md) |
+| Standalone slide/report generation and explicit program-based edits | [api-selection.md](api-selection.md#tools-and-artifacts) |
 
 Treat generation protocol, message persistence, client renderer, component library, tools, and artifact lifecycle as separate choices. Do not silently replace one because another changes.
 
@@ -65,7 +68,7 @@ Model availability changes independently of this skill. Verify identifiers again
 
 ## Component Libraries
 
-The model-facing prompt and browser renderer must use the same component contract. Use the managed `chatLibrary` on the client with the managed built-in Cloud prompt, or pass a generated custom-library spec to the prompt helper and the matching runtime library to the renderer. Read [build-component-library.md](build-component-library.md) before building, extending, or migrating a library.
+The model-facing prompt and browser renderer must use the same component contract. Use the managed `chatLibrary` on the client with the managed built-in Cloud prompt, or pass a generated custom-library spec to the prompt helper and the matching runtime library to the renderer. Read [build-component-library.md](../build-component-library.md) before building, extending, or migrating a library.
 
 ## Reliability and Observability
 
@@ -91,6 +94,7 @@ When production monitoring is required, use the current `@openuidev/observabilit
 - `https://www.openui.com/docs/openui-cloud/api/overview`
 - `https://www.openui.com/docs/openui-cloud/api/responses`
 - `https://www.openui.com/docs/openui-cloud/api/chat-completions`
+- `https://www.openui.com/docs/openui-cloud/api/conversations`
 - `https://www.openui.com/docs/openui-cloud/models-and-byok`
 - `https://www.openui.com/docs/openui-cloud/build/component-library`
 - `https://www.openui.com/docs/agent/reference/adapters-and-formats`

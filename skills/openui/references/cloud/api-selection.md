@@ -6,10 +6,10 @@ Read this reference before selecting a Cloud endpoint, history model, stream ada
 
 | Surface | Endpoint | Use when | History owner | Runbook |
 | --- | --- | --- | --- | --- |
-| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app, using Responses already, or needing hosted tools, persistent Cloud conversations, or artifacts inside the agent stream | Cloud with `conversation` plus `store: true`; otherwise the app can send full `input` or use `previous_response_id` | [cloud-responses-integration.md](cloud-responses-integration.md) |
-| Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, using plain text passthrough, or retaining app-owned messages and function tools | Application resends `messages` | [cloud-chat-completions-integration.md](cloud-chat-completions-integration.md) |
+| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app, using Responses already, or needing hosted tools, persistent Cloud conversations, or artifacts inside the agent stream | Cloud with `conversation` plus `store: true`; otherwise the app can send full `input` or use `previous_response_id` | [responses.md](responses.md) |
+| Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, using plain text passthrough, or retaining app-owned messages and function tools | Application resends `messages` | [chat-completions.md](chat-completions.md) |
 | Artifact Chat Completions | `POST https://api.thesys.dev/v1/artifact/chat/completions` | Generating or explicitly editing a standalone slide deck or report outside an agent conversation | Application sends the current artifact program on edits | Current first-party artifact guide |
-| Conversations | `https://api.thesys.dev/v1/conversations` | Creating, listing, updating, or deleting persistent Responses threads and items | Cloud | [cloud-responses-integration.md](cloud-responses-integration.md) |
+| Conversations | `https://api.thesys.dev/v1/conversations` | Creating, listing, updating, or deleting persistent Responses threads and items | Cloud | [conversations.md](conversations.md) |
 
 Responses is the recommended starting point for new agent applications, not a mandatory migration target for existing Chat Completions applications. Do not use Embed Chat Completions with the Conversations API.
 
@@ -35,7 +35,7 @@ Do not introduce Cloud Conversations merely because the application calls the Cl
 
 For Responses with `conversation: threadId` and `store: true`, send only the latest user turn. Do not also resend full history. For Chat Completions, retain the complete relevant `messages` array. Preserve the upstream event shape when proxying either stream.
 
-The Conversations API is the storage plane used by `useOpenuiCloudStorage()`. Browser access requires a short-lived frontend token minted by the application server for an authenticated `user_id` and optional stable `app_id`; never expose `THESYS_API_KEY` to browser code. This storage path is for Responses conversations, not Embed Chat Completions history.
+The Conversations API is the storage plane used by `useOpenuiCloudStorage()`. Browser access requires a short-lived frontend token minted by the application server for an authenticated `user_id` and optional stable `app_id`; never expose `THESYS_API_KEY` to browser code. This storage path is for Responses conversations, not Embed Chat Completions history. Follow [conversations.md](conversations.md) when selecting it.
 
 ## Choose the Prompt Mode
 
@@ -53,7 +53,7 @@ For application-owned/self-hosted generative UI sent through Embed Chat Completi
 
 For plain text passthrough, omit the managed generative UI prompt and preserve the application's trusted system/developer instructions.
 
-Read [build-component-library.md](build-component-library.md) before defining or migrating a custom library. Never pair a custom runtime library with the built-in model-facing prompt or a stale serialized spec.
+Read [build-component-library.md](../build-component-library.md) before defining or migrating a custom library. Never pair a custom runtime library with the built-in model-facing prompt or a stale serialized spec.
 
 ## Tools and Artifacts
 

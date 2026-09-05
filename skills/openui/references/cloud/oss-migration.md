@@ -1,6 +1,6 @@
 # OSS to Cloud Migration
 
-Use this runbook for application-code migration from OSS (open-source or self-hosted) OpenUI to the managed Cloud backend. Read [cloud-api-selection.md](cloud-api-selection.md) to choose the target API and state model, then read [cloud-integration.md](cloud-integration.md) plus the selected [Responses](cloud-responses-integration.md) or [Chat Completions](cloud-chat-completions-integration.md) runbook.
+Use this runbook for application-code migration from OSS (open-source or self-hosted) OpenUI to the managed Cloud backend. Read [api-selection.md](api-selection.md) to choose the target API and state model, then read [existing-project.md](existing-project.md) plus the selected [Responses](responses.md) or [Chat Completions](chat-completions.md) runbook. Also read [conversations.md](conversations.md) when Cloud will own persistent threads.
 
 ## Contents
 
@@ -46,7 +46,7 @@ artifacts, custom slots/theme, and tests.
 
 If the existing application uses `chat.completions.create()` and the user did not request a protocol migration, keep its message and storage architecture:
 
-1. Read [cloud-chat-completions-integration.md](cloud-chat-completions-integration.md).
+1. Read [chat-completions.md](chat-completions.md).
 2. Point the existing OpenAI-compatible client at the Cloud Embed base URL and replace provider-specific model ids with an allowed current `{provider}/{model}` value.
 3. For managed generative UI, put `generateSystemPrompt({ cloud: true, ... })` from `@openuidev/lang-core` in the trusted system-message position. Preserve trusted application behavior through the helper's documented instructions option.
 4. Keep the complete relevant `messages` history, including assistant tool calls and tool results.
@@ -74,11 +74,11 @@ Apply this map only when the user chose Responses and Cloud Conversations. Do no
 
 Preserve branding, theme, starters, slots, navigation, route placement, error boundaries, analytics, and authentication unless the user requests a redesign.
 
-For the complete implementation and security contract, read [cloud-responses-integration.md](cloud-responses-integration.md).
+For the generation contract, read [responses.md](responses.md). For persistent named threads, frontend tokens, and identity, also read [conversations.md](conversations.md).
 
 ### Migrate AgentInterface apps to Responses
 
-1. Read [cloud-integration.md](cloud-integration.md) and [cloud-responses-integration.md](cloud-responses-integration.md), then add only the missing Cloud packages and server-only configuration.
+1. Read [existing-project.md](existing-project.md), [responses.md](responses.md), and [conversations.md](conversations.md), then add only the missing Cloud packages and server-only configuration.
 2. Replace the client `llm` with `fetchLLM({ streamAdapter: openAIResponsesAdapter(), messageFormat: openAIConversationMessageFormat })` or an equivalent direct `ChatLLM`. The server must forward only the latest allowlisted user message to the stored Cloud conversation.
 3. In Next.js, move the Cloud UI into a separate client component and match the
    installed first-party template's dynamic-rendering boundary. Add an
@@ -100,7 +100,7 @@ For an Agent Interface migration:
 
 1. Introduce `AgentInterface` at the requested route or surface.
 2. Move reusable branding and surrounding layout into `AgentInterface` props/slots.
-3. Add the two Cloud server routes and managed library/artifacts from [cloud-responses-integration.md](cloud-responses-integration.md).
+3. Add the generation route from [responses.md](responses.md) and the frontend-token and storage wiring from [conversations.md](conversations.md).
 4. Retain the old Renderer surface until behavior parity is verified; then remove it only for replacement migrations.
 
 For a renderer-preserving or custom component-library migration:
@@ -109,7 +109,7 @@ For a renderer-preserving or custom component-library migration:
 - **Will Cloud generation receive matching component instructions?** Generate a serialized spec with `openui generate --spec` and pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`.
 - **Who owns history?** Use Responses with `conversation` plus `store: true` for Cloud persistence, or choose Embed Chat Completions when the application should continue resending its own history.
 
-Regenerate the spec whenever the runtime library contract changes. Do not pair the built-in Cloud prompt with a custom client library; the model and renderer must use the same component contract. Read [build-component-library.md](build-component-library.md) for the complete workflow.
+Regenerate the spec whenever the runtime library contract changes. Do not pair the built-in Cloud prompt with a custom client library; the model and renderer must use the same component contract. Read [build-component-library.md](../build-component-library.md) for the complete workflow.
 
 ## Handle Dual Mode
 
@@ -126,7 +126,7 @@ Select the mode on the server or through trusted deployment configuration. Do no
 ## Respect Unsupported Boundaries
 
 - **Historical conversations/artifacts:** no import path is established by the repository sources. Preserve the old store read-only or export it separately; do not fabricate Cloud records.
-- **Custom tool execution:** supported. For Chat Completions, preserve the application's standard assistant-tool/result loop. For Responses, declare `type: "function"` tools and use the current template's bounded loop from [cloud-responses-integration.md](cloud-responses-integration.md#app-owned-function-tools). Never execute or answer Cloud-owned `thesys_*` function calls in the Responses loop.
+- **Custom tool execution:** supported. For Chat Completions, preserve the application's standard assistant-tool/result loop. For Responses, declare `type: "function"` tools and use the current template's bounded loop from [responses.md](responses.md#app-owned-function-tools). Never execute or answer Cloud-owned `thesys_*` function calls in the Responses loop.
 - **Custom artifact-producing tools:** managed `artifactTool()` covers the documented report and slide path. Do not infer support for arbitrary custom artifacts.
 - **Attachments and media:** preserve an attachment-capable self-hosted path until the installed Cloud client, generation input, storage, and size-limit contracts are verified end to end.
 - **Non-React clients:** the verified managed client surface is React. Require a first-party runtime/example before promising another framework.

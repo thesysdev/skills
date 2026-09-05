@@ -34,15 +34,16 @@ Once installed, try prompts such as:
 | Resource | Purpose |
 | --- | --- |
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
-| [`cloud-quickstart.md`](skills/openui/references/cloud-quickstart.md) | Cloud-first scaffolding, generated-template workflow, and launch verification |
+| [`cloud/quickstart.md`](skills/openui/references/cloud/quickstart.md) | Cloud-first scaffolding, generated-template workflow, and launch verification |
 | [`examples.md`](skills/openui/references/examples.md) | Complete current first-party example catalog with exact paths and integration seams |
 | [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
-| [`cloud-api-selection.md`](skills/openui/references/cloud-api-selection.md) | Cloud endpoint, state model, adapter, and prompt-mode selection |
-| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Shared brownfield Cloud discovery, configuration, security, BYOK, and protocol routing |
-| [`cloud-responses-integration.md`](skills/openui/references/cloud-responses-integration.md) | Responses, Cloud Conversations, hosted tools, artifacts, identity, and persistence runbook |
-| [`cloud-chat-completions-integration.md`](skills/openui/references/cloud-chat-completions-integration.md) | Existing Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`cloud/api-selection.md`](skills/openui/references/cloud/api-selection.md) | Cloud endpoint, state model, adapter, and prompt-mode selection |
+| [`cloud/existing-project.md`](skills/openui/references/cloud/existing-project.md) | Shared brownfield Cloud discovery, configuration, security, BYOK, and protocol routing |
+| [`cloud/responses.md`](skills/openui/references/cloud/responses.md) | Responses generation, history modes, streaming, hosted tools, and artifacts |
+| [`cloud/chat-completions.md`](skills/openui/references/cloud/chat-completions.md) | Existing Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`cloud/conversations.md`](skills/openui/references/cloud/conversations.md) | Persistent Responses threads, items, frontend tokens, identity, authorization, and browser storage |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
-| [`oss-to-cloud-migration.md`](skills/openui/references/oss-to-cloud-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
+| [`cloud/oss-migration.md`](skills/openui/references/cloud/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
 
 ## OpenUI Building Blocks
 
