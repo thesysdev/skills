@@ -1,6 +1,6 @@
 # Integrate OpenUI Cloud with the Responses API
 
-Read [existing-project.md](existing-project.md) first. Use this runbook for applications that already consume Responses events, new agents that need hosted tools, or workflows that need artifacts inside the agent stream. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration.
+Read [the shared Cloud integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events, new agents that need hosted tools, or workflows that need artifacts inside the agent stream. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration.
 
 Conversations is optional. Read [conversations.md](conversations.md) only when the application needs persistent named Cloud threads, item APIs, browser storage, frontend tokens, or Cloud user/app isolation.
 
@@ -80,7 +80,7 @@ const instructions = generateSystemPrompt({
 
 Pass the result as the Responses `instructions` value. Keep user-authored content out of trusted instructions, preambles, rules, and examples.
 
-For a custom component library, follow [build-component-library.md](../build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library. Do not combine a custom client library with the built-in model-facing prompt.
+For a custom component library, follow [build-component-library.md](../../build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library. Do not combine a custom client library with the built-in model-facing prompt.
 
 ## Match the Client Stream
 
@@ -208,7 +208,7 @@ This artifact example uses the named-conversation state model so follow-up turns
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-Managed artifacts are separate stored objects. Register the installed `presentationArtifactRenderer` and `reportArtifactRenderer` client exports, and add Cloud storage when the product must persist and reopen them. Follow-up turns in the same stored conversation can edit them. For standalone generation or explicit program-based editing outside an agent stream, follow [artifacts.md](artifacts.md) instead.
+Managed artifacts are separate stored objects. Register the installed `presentationArtifactRenderer` and `reportArtifactRenderer` client exports, and add Cloud storage when the product must persist and reopen them. Follow-up turns in the same stored conversation can edit them. For standalone generation or explicit program-based editing outside an agent stream, follow [artifacts.md](../artifacts.md) instead.
 
 ## App-Owned Function Tools
 
@@ -228,11 +228,11 @@ Managed UI generation validates and repairs output against the selected componen
 
 Run representative prompts repeatedly against the actual component library and model choices. Compare parser/renderer failures, partial renders, latency, and cost rather than trusting one successful generation. Use OpenUI DevTools during development.
 
-When production monitoring is required, follow [existing-project.md](existing-project.md#reliability-and-observability) for the current `@openuidev/observability-cloud` boundary.
+When production monitoring is required, follow [the shared Cloud integration guide](../integration.md#reliability-and-observability) for the current `@openuidev/observability-cloud` boundary.
 
 ## Verify
 
-1. Run the shared checks in [existing-project.md](existing-project.md#shared-verification).
+1. Run the shared checks in [the Cloud integration guide](../integration.md#shared-verification).
 2. Confirm the route calls `/v1/embed/responses` and the client uses `openAIResponsesAdapter()`.
 3. Confirm exactly one history pattern is active: full `input`, `previous_response_id`, or `conversation`.
 4. For full history, verify authorized storage is loaded and bounded on every turn without `conversation` or `previous_response_id`.

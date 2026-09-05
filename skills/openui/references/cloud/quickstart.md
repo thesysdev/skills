@@ -31,7 +31,7 @@ After scaffolding:
 4. Preserve `openAIResponsesAdapter()` with `openAIConversationMessageFormat`, `conversation: threadId`, `store: true`, and latest-message-only forwarding.
 5. Keep managed tools on Cloud. Execute only explicitly declared app-owned function tools in the application loop.
 
-For shared production configuration, authentication, and failure handling, read [existing-project.md](existing-project.md), then use [responses.md](responses.md) for generation and [conversations.md](conversations.md) for the generated template's persistent thread, identity, and frontend-token contracts. For endpoint and state-model selection, read [api-selection.md](api-selection.md).
+For shared production configuration, authentication, and failure handling, read [the Cloud integration guide](integration.md), then use [Responses](agent/responses.md) for generation and [Conversations](agent/conversations.md) for the generated template's persistent thread, identity, and frontend-token contracts. If the generated agent architecture is being reconsidered, read [Choose an agent API](agent/api-selection.md).
 
 ## Extend the Starter
 

@@ -1,26 +1,20 @@
-# Integrate OpenUI Cloud into an Existing Project
+# Integrate OpenUI Cloud
 
-Read this reference first for any brownfield OpenUI Cloud integration. It owns shared discovery, configuration, and routing. Then read exactly one generation runbook for the selected protocol:
+Read this reference first for shared OpenUI Cloud integration requirements. It owns host discovery, server-side configuration, component compatibility, security, reliability, and verification. Then read only the guide for the requested workload:
 
-- [Responses integration](responses.md) for Responses events, hosted tools, or artifacts in the agent stream.
-- [Chat Completions integration](chat-completions.md) for an existing `chat.completions.create()` application that should retain app-owned messages, persistence, and function-tool execution.
-- [Artifact Chat Completions integration](artifacts.md) for standalone slide or report generation and explicit program-based edits outside an agent stream.
-
-Also read [Conversations integration](conversations.md) when Responses should use persistent named threads, Cloud-managed items, frontend tokens, or browser storage.
-
-Read [api-selection.md](api-selection.md) when the correct surface is not already established.
-
-## Preserve the Existing Protocol
-
-Do not migrate an existing application from Chat Completions to Responses merely because Responses is the default for new Cloud agent applications. Preserve the host protocol unless the user requests a migration or requires a Responses-only capability such as Cloud-managed conversations, hosted web/image search, remote MCP, or artifacts inside the agent stream.
-
-| Existing or requested shape | Continue with |
+| Workload | Continue with |
 | --- | --- |
-| `chat.completions.create()`, `messages[]`, app-owned history, or app-run function tools | [chat-completions.md](chat-completions.md) |
-| `responses.create()`, Responses events, `previous_response_id`, or full `input` history | [responses.md](responses.md); preserve the existing Responses history model |
-| New persistent agent app using Cloud conversations | [responses.md](responses.md) plus [conversations.md](conversations.md) with `conversation` and `store: true` |
-| Conversation/item CRUD, frontend tokens, identity scoping, or `useOpenuiCloudStorage()` | [conversations.md](conversations.md) |
-| Standalone slide/report generation and explicit program-based edits | [artifacts.md](artifacts.md) |
+| Agent generation | [Choose an agent API](agent/api-selection.md), then read either [Responses](agent/responses.md) or [Chat Completions](agent/chat-completions.md) |
+| Cloud-managed persistent threads for a Responses agent | [Responses](agent/responses.md) plus [Conversations](agent/conversations.md) |
+| Standalone slide or report generation and explicit program-based edits | [Standalone artifacts](artifacts.md) |
+| New Cloud agent scaffold | [Cloud quickstart](quickstart.md), then the generated template |
+| Existing self-hosted/OpenUI OSS application moving to Cloud | [OSS migration](oss-migration.md) |
+
+Responses and Chat Completions are alternative agent-generation protocols. Conversations is an optional persistence and identity layer for Responses; it is not a third generation protocol. Artifact Chat Completions is a specialized standalone artifact endpoint; it is not an agent protocol.
+
+## Preserve Existing Architecture
+
+In an existing application, do not migrate from Chat Completions to Responses merely because Responses is the default for new Cloud agent applications. Preserve the host protocol unless the user requests a migration or requires a Responses-only capability such as Cloud-managed conversations, hosted web/image search, remote MCP, or artifacts inside the agent stream.
 
 Treat generation protocol, message persistence, client renderer, component library, tools, and artifact lifecycle as separate choices. Do not silently replace one because another changes.
 
@@ -42,7 +36,7 @@ Use the installed application and current first-party template as the source of 
 All Cloud generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
-- Use the stock OpenAI SDK with the generation base URL `https://api.thesys.dev/v1/embed` unless the installed framework adapter documents another configuration seam.
+- Use the endpoint family selected by the workload: `/v1/embed` for agent generation, `/v1/artifact` for standalone artifacts, and `/v1` for server-side Conversations access. Do not reuse one base URL for every Cloud API.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.
 - Validate request content type, byte size, message/item shapes, and role allowlists before forwarding.

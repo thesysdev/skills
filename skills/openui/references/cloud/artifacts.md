@@ -1,6 +1,6 @@
-# Integrate OpenUI Cloud Artifact Chat Completions
+# Generate Standalone OpenUI Cloud Artifacts
 
-Read [existing-project.md](existing-project.md) first. Use this reference to generate or explicitly edit a standalone OpenUI Cloud slide deck or report whose lifecycle is separate from an agent conversation.
+Read [the shared Cloud integration guide](integration.md) first. Use this reference for the specialized Artifact Chat Completions endpoint when generating or explicitly editing a standalone OpenUI Cloud slide deck or report. This endpoint is separate from the Responses-versus-Chat-Completions choice for agent applications.
 
 ## Choose the Artifact Lifecycle
 
@@ -8,7 +8,7 @@ Read [existing-project.md](existing-project.md) first. Use this reference to gen
 | --- | --- |
 | Standalone slide/report generation, with the application storing the returned program | Artifact Chat Completions in this guide |
 | Explicit edit where the application sends the current program and an edit instruction | Artifact Chat Completions in this guide |
-| Artifact generated, stored, reopened, and edited inside a persistent agent conversation | Responses with `artifactTool()`; read [responses.md](responses.md) and [conversations.md](conversations.md) |
+| Artifact generated, stored, reopened, and edited inside a persistent agent conversation | Responses with `artifactTool()`; read [responses.md](agent/responses.md) and [conversations.md](agent/conversations.md) |
 
 Do not use the standalone artifact endpoint as an Agent Interface conversation store. It returns an OpenUI Lang artifact program; the application owns that program and its surrounding persistence, authorization, and version history.
 

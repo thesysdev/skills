@@ -1,6 +1,6 @@
 # Integrate OpenUI Cloud Conversations
 
-Read [existing-project.md](existing-project.md) first. Use this reference when an application needs persistent named Responses threads, conversation-item access, browser thread storage, scoped frontend tokens, or multi-user/multi-app isolation.
+Read [the shared Cloud integration guide](../integration.md) first. Use this reference when an application needs persistent named Responses threads, conversation-item access, browser thread storage, scoped frontend tokens, or multi-user/multi-app isolation.
 
 Conversations is a storage and identity plane, not a generation protocol. It integrates with the Responses API. Embed Chat Completions applications keep and resend their own `messages` history; do not add the Conversations API to them without an explicit protocol and storage migration.
 
