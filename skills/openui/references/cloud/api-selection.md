@@ -8,7 +8,7 @@ Read this reference before selecting a Cloud endpoint, history model, stream ada
 | --- | --- | --- | --- | --- |
 | Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app, using Responses already, or needing hosted tools, persistent Cloud conversations, or artifacts inside the agent stream | Cloud with `conversation` plus `store: true`; otherwise the app can send full `input` or use `previous_response_id` | [responses.md](responses.md) |
 | Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, using plain text passthrough, or retaining app-owned messages and function tools | Application resends `messages` | [chat-completions.md](chat-completions.md) |
-| Artifact Chat Completions | `POST https://api.thesys.dev/v1/artifact/chat/completions` | Generating or explicitly editing a standalone slide deck or report outside an agent conversation | Application sends the current artifact program on edits | Current first-party artifact guide |
+| Artifact Chat Completions | `POST https://api.thesys.dev/v1/artifact/chat/completions` | Generating or explicitly editing a standalone slide deck or report outside an agent conversation | Application stores the program and sends its current version on edits | [artifacts.md](artifacts.md) |
 | Conversations | `https://api.thesys.dev/v1/conversations` | Creating, listing, updating, or deleting persistent Responses threads and items | Cloud | [conversations.md](conversations.md) |
 
 Responses is the recommended starting point for new agent applications, not a mandatory migration target for existing Chat Completions applications. Do not use Embed Chat Completions with the Conversations API.
@@ -59,7 +59,7 @@ Read [build-component-library.md](../build-component-library.md) before defining
 
 - Responses supports hosted web search, image search, remote MCP, managed artifacts, and app-owned function tools.
 - Embed Chat Completions accepts app-owned function tools but does not execute them; the application runs the standard tool loop.
-- Artifact Chat Completions is for standalone slide/report programs and explicit program-based edits.
+- Artifact Chat Completions is for standalone slide/report programs and explicit program-based edits; follow [artifacts.md](artifacts.md).
 - Use Responses plus `artifactTool()` when artifacts should live inside a persistent agent conversation.
 
 ## First-Party References

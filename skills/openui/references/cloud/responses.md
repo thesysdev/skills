@@ -208,7 +208,7 @@ This artifact example uses the named-conversation state model so follow-up turns
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-Managed artifacts are separate stored objects. Register the installed `presentationArtifactRenderer` and `reportArtifactRenderer` client exports, and add Cloud storage when the product must persist and reopen them. Follow-up turns in the same stored conversation can edit them. For standalone generation or explicit program-based editing outside an agent stream, use Artifact Chat Completions instead.
+Managed artifacts are separate stored objects. Register the installed `presentationArtifactRenderer` and `reportArtifactRenderer` client exports, and add Cloud storage when the product must persist and reopen them. Follow-up turns in the same stored conversation can edit them. For standalone generation or explicit program-based editing outside an agent stream, follow [artifacts.md](artifacts.md) instead.
 
 ## App-Owned Function Tools
 

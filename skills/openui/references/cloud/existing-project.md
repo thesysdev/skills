@@ -4,10 +4,11 @@ Read this reference first for any brownfield OpenUI Cloud integration. It owns s
 
 - [Responses integration](responses.md) for Responses events, hosted tools, or artifacts in the agent stream.
 - [Chat Completions integration](chat-completions.md) for an existing `chat.completions.create()` application that should retain app-owned messages, persistence, and function-tool execution.
+- [Artifact Chat Completions integration](artifacts.md) for standalone slide or report generation and explicit program-based edits outside an agent stream.
 
 Also read [Conversations integration](conversations.md) when Responses should use persistent named threads, Cloud-managed items, frontend tokens, or browser storage.
 
-Read [api-selection.md](api-selection.md) when the correct surface is not already established. For standalone slide or report generation outside an agent stream, use the Artifact Chat Completions path described there instead of either general chat runbook.
+Read [api-selection.md](api-selection.md) when the correct surface is not already established.
 
 ## Preserve the Existing Protocol
 
@@ -19,7 +20,7 @@ Do not migrate an existing application from Chat Completions to Responses merely
 | `responses.create()`, Responses events, `previous_response_id`, or full `input` history | [responses.md](responses.md); preserve the existing Responses history model |
 | New persistent agent app using Cloud conversations | [responses.md](responses.md) plus [conversations.md](conversations.md) with `conversation` and `store: true` |
 | Conversation/item CRUD, frontend tokens, identity scoping, or `useOpenuiCloudStorage()` | [conversations.md](conversations.md) |
-| Standalone slide/report generation and explicit program-based edits | [api-selection.md](api-selection.md#tools-and-artifacts) |
+| Standalone slide/report generation and explicit program-based edits | [artifacts.md](artifacts.md) |
 
 Treat generation protocol, message persistence, client renderer, component library, tools, and artifact lifecycle as separate choices. Do not silently replace one because another changes.
 
@@ -94,6 +95,7 @@ When production monitoring is required, use the current `@openuidev/observabilit
 - `https://www.openui.com/docs/openui-cloud/api/overview`
 - `https://www.openui.com/docs/openui-cloud/api/responses`
 - `https://www.openui.com/docs/openui-cloud/api/chat-completions`
+- `https://www.openui.com/docs/openui-cloud/api/artifacts`
 - `https://www.openui.com/docs/openui-cloud/api/conversations`
 - `https://www.openui.com/docs/openui-cloud/models-and-byok`
 - `https://www.openui.com/docs/openui-cloud/build/component-library`

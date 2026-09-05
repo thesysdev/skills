@@ -50,6 +50,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the task can start from a maintained integration, runtime, design-system, harness, or specialized example, read [references/examples.md](references/examples.md) and choose the closest exact path.
 - If the user wants to define, extend, migrate, or validate a component library, read [references/build-component-library.md](references/build-component-library.md) completely before editing.
 - If the task requires choosing among Cloud Responses, Embed Chat Completions, Artifact Chat Completions, or Conversations, read [references/cloud/api-selection.md](references/cloud/api-selection.md).
+- If the user wants to generate or explicitly edit a standalone Cloud slide deck or report outside an agent conversation, read [references/cloud/artifacts.md](references/cloud/artifacts.md).
 - For any existing-project Cloud integration, read [references/cloud/existing-project.md](references/cloud/existing-project.md), then read the Responses or Chat Completions runbook it selects.
 - If the task involves Cloud-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/cloud/conversations.md](references/cloud/conversations.md).
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Cloud validation, fallbacks, and production monitoring, also read [Reliability and observability](references/cloud/existing-project.md#reliability-and-observability).
@@ -69,7 +70,7 @@ OpenUI Cloud exposes four related API surfaces: Responses, Embed Chat Completion
 | Cloud-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [cloud/conversations.md](references/cloud/conversations.md) |
 | Hosted web search, image search, remote MCP, and artifacts inside agent turns | Responses |
 | App-owned function tools | Responses or Embed Chat Completions, with different tool-result protocols and application-owned execution loops |
-| Standalone slide/report generation and explicit program-based edits | Artifact Chat Completions |
+| Standalone slide/report generation and explicit program-based edits | Artifact Chat Completions; follow [cloud/artifacts.md](references/cloud/artifacts.md) |
 | Responsive managed UI | `AgentInterface` plus `chatLibrary`, with the adapter and message format selected for the generation protocol |
 
 ## Route Cloud Integration and Migration Tasks
@@ -83,6 +84,7 @@ Choose the matching path:
 | Existing Chat Completions application | Read [references/cloud/existing-project.md](references/cloud/existing-project.md) and [references/cloud/chat-completions.md](references/cloud/chat-completions.md); keep app-owned history unless migration is requested |
 | Existing Responses application | Read [references/cloud/existing-project.md](references/cloud/existing-project.md) and [references/cloud/responses.md](references/cloud/responses.md); preserve the selected Responses history pattern |
 | New or existing Responses app using Cloud-managed threads | Also read [references/cloud/conversations.md](references/cloud/conversations.md) for the persistence, identity, token, and authorization plane |
+| Standalone Cloud slide/report generation or explicit editing | Read [references/cloud/existing-project.md](references/cloud/existing-project.md) and [references/cloud/artifacts.md](references/cloud/artifacts.md); keep artifact persistence in the application |
 | Existing non-React client | Read [references/cloud/existing-project.md](references/cloud/existing-project.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
 | Existing self-hosted/open-source app moving to Cloud | Read [references/cloud/oss-migration.md](references/cloud/oss-migration.md), [references/cloud/existing-project.md](references/cloud/existing-project.md), and the protocol-specific runbook selected after inspecting the host |
 
@@ -404,6 +406,7 @@ Remote first-party OpenUI sources:
 - `https://www.openui.com/docs/openui-cloud/api/overview`
 - `https://www.openui.com/docs/openui-cloud/api/responses`
 - `https://www.openui.com/docs/openui-cloud/api/chat-completions`
+- `https://www.openui.com/docs/openui-cloud/api/artifacts`
 - `https://www.openui.com/docs/openui-cloud/build/component-library`
 - `https://www.openui.com/docs/agent/getting-started/quickstart`
 - `https://www.openui.com/docs/agent/reference/agentinterface-props`

@@ -127,7 +127,7 @@ Select the mode on the server or through trusted deployment configuration. Do no
 
 - **Historical conversations/artifacts:** no import path is established by the repository sources. Preserve the old store read-only or export it separately; do not fabricate Cloud records.
 - **Custom tool execution:** supported. For Chat Completions, preserve the application's standard assistant-tool/result loop. For Responses, declare `type: "function"` tools and use the current template's bounded loop from [responses.md](responses.md#app-owned-function-tools). Never execute or answer Cloud-owned `thesys_*` function calls in the Responses loop.
-- **Custom artifact-producing tools:** managed `artifactTool()` covers the documented report and slide path. Do not infer support for arbitrary custom artifacts.
+- **Custom artifact-producing tools:** managed `artifactTool()` covers the documented report and slide path inside Responses. Use [artifacts.md](artifacts.md) for standalone slide/report programs; do not infer support for arbitrary custom artifact types.
 - **Attachments and media:** preserve an attachment-capable self-hosted path until the installed Cloud client, generation input, storage, and size-limit contracts are verified end to end.
 - **Non-React clients:** the verified managed client surface is React. Require a first-party runtime/example before promising another framework.
 

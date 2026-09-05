@@ -101,7 +101,7 @@ Embed Chat Completions accepts function tools but does not execute them. Preserv
 5. Append the assistant tool-call message and one `role: "tool"` result for each call.
 6. Repeat with a bounded iteration count until the model returns the final answer.
 
-Do not attach Responses-only hosted `web_search`, `image_search`, remote MCP, or `artifactTool()` declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses. For standalone slide/report generation, use Artifact Chat Completions as a separate call.
+Do not attach Responses-only hosted `web_search`, `image_search`, remote MCP, or `artifactTool()` declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses. For standalone slide/report generation, use Artifact Chat Completions as a separate call and follow [artifacts.md](artifacts.md).
 
 ## Keep Plain Text and Application-Owned UI Intact
 

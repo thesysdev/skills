@@ -41,6 +41,7 @@ Once installed, try prompts such as:
 | [`cloud/existing-project.md`](skills/openui/references/cloud/existing-project.md) | Shared brownfield Cloud discovery, configuration, security, BYOK, and protocol routing |
 | [`cloud/responses.md`](skills/openui/references/cloud/responses.md) | Responses generation, history modes, streaming, hosted tools, and artifacts |
 | [`cloud/chat-completions.md`](skills/openui/references/cloud/chat-completions.md) | Existing Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`cloud/artifacts.md`](skills/openui/references/cloud/artifacts.md) | Standalone slide/report generation, explicit edits, rendering, and application-owned persistence |
 | [`cloud/conversations.md`](skills/openui/references/cloud/conversations.md) | Persistent Responses threads, items, frontend tokens, identity, authorization, and browser storage |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
 | [`cloud/oss-migration.md`](skills/openui/references/cloud/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
