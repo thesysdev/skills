@@ -4,13 +4,13 @@ Read this reference first for shared OpenUI Cloud integration requirements. It o
 
 | Workload | Continue with |
 | --- | --- |
-| Agent generation | [Choose an agent API](agent/api-selection.md), then read either [Responses](agent/responses.md) or [Chat Completions](agent/chat-completions.md) |
-| Cloud-managed persistent threads for a Responses agent | [Responses](agent/responses.md) plus [Conversations](agent/conversations.md) |
+| Conversational generation | [Choose a chat generation API](chat/api-selection.md), then read either [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) |
+| Cloud-managed persistent threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
 | Standalone slide or report generation and explicit program-based edits | [Standalone artifacts](artifacts.md) |
 | New Cloud agent scaffold | [Cloud quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Cloud | [OSS migration](oss-migration.md) |
 
-Responses and Chat Completions are alternative agent-generation protocols. Conversations is an optional persistence and identity layer for Responses; it is not a third generation protocol. Artifact Chat Completions is a specialized standalone artifact endpoint; it is not an agent protocol.
+Responses and Chat Completions are alternative conversational generation protocols. Conversations is an optional persistence and identity layer for Responses; it is not a third generation protocol. Artifact Chat Completions is a specialized standalone artifact endpoint; it is outside the chat protocol choice.
 
 ## Preserve Existing Architecture
 

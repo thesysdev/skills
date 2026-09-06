@@ -8,7 +8,7 @@ Read [the shared Cloud integration guide](integration.md) first. Use this refere
 | --- | --- |
 | Standalone slide/report generation, with the application storing the returned program | Artifact Chat Completions in this guide |
 | Explicit edit where the application sends the current program and an edit instruction | Artifact Chat Completions in this guide |
-| Artifact generated, stored, reopened, and edited inside a persistent agent conversation | Responses with `artifactTool()`; read [responses.md](agent/responses.md) and [conversations.md](agent/conversations.md) |
+| Artifact generated, stored, reopened, and edited inside a persistent agent conversation | Responses with `artifactTool()`; read [responses.md](chat/responses.md) and [conversations.md](chat/conversations.md) |
 
 Do not use the standalone artifact endpoint as an Agent Interface conversation store. It returns an OpenUI Lang artifact program; the application owns that program and its surrounding persistence, authorization, and version history.
 

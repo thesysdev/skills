@@ -1,14 +1,14 @@
-# Choose an Agent API
+# Choose a Chat Generation API
 
-Use this reference only to choose the agent-generation protocol and its state model. Shared configuration, security, compatibility, and verification requirements live in [the Cloud integration guide](../integration.md).
+Use this reference only to choose the generation protocol and state model for an interactive chat or agent application. Shared configuration, security, compatibility, and verification requirements live in [the Cloud integration guide](../integration.md).
 
 ## Choose the Generation Protocol
 
-Responses and Embed Chat Completions are the two agent-generation choices:
+Responses and Embed Chat Completions are the two conversational generation choices:
 
 | Protocol | Endpoint | Use when | Continue with |
 | --- | --- | --- | --- |
-| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new agent app, preserving an existing Responses integration, or needing hosted tools or artifacts inside agent turns | [responses.md](responses.md) |
+| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new chat or agent app, preserving an existing Responses integration, or needing hosted tools or artifacts inside turns | [responses.md](responses.md) |
 | Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, plain-text passthrough, app-owned messages, or app-run function tools | [chat-completions.md](chat-completions.md) |
 
 Responses is the recommended starting point for new agent applications, not a mandatory migration target. Preserve an existing Chat Completions protocol unless the user requests migration or needs a Responses-only capability.
@@ -55,7 +55,7 @@ Read [build-component-library.md](../../build-component-library.md) before defin
 
 ## Keep Standalone Artifacts Separate
 
-Artifact Chat Completions is a specialized endpoint for standalone slide and report programs. It is not an agent-generation protocol and does not belong in the Responses-versus-Chat-Completions decision. Read [artifacts.md](../artifacts.md) for that workflow.
+Artifact Chat Completions is a specialized endpoint for standalone slide and report programs. It is not a conversational generation protocol and does not belong in the Responses-versus-Chat-Completions decision. Read [artifacts.md](../artifacts.md) for that workflow.
 
 When an artifact should live inside an agent conversation, use Responses with `artifactTool()` instead.
 

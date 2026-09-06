@@ -50,9 +50,9 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the task can start from a maintained integration, runtime, design-system, harness, or specialized example, read [references/examples.md](references/examples.md) and choose the closest exact path.
 - If the user wants to define, extend, migrate, or validate a component library, read [references/build-component-library.md](references/build-component-library.md) completely before editing.
 - For any OpenUI Cloud integration, read [references/cloud/integration.md](references/cloud/integration.md) for the shared configuration, security, compatibility, and verification requirements.
-- If the task requires choosing an agent-generation protocol, read [references/cloud/agent/api-selection.md](references/cloud/agent/api-selection.md). Responses and Chat Completions are the two choices; Conversations is an optional Responses persistence layer.
+- If the task requires choosing a Cloud API for conversational generation, read [references/cloud/chat/api-selection.md](references/cloud/chat/api-selection.md). Responses and Chat Completions are the two choices; Conversations is an optional Responses persistence layer.
 - If the user wants to generate or explicitly edit a standalone Cloud slide deck or report outside an agent conversation, read [references/cloud/artifacts.md](references/cloud/artifacts.md).
-- If the task involves Cloud-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/cloud/agent/conversations.md](references/cloud/agent/conversations.md).
+- If the task involves Cloud-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/cloud/chat/conversations.md](references/cloud/chat/conversations.md).
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Cloud validation, fallbacks, and production monitoring, also read [Reliability and observability](references/cloud/integration.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
@@ -60,14 +60,14 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 ## OpenUI Cloud Capabilities
 
-OpenUI Cloud has two agent-generation protocols: Responses and Embed Chat Completions. Responses is recommended for new agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Artifact Chat Completions is a separate, specialized endpoint for standalone slide and report programs. Read [references/cloud/agent/api-selection.md](references/cloud/agent/api-selection.md) when choosing an agent protocol or state model.
+OpenUI Cloud has two APIs for conversational generation: Responses and Embed Chat Completions. Responses is recommended for new chat or agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Artifact Chat Completions is a separate, specialized endpoint for standalone slide and report programs. Read [references/cloud/chat/api-selection.md](references/cloud/chat/api-selection.md) when choosing a conversational generation protocol or state model.
 
 | Capability | Available through |
 |---|---|
 | Managed generative UI, output validation, repair, model routing, and fallbacks | Responses and Embed Chat Completions when using `generateSystemPrompt({ cloud: true })` |
 | Managed models or BYOK | Cloud generation endpoints; read [Configure BYOK](references/cloud/integration.md#configure-byok) before assisting with provider credentials |
 | Built-in or custom component libraries | Responses and Embed Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
-| Cloud-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [cloud/agent/conversations.md](references/cloud/agent/conversations.md) |
+| Cloud-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [cloud/chat/conversations.md](references/cloud/chat/conversations.md) |
 | Hosted web search, image search, remote MCP, and artifacts inside agent turns | Responses |
 | App-owned function tools | Responses or Embed Chat Completions, with different tool-result protocols and application-owned execution loops |
 | Standalone slide/report generation and explicit program-based edits | Artifact Chat Completions; follow [cloud/artifacts.md](references/cloud/artifacts.md) |
@@ -81,9 +81,9 @@ Choose the matching path:
 
 | Starting point and goal | Required runbooks |
 | --- | --- |
-| Existing Chat Completions application | Read [references/cloud/integration.md](references/cloud/integration.md) and [references/cloud/agent/chat-completions.md](references/cloud/agent/chat-completions.md); keep app-owned history unless migration is requested |
-| Existing Responses application | Read [references/cloud/integration.md](references/cloud/integration.md) and [references/cloud/agent/responses.md](references/cloud/agent/responses.md); preserve the selected Responses history pattern |
-| New or existing Responses app using Cloud-managed threads | Also read [references/cloud/agent/conversations.md](references/cloud/agent/conversations.md) for the persistence, identity, token, and authorization plane |
+| Existing Chat Completions application | Read [references/cloud/integration.md](references/cloud/integration.md) and [references/cloud/chat/chat-completions.md](references/cloud/chat/chat-completions.md); keep app-owned history unless migration is requested |
+| Existing Responses application | Read [references/cloud/integration.md](references/cloud/integration.md) and [references/cloud/chat/responses.md](references/cloud/chat/responses.md); preserve the selected Responses history pattern |
+| New or existing Responses app using Cloud-managed threads | Also read [references/cloud/chat/conversations.md](references/cloud/chat/conversations.md) for the persistence, identity, token, and authorization plane |
 | Standalone Cloud slide/report generation or explicit editing | Read [references/cloud/integration.md](references/cloud/integration.md) and [references/cloud/artifacts.md](references/cloud/artifacts.md); keep artifact persistence in the application |
 | Existing non-React client | Read [references/cloud/integration.md](references/cloud/integration.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
 | Existing self-hosted/open-source app moving to Cloud | Read [references/cloud/oss-migration.md](references/cloud/oss-migration.md), [references/cloud/integration.md](references/cloud/integration.md), and the protocol-specific runbook selected after inspecting the host |

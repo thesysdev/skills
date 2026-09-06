@@ -36,10 +36,10 @@ Once installed, try prompts such as:
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
 | [`cloud/integration.md`](skills/openui/references/cloud/integration.md) | Shared Cloud routing, configuration, security, BYOK, compatibility, reliability, and verification |
 | [`cloud/quickstart.md`](skills/openui/references/cloud/quickstart.md) | Cloud-first scaffolding, generated-template workflow, and launch verification |
-| [`cloud/agent/api-selection.md`](skills/openui/references/cloud/agent/api-selection.md) | Selection between the Responses and Chat Completions agent-generation protocols |
-| [`cloud/agent/responses.md`](skills/openui/references/cloud/agent/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
-| [`cloud/agent/chat-completions.md`](skills/openui/references/cloud/agent/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
-| [`cloud/agent/conversations.md`](skills/openui/references/cloud/agent/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
+| [`cloud/chat/api-selection.md`](skills/openui/references/cloud/chat/api-selection.md) | Selection between Responses and Chat Completions for conversational generation |
+| [`cloud/chat/responses.md`](skills/openui/references/cloud/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
+| [`cloud/chat/chat-completions.md`](skills/openui/references/cloud/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`cloud/chat/conversations.md`](skills/openui/references/cloud/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
 | [`cloud/artifacts.md`](skills/openui/references/cloud/artifacts.md) | Standalone slide/report generation, explicit edits, rendering, and application-owned persistence |
 | [`cloud/oss-migration.md`](skills/openui/references/cloud/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
 | [`examples.md`](skills/openui/references/examples.md) | Complete current first-party example catalog with exact paths and integration seams |
