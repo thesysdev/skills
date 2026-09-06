@@ -4,12 +4,13 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 
 ## What the Skill Covers
 
-- Scaffold new OpenUI applications with `@openuidev/cli`.
+- Scaffold new OpenUI Cloud applications by default with `@openuidev/cli`, while preserving an explicit self-hosted path.
 - Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
 - Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
 - Add `AgentInterface` to new or existing chat applications.
-- Choose between self-hosted OpenUI and OpenUI Cloud, including Cloud BYOK with OpenAI or Anthropic API keys, or Google Cloud service-account credentials, on any plan, including the free tier.
+- Choose between Responses and Chat Completions for agent generation, optionally add Conversations persistence to Responses, and use the separate Artifact Chat Completions workflow for standalone slides and reports.
+- Use built-in or custom component libraries with managed Cloud generation, including Cloud BYOK.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
 - Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
 
@@ -22,8 +23,10 @@ npx skills add thesysdev/skills
 Once installed, try prompts such as:
 
 - “Create a streaming OpenUI dashboard from this API.”
+- “Create a new OpenUI Cloud agent with LangGraph.”
 - “Add Agent Interface to my existing Next.js app.”
 - “Build a custom OpenUI component library for these domain objects.”
+- “Move this OpenAI Chat Completions app to OpenUI Cloud without changing its history model.”
 - “Migrate this self-hosted OpenUI chat to OpenUI Cloud.”
 
 ## Skill Contents
@@ -31,9 +34,17 @@ Once installed, try prompts such as:
 | Resource | Purpose |
 | --- | --- |
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
-| [`cloud-integration.md`](skills/openui/references/cloud-integration.md) | Production-minded OpenUI Cloud integration, reliability, and observability runbook |
+| [`cloud/integration.md`](skills/openui/references/cloud/integration.md) | Shared Cloud routing, configuration, security, BYOK, compatibility, reliability, and verification |
+| [`cloud/quickstart.md`](skills/openui/references/cloud/quickstart.md) | Cloud-first scaffolding, generated-template workflow, and launch verification |
+| [`cloud/chat/api-selection.md`](skills/openui/references/cloud/chat/api-selection.md) | Selection between Responses and Chat Completions for conversational generation |
+| [`cloud/chat/responses.md`](skills/openui/references/cloud/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
+| [`cloud/chat/chat-completions.md`](skills/openui/references/cloud/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`cloud/chat/conversations.md`](skills/openui/references/cloud/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
+| [`cloud/artifacts.md`](skills/openui/references/cloud/artifacts.md) | Standalone slide/report generation, explicit edits, rendering, and application-owned persistence |
+| [`cloud/oss-migration.md`](skills/openui/references/cloud/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
+| [`examples.md`](skills/openui/references/examples.md) | Complete current first-party example catalog with exact paths and integration seams |
+| [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
-| [`oss-to-cloud-migration.md`](skills/openui/references/oss-to-cloud-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Cloud |
 
 ## OpenUI Building Blocks
 
