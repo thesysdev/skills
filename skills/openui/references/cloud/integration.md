@@ -36,6 +36,7 @@ Use the installed application and current first-party template as the source of 
 All Cloud generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
+- If the key or Cloud account is not configured, stop at the setup checkpoint and let the user complete sign-in or secret entry privately. Do not infer a self-hosted architecture or rebuild a managed feature to bypass credentials.
 - Use the endpoint family selected by the workload: `/v1/embed` for agent generation, `/v1/artifact` for standalone artifacts, and `/v1` for server-side Conversations access. Do not reuse one base URL for every Cloud API.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.

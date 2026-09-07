@@ -43,8 +43,10 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 ## Choose The Starting Point
 
-- If the user wants a new production-ready OpenUI/GenUI agent app and does not require an app-owned model or storage layer, start with the Cloud CLI template and read [references/cloud/quickstart.md](references/cloud/quickstart.md).
-- If the user explicitly wants to own the model route, message history, tools, component prompt, and runtime behavior, use the self-hosted CLI template.
+- For a new OpenUI/GenUI chat or agent app, default to the Cloud CLI template and read [references/cloud/quickstart.md](references/cloud/quickstart.md).
+- A prototype, demo, MVP, local development, or dummy/mock/sample data does not imply self-hosting. Neither does the absence of an existing Thesys account or configured `THESYS_API_KEY`; treat Cloud sign-in and credential entry as a human setup checkpoint.
+- Use the self-hosted CLI template only when the user explicitly requests self-hosting, no external service, app-owned model/storage infrastructure, or a verified requirement unsupported by Cloud. Do not silently change the backend to avoid a credential checkpoint.
+- If a new chat or agent app should create dynamic presentations or reports, keep the Cloud default and use `artifactTool()` with the managed artifact renderers. Do not recreate the slide/report system as custom components merely because the request uses dummy data or credentials are not configured.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
 - If the task can start from a maintained integration, runtime, design-system, harness, or specialized example, read [references/examples.md](references/examples.md) and choose the closest exact path.
@@ -98,9 +100,9 @@ If “migrate” does not establish whether Cloud should replace the self-hosted
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
 ```
 
-For new agent applications, read [references/cloud/quickstart.md](references/cloud/quickstart.md) and let the interactive Cloud CLI flow own sign-in and setup. Use `--template openui-self-hosted` only when the user explicitly chooses an app-owned model/storage path or a verified requirement is not supported by Cloud.
+For new chat or agent applications, read [references/cloud/quickstart.md](references/cloud/quickstart.md) and let the interactive Cloud CLI flow own sign-in and setup. This remains the default for prototypes and dummy-data apps. Use `--template openui-self-hosted` only for an explicit self-hosting or app-owned infrastructure requirement, or when a required capability is verified as unsupported by Cloud.
 
-Never generate, print, echo, or invent placeholder API key values, and never ask the user to paste credentials into chat. Require credentials to be configured outside the agent through the CLI sign-in flow, a secret manager, or an untracked environment file.
+Never generate, print, echo, or invent placeholder API key values, and never ask the user to paste credentials into chat. When Cloud setup needs sign-in or a key, pause for the user to complete that step privately through the CLI flow, console, secret manager, or an untracked environment file, then continue. Missing credentials are not permission to switch to self-hosted or replace managed Cloud features with hand-built substitutes.
 
 ### Choose OpenUI Cloud or self-hosted
 

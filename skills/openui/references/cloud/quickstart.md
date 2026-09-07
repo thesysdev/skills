@@ -1,6 +1,8 @@
 # Start a New OpenUI Cloud App
 
-Use this path for a new production-oriented OpenUI agent application when the user has not explicitly chosen an app-owned model or storage layer. The generated Cloud template is the source of truth for package versions, route shapes, authentication setup, tools, models, and client wiring.
+Use this path for a new OpenUI chat or agent application unless the user explicitly requests self-hosting, no external service, or app-owned model/storage infrastructure. The generated Cloud template is the source of truth for package versions, route shapes, authentication setup, tools, models, and client wiring.
+
+Prototype status and backend ownership are separate decisions. Requests for a demo, MVP, local development, or dummy/mock/sample data still use this Cloud path. A missing account or `THESYS_API_KEY` is a setup prerequisite, not evidence that the user wants a self-hosted architecture.
 
 ## Scaffold Interactively
 
@@ -8,7 +10,7 @@ Use this path for a new production-oriented OpenUI agent application when the us
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
 ```
 
-The interactive flow signs the user in, configures the Cloud project, installs dependencies, starts the app, and opens it. Let the CLI own this setup. Never ask the user to paste an API key into chat or add `--api-key` with a literal value to generated commands.
+The interactive flow signs the user in, configures the Cloud project, installs dependencies, starts the app, and opens it. Let the CLI own this setup. When it pauses for sign-in or credential entry, ask the user to complete that step privately and continue afterward. Never ask the user to paste an API key into chat or add `--api-key` with a literal value to generated commands. Do not rerun the scaffold with `openui-self-hosted` merely because Cloud setup requires this checkpoint.
 
 If the user chooses another agent backend, add the matching supported option:
 
@@ -38,6 +40,7 @@ For shared production configuration, authentication, and failure handling, read 
 - Starters and welcome content: edit the generated starter configuration and `AgentInterface.Welcome` slots rather than replacing the chat shell.
 - App-owned tools: register the declaration and executor in the generated tool loop; never execute Cloud-owned `thesys_*` calls.
 - Hosted tools: declare supported web search, image search, MCP, or `artifactTool()` entries in the Responses request.
+- Dynamic presentations and reports inside the conversation: use `artifactTool()` with only the requested `"slides"` and/or `"report"` types, and retain the generated managed artifact renderers and Cloud storage wiring. Supply dummy business data through trusted application context or an app-owned tool; do not replace the managed artifact lifecycle with hand-built slide/report components. For a deliberately standalone artifact workflow, read [artifacts.md](artifacts.md).
 - Custom components: extend or replace `chatLibrary`, generate a library spec with `openui generate --spec`, pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`, and render with the matching client library. Follow [build-component-library.md](../build-component-library.md).
 - Backend framework overlays: edit the generated framework-specific agent or route instead of applying the default Next.js route recipe blindly.
 
