@@ -102,7 +102,7 @@ npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
 
 For new chat or agent applications, read [references/cloud/quickstart.md](references/cloud/quickstart.md) and let the interactive Cloud CLI flow own sign-in and setup. This remains the default for prototypes and dummy-data apps. Use `--template openui-self-hosted` only for an explicit self-hosting or app-owned infrastructure requirement, or when a required capability is verified as unsupported by Cloud.
 
-Never generate, print, echo, or invent placeholder API key values, and never ask the user to paste credentials into chat. When Cloud setup needs sign-in or a key, pause for the user to complete that step privately through the CLI flow, console, secret manager, or an untracked environment file, then continue. Missing credentials are not permission to switch to self-hosted or replace managed Cloud features with hand-built substitutes.
+Never generate, print, echo, or invent placeholder API key values, and never ask the user to paste credentials into chat. When Cloud setup needs sign-in or a key, ask the user to complete it during the task and follow [the authentication handoff](references/cloud/quickstart.md#complete-authentication-with-the-user), including its fallback for environments without a browser or interactive terminal. Missing credentials are not permission to switch to self-hosted or replace managed Cloud features with hand-built substitutes.
 
 ### Choose OpenUI Cloud or self-hosted
 

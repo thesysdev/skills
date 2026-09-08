@@ -10,7 +10,7 @@ Prototype status and backend ownership are separate decisions. Requests for a de
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
 ```
 
-The interactive flow signs the user in, configures the Cloud project, installs dependencies, starts the app, and opens it. Let the CLI own this setup. When it pauses for sign-in or credential entry, ask the user to complete that step privately and continue afterward. Never ask the user to paste an API key into chat or add `--api-key` with a literal value to generated commands. Do not rerun the scaffold with `openui-self-hosted` merely because Cloud setup requires this checkpoint.
+The interactive flow signs the user in, configures the Cloud project, installs dependencies, starts the app, and opens it. Let the CLI own this setup. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Cloud setup requires this checkpoint.
 
 If the user chooses another agent backend, add the matching supported option:
 
@@ -19,9 +19,24 @@ npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud -
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud --backend-framework vercel-ai-sdk
 ```
 
-For unattended execution, provide every required choice and pass `--no-interactive`. Use `--auth skip` only when authentication is intentionally handled outside the CLI and the Cloud credential is already configured in an approved secret store. Use `--no-skill` when the caller should not change its installed skills, and `--no-install` only when the agent must control package installation separately.
+For unattended execution, provide every required choice and pass `--no-interactive`. Use `--auth skip` when credentials are configured separately, the user chooses to defer authentication, or the execution environment cannot support interactive sign-in. This skips only the CLI authentication step; if credentials are missing, follow the handoff below. Use `--no-skill` when the caller should not change its installed skills, and `--no-install` only when the agent must control package installation separately.
 
 If install or build fails with `ERR_PNPM_IGNORED_BUILDS` for an expected native package such as `sharp` or `unrs-resolver`, run `pnpm approve-builds` or `pnpm approve-builds --all` in an environment where package build scripts are allowed, then retry the install/build.
+
+## Complete Authentication with the User
+
+Ask the user to complete authentication as soon as it is needed. An unavailable browser or interactive terminal changes the handoff method; it does not prevent asking the user to participate.
+
+- When supported, start the CLI browser sign-in flow, keep the process running, and wait for the user to finish in their browser.
+- Otherwise, provide the project's key-generation script after checking `package.json`, or the command below to run from the app directory. Alternatively, open or link the [Thesys keys console](https://console.thesys.dev/keys) and ask the user to generate a key and save it privately as `THESYS_API_KEY` in the app's untracked environment file or secret store. Never request the key in chat or include its value in commands or output.
+
+```bash
+npx @openuidev/cli@latest generate-api-key --file .env
+```
+
+Match `--file` to the app's environment file. The key must be configured in the environment running the app; signing in on the user's laptop does not configure a remote workspace automatically.
+
+Ask for confirmation when the user completes setup outside the running CLI flow. Continue independent implementation while waiting, then reload the app's environment and resume [runtime verification](#verify), including generating and reopening a requested presentation or report. Defer authentication to the final handoff only if the user chooses to defer it or a verified environment limitation prevents completion through these methods. In that case, report the limitation and which Cloud runtime checks remain unverified.
 
 ## Work from the Generated App
 
