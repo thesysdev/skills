@@ -81,7 +81,7 @@ const llm = fetchLLM({
   messageFormat: openAIMessageFormat,
 });
 
-export function CloudChat() {
+export function GatewayChat() {
   return <AgentInterface llm={llm} componentLibrary={chatLibrary} />;
 }
 ```

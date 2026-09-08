@@ -102,7 +102,7 @@ const llm = fetchLLM({
   messageFormat: openAIConversationMessageFormat,
 });
 
-export function CloudChat() {
+export function GatewayChat() {
   return <AgentInterface llm={llm} componentLibrary={chatLibrary} />;
 }
 ```

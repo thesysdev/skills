@@ -2,7 +2,7 @@
 
 Agent-ready guidance for building generative interfaces with [OpenUI](https://www.openui.com/). This repository contains one focused skill that helps AI coding assistants work with OpenUI Lang, the OpenUI runtimes, Agent Interface, and OpenUI Gateway.
 
-The current docs distinguish Gateway (model access and correction) from Observability (runtime monitoring). The hosted CLI template is still named `openui-cloud`; the skill's `references/cloud/` paths and existing Thesys SDK identifiers remain unchanged.
+The current docs distinguish Gateway (model access and correction) from Observability (runtime monitoring). Hosted-service guidance lives under `references/gateway/`. The CLI template remains `openui-cloud`, and existing Thesys SDK identifiers are unchanged.
 
 ## What the Skill Covers
 
@@ -37,14 +37,14 @@ Once installed, try prompts such as:
 | Resource | Purpose |
 | --- | --- |
 | [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
-| [`cloud/integration.md`](skills/openui/references/cloud/integration.md) | Shared Gateway routing, configuration, security, BYOK, compatibility, reliability, and verification |
-| [`cloud/quickstart.md`](skills/openui/references/cloud/quickstart.md) | Gateway-first scaffolding, generated-template workflow, and launch verification |
-| [`cloud/chat/api-selection.md`](skills/openui/references/cloud/chat/api-selection.md) | Selection between Responses and Chat Completions for conversational generation |
-| [`cloud/chat/responses.md`](skills/openui/references/cloud/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
-| [`cloud/chat/chat-completions.md`](skills/openui/references/cloud/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
-| [`cloud/chat/conversations.md`](skills/openui/references/cloud/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
-| [`cloud/artifacts.md`](skills/openui/references/cloud/artifacts.md) | Version-sensitive standalone slide/report contract, availability checkpoint, viewers, and application-owned persistence |
-| [`cloud/oss-migration.md`](skills/openui/references/cloud/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Gateway |
+| [`gateway/integration.md`](skills/openui/references/gateway/integration.md) | Shared Gateway routing, configuration, security, BYOK, compatibility, reliability, and verification |
+| [`gateway/quickstart.md`](skills/openui/references/gateway/quickstart.md) | Gateway-first scaffolding, generated-template workflow, and launch verification |
+| [`gateway/chat/api-selection.md`](skills/openui/references/gateway/chat/api-selection.md) | Selection between Responses and Chat Completions for conversational generation |
+| [`gateway/chat/responses.md`](skills/openui/references/gateway/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
+| [`gateway/chat/chat-completions.md`](skills/openui/references/gateway/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
+| [`gateway/chat/conversations.md`](skills/openui/references/gateway/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
+| [`gateway/artifacts.md`](skills/openui/references/gateway/artifacts.md) | Version-sensitive standalone slide/report contract, availability checkpoint, viewers, and application-owned persistence |
+| [`gateway/oss-migration.md`](skills/openui/references/gateway/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Gateway |
 | [`examples.md`](skills/openui/references/examples.md) | Complete first-party example catalog plus current existing-chat and runtime integration guides |
 | [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
 | [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |

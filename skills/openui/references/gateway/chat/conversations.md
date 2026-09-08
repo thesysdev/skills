@@ -89,7 +89,7 @@ In a React client module, use Gateway storage for thread listing, item reload, a
 import { AgentInterface } from "@openuidev/react-ui";
 import { useOpenuiCloudStorage } from "@openuidev/thesys";
 
-export function CloudAgent() {
+export function GatewayAgent() {
   const storage = useOpenuiCloudStorage({
     token: "/api/frontend-token",
     apiBaseUrl: "https://api.thesys.dev",
@@ -109,7 +109,7 @@ The application server mints a short-lived token with `POST https://api.thesys.d
 ```ts
 type FrontendToken = { token: string; expires_at: number };
 
-export async function mintCloudFrontendToken(userId: string): Promise<FrontendToken> {
+export async function mintGatewayFrontendToken(userId: string): Promise<FrontendToken> {
   const apiKey = process.env.THESYS_API_KEY;
   if (!apiKey) throw new Error("THESYS_API_KEY is not configured");
 
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const frontendToken = await mintCloudFrontendToken(userId);
+    const frontendToken = await mintGatewayFrontendToken(userId);
     return Response.json(frontendToken, {
       headers: { "Cache-Control": "private, no-store" },
     });

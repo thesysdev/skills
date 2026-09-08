@@ -1,6 +1,6 @@
-# Generate Standalone OpenUI Cloud Artifacts
+# Generate Standalone OpenUI Gateway Artifacts
 
-Read [the shared Gateway integration guide](integration.md) first. This reference preserves the specialized Artifact Chat Completions contract for standalone OpenUI Cloud slides/reports. It is separate from the Responses-versus-Chat-Completions choice for agent applications.
+Read [the shared Gateway integration guide](integration.md) first. This reference preserves the specialized Artifact Chat Completions contract for standalone OpenUI Gateway slides/reports. It is separate from the Responses-versus-Chat-Completions choice for agent applications.
 
 ## Check Current Availability
 
@@ -114,7 +114,7 @@ const edited = await artifactClient.chat.completions.create({
 });
 ```
 
-The response is a patch-mode OpenUI Lang program merged against the assistant-message base. Keep the artifact id and type consistent, load the authoritative prior program from application storage, and authorize access before calling Cloud. Do not trust a browser-supplied base program or artifact id when the server can load them from its own store.
+The response is a patch-mode OpenUI Lang program merged against the assistant-message base. Keep the artifact id and type consistent, load the authoritative prior program from application storage, and authorize access before calling Gateway. Do not trust a browser-supplied base program or artifact id when the server can load them from its own store.
 
 ## Preserve Application Ownership
 
@@ -125,7 +125,7 @@ The application owns standalone artifact state:
 - Bound prompt and previous-program sizes before forwarding them.
 - Forward abort signals and terminate streamed responses cleanly.
 - Do not log keys, sensitive prompts, or artifact programs unless the product's data policy explicitly permits it.
-- Do not describe a standalone artifact as stored in Cloud Conversations.
+- Do not describe a standalone artifact as stored in Gateway Conversations.
 
 The endpoint supports the managed `slides` and `report` types. Do not invent arbitrary `c1_artifact_type` values or route custom application artifacts through this contract.
 
@@ -137,7 +137,7 @@ The endpoint supports the managed `slides` and `report` types. Do not invent arb
 4. Stream a program and confirm progressive rendering receives the correct `isStreaming` state.
 5. Edit a stored artifact and confirm the authoritative prior program is sent as the assistant message with `is_edit: true`.
 6. Verify unauthorized users cannot load or edit another user's stored program or artifact id.
-7. Test missing configuration, invalid types, oversized inputs, empty output, Cloud failures, cancellation, and stream closure.
+7. Test missing configuration, invalid types, oversized inputs, empty output, Gateway failures, cancellation, and stream closure.
 8. Run the host formatter, typecheck, tests, and production build.
 
 ## First-Party References

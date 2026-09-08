@@ -117,8 +117,8 @@ Keep each backend internally consistent. Define two complete configurations rath
 
 ```text
 selfHosted = full-history transport + provider route + self-hosted storage + OSS library prompt
-cloudChatCompletions = full messages + Gateway Embed proxy + app storage/tools + Chat Completions adapters
-cloudResponses = selected Responses history model + Gateway proxy + matching storage + Responses adapter
+gatewayChatCompletions = full messages + Gateway Embed proxy + app storage/tools + Chat Completions adapters
+gatewayResponses = selected Responses history model + Gateway proxy + matching storage + Responses adapter
 ```
 
 Select the mode on the server or through trusted deployment configuration. Do not expose secrets or allow an untrusted browser value to choose arbitrary upstream credentials. Namespace storage and routes when necessary to avoid thread-id collisions.
