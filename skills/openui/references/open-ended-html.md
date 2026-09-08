@@ -28,7 +28,7 @@ Tell the model to:
 - omit Markdown fences;
 - escape newlines, quotes, and backslashes for the OpenUI Lang string.
 
-Keep one valid example in `promptOptions.examples`, then regenerate the checked-in system prompt.
+Keep one valid example in `promptOptions.examples`, then regenerate the prompt/spec according to the host's build convention. Current first-party examples generate these files locally and ignore them in Git; do not commit generated output automatically.
 
 ## Security
 

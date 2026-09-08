@@ -1,8 +1,8 @@
-# Integrate OpenUI Cloud with Chat Completions
+# Integrate OpenUI Gateway with Chat Completions
 
-Read [the shared Cloud integration guide](../integration.md) first. Use this runbook when an existing application calls `chat.completions.create()`, owns a `messages` array, or should retain app-owned conversation persistence and function-tool execution.
+Read [the shared Gateway integration guide](../integration.md) first. Use this runbook when an existing application calls `chat.completions.create()`, owns a `messages` array, or should retain app-owned conversation persistence and function-tool execution.
 
-The central invariant is protocol preservation: moving model access or managed UI generation to OpenUI Cloud does not require moving the application to Responses or Cloud Conversations.
+The central invariant is protocol preservation: moving model access or managed UI generation to OpenUI Gateway does not require moving the application to Responses or Gateway Conversations.
 
 ## Supported Shapes
 
@@ -10,8 +10,8 @@ The Embed Chat Completions endpoint supports three distinct modes:
 
 | Mode | System prompt | Output owner |
 | --- | --- | --- |
-| Managed generative UI | `generateSystemPrompt({ cloud: true })` | Cloud assembles the managed component prompt and validates/repairs OpenUI Lang |
-| Plain text passthrough | Existing application system/developer messages; omit the managed prompt sentinel | Cloud routes the selected model and returns text |
+| Managed generative UI | `generateSystemPrompt({ cloud: true })` | Gateway assembles the managed component prompt and validates/repairs OpenUI Lang |
+| Plain text passthrough | Existing application system/developer messages; omit the managed prompt sentinel | Gateway routes the selected model and returns text |
 | Application-owned generative UI | `generateSystemPrompt({ library, promptOptions })` without `cloud: true` | Application owns the full prompt, validation, correction, and renderer contract |
 
 Do not infer the mode from the endpoint alone. Preserve the existing output mode unless the user asks to change it.
@@ -22,10 +22,10 @@ Chat Completions is message-based. Keep the application's existing persistence a
 
 - Do not send only the latest message.
 - Do not add `conversation`, `previous_response_id`, or `store: true` Responses semantics.
-- Do not replace the host database or `restStorage` with `useOpenuiCloudStorage()` merely to use the Cloud generation endpoint.
-- Preserve existing compaction, truncation, tool-result, and attachment behavior after checking Cloud/model compatibility.
+- Do not replace the host database or `restStorage` with `useOpenuiCloudStorage()` merely to use the Gateway generation endpoint.
+- Preserve existing compaction, truncation, tool-result, and attachment behavior after checking Gateway/model compatibility.
 
-If the product explicitly wants Cloud-managed persistent threads, that is a protocol and storage migration. Read [responses.md](responses.md) and [conversations.md](conversations.md), then treat the migration as a separate user-visible change.
+If the product wants server-side history injection via `conversation`, choose Responses and treat that as a separate protocol/storage migration. A framework can also manage Gateway storage independently of its Chat Completions model call; preserve an already-configured path and verify its writes and reloads. Do not infer this behavior merely from a storage hook being present.
 
 ## Configure Managed Generative UI
 
@@ -88,6 +88,8 @@ export function CloudChat() {
 
 Use `openAIReadableStreamAdapter()` instead when the server returns the OpenAI SDK stream through `.toReadableStream()`. Do not pair a Chat Completions stream with `openAIResponsesAdapter()` or `openAIConversationMessageFormat`.
 
+These pairs apply to direct Chat Completions streams. If Vercel AI SDK or another framework wraps the model call, preserve its UIMessage/AG-UI/native transport and matching adapter; see [the scaffold contract table](../quickstart.md#work-from-the-generated-app).
+
 If the application already owns its chat UI, keep it and render only generated OpenUI Lang with the appropriate `Renderer`; adopting `AgentInterface` is a separate choice.
 
 ## Keep Function Tools in the Application
@@ -105,7 +107,7 @@ Do not attach Responses-only hosted `web_search`, `image_search`, remote MCP, or
 
 ## Keep Plain Text and Application-Owned UI Intact
 
-For plain text passthrough, retain the existing trusted prompt and omit `generateSystemPrompt({ cloud: true })`. The Cloud endpoint then acts as the compatible model gateway.
+For plain text passthrough, retain the existing trusted prompt and omit `generateSystemPrompt({ cloud: true })`. The Gateway endpoint then acts as the compatible model gateway.
 
 For application-owned generative UI, compile the complete prompt from the runtime library spec without `cloud: true`:
 
@@ -116,13 +118,13 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-In that mode the application—not Cloud's managed component path—owns prompt assembly, output validation/correction, and the renderer contract. Do not describe it as managed Cloud UI validation.
+In that mode the application—not Gateway's managed component path—owns prompt assembly, output validation/correction, and the renderer contract. Do not describe it as managed Gateway UI validation.
 
 ## Adapt the Server Route
 
 Preserve the host's framework and existing route contract. The route should:
 
-- Authenticate and rate-limit before calling Cloud.
+- Authenticate and rate-limit before calling Gateway.
 - Bound and validate the full messages array rather than casting `req.json()` directly.
 - Allow only roles and content parts the product actually supports, including complete assistant/tool-call pairs.
 - Preserve the existing storage owner and load authoritative history server-side when possible instead of trusting arbitrary browser-supplied history.
@@ -132,18 +134,18 @@ Preserve the host's framework and existing route contract. The route should:
 
 ## Verify
 
-1. Run the shared checks in [the Cloud integration guide](../integration.md#shared-verification).
+1. Run the shared checks in [the Gateway integration guide](../integration.md#shared-verification).
 2. Confirm the request uses `/v1/embed/chat/completions` and the expected `chat.completions.create()` shape.
 3. Confirm every turn includes the intended history and exactly one managed system prompt when managed UI is enabled.
 4. Confirm `openAIMessageFormat` is paired with `openAIAdapter()` or `openAIReadableStreamAdapter()` as required by the returned stream.
-5. Reload a persisted thread and confirm the application's existing storage—not Cloud Conversations—restores it.
+5. Reload a persisted thread and confirm its intended storage owner restores it; separately verify any explicit framework-to-Gateway storage integration.
 6. Exercise a multi-step function tool and confirm assistant tool calls plus every tool result remain in history.
 7. Confirm Responses-only hosted tool declarations are absent.
 8. For generative UI, run representative prompts repeatedly and inspect both stream rendering and settled parser errors.
 
 ## First-Party References
 
-- `https://www.openui.com/docs/openui-cloud/api/chat-completions`
-- `https://www.openui.com/docs/openui-cloud/api/overview`
-- `https://www.openui.com/docs/openui-cloud/build/component-library`
+- `https://www.openui.com/docs/gateway/api/chat-completions`
+- `https://www.openui.com/docs/gateway`
+- `https://www.openui.com/docs/gateway/generate-openui-lang`
 - `https://www.openui.com/docs/agent/reference/adapters-and-formats`

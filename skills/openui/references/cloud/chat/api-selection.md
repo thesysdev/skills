@@ -1,6 +1,6 @@
 # Choose a Chat Generation API
 
-Use this reference only to choose the generation protocol and state model for an interactive chat or agent application. Shared configuration, security, compatibility, and verification requirements live in [the Cloud integration guide](../integration.md).
+Use this reference only to choose the generation protocol and state model for an interactive chat or agent application. Shared configuration, security, compatibility, and verification requirements live in [the Gateway integration guide](../integration.md).
 
 ## Choose the Generation Protocol
 
@@ -21,25 +21,27 @@ Responses supports three history patterns:
 - A `previous_response_id` chain stored without a named conversation.
 - A persistent named thread using `conversation` plus `store: true` and the Conversations API.
 
-Read [conversations.md](conversations.md) only for the third pattern, including conversation/item CRUD, browser thread storage, frontend tokens, and `user_id`/`app_id` isolation. Conversations is a companion to Responses, not another generation protocol.
+Read [conversations.md](conversations.md) for the third pattern or a separately configured framework storage integration needing conversation/item CRUD, frontend tokens, or `user_id`/`app_id` isolation. Conversations is a storage companion, not another generation protocol.
 
-Embed Chat Completions always uses application-owned `messages` history. Do not combine it with the Conversations API.
+Embed Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [framework scaffold contracts](../quickstart.md#work-from-the-generated-app).
 
 ## Match the Client Contract
 
 | Server response | Agent Interface stream adapter | Message format |
 | --- | --- | --- |
-| Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` for Cloud conversations; verify the installed format for other Responses history modes |
+| Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` for Gateway conversations; verify the installed format for other Responses history modes |
 | Raw Chat Completions `data:` SSE | `openAIAdapter()` | `openAIMessageFormat` |
 | OpenAI SDK Chat Completions `.toReadableStream()` | `openAIReadableStreamAdapter()` | `openAIMessageFormat` |
 
 For Responses with `conversation: threadId` and `store: true`, send only the latest user turn. Do not also resend full history. For Chat Completions, retain the complete relevant `messages` array. Preserve the upstream event shape when proxying either stream.
 
+This table covers direct provider-stream proxies. A framework may instead return a UIMessage, LangGraph, AG-UI, or Eve stream; select the browser adapter from that actual stream, not from the model API hidden behind the framework.
+
 ## Choose the Prompt Mode
 
 Use `generateSystemPrompt()` from `@openuidev/lang-core` for current prompt compilation.
 
-For managed Cloud generative UI:
+For managed Gateway generative UI:
 
 - Pass `{ cloud: true }`.
 - Responses: put the generated prompt in `instructions`.
@@ -55,14 +57,14 @@ Read [build-component-library.md](../../build-component-library.md) before defin
 
 ## Keep Standalone Artifacts Separate
 
-Artifact Chat Completions is a specialized endpoint for standalone slide and report programs. It is not a conversational generation protocol and does not belong in the Responses-versus-Chat-Completions decision. Read [artifacts.md](../artifacts.md) for that workflow.
+Artifact Chat Completions is a specialized, version-sensitive contract for standalone slide and report programs. Its former docs were removed from the live site; read [artifacts.md](../artifacts.md) and verify current availability before new integration work. It is not a peer conversational generation protocol.
 
 When an artifact should live inside an agent conversation, use Responses with `artifactTool()` instead.
 
 ## First-Party References
 
-- `https://www.openui.com/docs/openui-cloud/api/overview`
-- `https://www.openui.com/docs/openui-cloud/api/responses`
-- `https://www.openui.com/docs/openui-cloud/api/chat-completions`
-- `https://www.openui.com/docs/openui-cloud/api/conversations`
-- `https://www.openui.com/docs/openui-cloud/build/component-library`
+- `https://www.openui.com/docs/gateway`
+- `https://www.openui.com/docs/gateway/api/responses`
+- `https://www.openui.com/docs/gateway/api/chat-completions`
+- `https://www.openui.com/docs/gateway/api/conversations`
+- `https://www.openui.com/docs/gateway/generate-openui-lang`

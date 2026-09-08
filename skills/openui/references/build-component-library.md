@@ -4,7 +4,7 @@ Read this reference completely when defining, extending, migrating, or validatin
 
 ## Choose the Smallest Library Change
 
-- Use `chatLibrary` from `@openuidev/thesys` for the managed Cloud chat component set.
+- Use `chatLibrary` from `@openuidev/thesys` for the managed Gateway chat component set.
 - Use `openuiLibrary` or `openuiChatLibrary` from `@openuidev/react-ui` for the built-in open-source React libraries.
 - Add domain-specific components when the built-in set cannot express the application's objects or actions.
 - Build a custom library when the application must use its own design system, needs a focused domain vocabulary, or targets another supported runtime.
@@ -118,7 +118,7 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-For managed OpenUI Cloud generation, add `cloud: true` and pass the same serialized library:
+For managed OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
 
 ```ts
 const managedPrompt = generateSystemPrompt({
@@ -132,7 +132,7 @@ const managedPrompt = generateSystemPrompt({
 - Responses API: pass the result as `instructions`.
 - Embed Chat Completions: pass the result as the `role: "system"` message content.
 
-`promptOptions` is valid on the managed Cloud path only alongside a custom `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
+`promptOptions` is valid on the managed Gateway path only alongside a custom `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
 
 ## Connect the Renderer
 
@@ -148,7 +148,7 @@ For renderer-only surfaces:
 <Renderer library={appLibrary} response={response} isStreaming={isStreaming} />
 ```
 
-Do not combine the built-in Cloud prompt with a custom renderer library, or a stale generated spec with a newer runtime library. Unknown components, incorrect positional arguments, and blank or partial renders often indicate this mismatch.
+Do not combine the built-in Gateway prompt with a custom renderer library, or a stale generated spec with a newer runtime library. Unknown components, incorrect positional arguments, and blank or partial renders often indicate this mismatch.
 
 ## Verify
 
@@ -165,6 +165,6 @@ Do not combine the built-in Cloud prompt with a custom renderer library, or a st
 - `https://www.openui.com/docs/openui-lang/defining-components`
 - `https://www.openui.com/docs/openui-lang/system-prompts`
 - `https://www.openui.com/docs/openui-lang/reliability`
-- `https://www.openui.com/docs/openui-cloud/build/component-library`
+- `https://www.openui.com/docs/gateway/generate-openui-lang`
 - `https://www.openui.com/docs/api-reference/cli#openui-generate`
 - `https://github.com/thesysdev/openui/tree/main/examples/design-systems`

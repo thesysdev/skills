@@ -136,7 +136,7 @@ export function OpenUIThemeRoot({
 }
 ```
 
-Only pass `"light"` or `"dark"`. `ThemeProvider` does not accept `"system"` and `useTheme()` does not return a setter. Resolve system preference, user choice, and persistence in the app's existing theme manager, then pass the resolved mode. Do not import internal source files such as `useSystemThemeMode`; use only installed public exports.
+Only pass `"light"` or `"dark"`. `ThemeProvider` does not accept `"system"` and `useTheme()` does not return a setter. Resolve system preference, user choice, and persistence in the app's existing theme manager, then pass the resolved mode. Current templates import `useSystemThemeMode` from the public `@openuidev/react-ui` entrypoint; use it only when exported by the installed version, never by reaching into internal source files.
 
 In Next.js App Router, place the provider and any browser theme logic behind a client-component boundary. Keep the server and initial client mode consistent enough to avoid a hydration flash; follow the host app's established theme bootstrap instead of adding a second preference store.
 

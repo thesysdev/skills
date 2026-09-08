@@ -1,12 +1,12 @@
-# Integrate OpenUI Cloud Conversations
+# Integrate OpenUI Gateway Conversations
 
-Read [the shared Cloud integration guide](../integration.md) first. Use this reference when an application needs persistent named Responses threads, conversation-item access, browser thread storage, scoped frontend tokens, or multi-user/multi-app isolation.
+Read [the shared Gateway integration guide](../integration.md) first. Use this reference when an application needs persistent named Responses threads, conversation-item access, browser thread storage, scoped frontend tokens, or multi-user/multi-app isolation.
 
-Conversations is a storage and identity plane, not a generation protocol. It integrates with the Responses API. Embed Chat Completions applications keep and resend their own `messages` history; do not add the Conversations API to them without an explicit protocol and storage migration.
+Conversations is a storage and identity plane, not a generation protocol. Responses can read/append its history automatically. Embed Chat Completions still requires application/framework-supplied `messages`; do not add Responses state parameters to it. A framework may independently use Gateway storage, but that requires a verified write/reload integration, not just a model endpoint change.
 
 ## Choose the State Model First
 
-Use Conversations only for the named-thread Responses pattern:
+For automatic history injection and turn persistence, use the named-thread Responses pattern:
 
 ```ts
 const response = await embedClient.responses.create({
@@ -19,7 +19,7 @@ const response = await embedClient.responses.create({
 });
 ```
 
-The application sends only the new turn because Cloud supplies the earlier items from the named conversation. Do not also resend full history.
+The application sends only the new turn because Gateway supplies the earlier items from the named conversation. Do not also resend full history.
 
 Responses can instead use application-owned full `input` history or a `previous_response_id` chain. Those modes do not require a Conversations client, frontend-token route, `useOpenuiCloudStorage()`, or conversation ownership checks. Read [responses.md](responses.md) for all three generation patterns.
 
@@ -81,7 +81,7 @@ Prefer the installed OpenAI SDK methods for these operations. Verify current pag
 
 ## Connect Agent Interface Storage
 
-In a React client module, use Cloud storage for thread listing, item reload, and managed artifact state:
+In a React client module, use Gateway storage for thread listing, item reload, and managed artifact state:
 
 ```tsx
 "use client";
@@ -100,7 +100,7 @@ export function CloudAgent() {
 }
 ```
 
-Keep the `@openuidev/thesys` import in the host framework's client boundary. Preserve the product's existing shell, theme, slots, routing, and authentication guard. Adding Cloud storage does not require replacing a working chat UI or component library.
+Keep the `@openuidev/thesys` import in the host framework's client boundary. Preserve the product's existing shell, theme, slots, routing, and authentication guard. Adding Gateway storage does not require replacing a working chat UI or component library.
 
 ## Mint Frontend Tokens
 
@@ -127,7 +127,7 @@ export async function mintCloudFrontendToken(userId: string): Promise<FrontendTo
   });
 
   if (!response.ok) {
-    throw new Error(`Cloud frontend-token mint failed with ${response.status}`);
+    throw new Error(`Gateway frontend-token mint failed with ${response.status}`);
   }
 
   return (await response.json()) as FrontendToken;
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch (error) {
-    console.error("[frontend-token] Cloud rejected token mint", error);
+    console.error("[frontend-token] Gateway rejected token mint", error);
     return Response.json(
       { error: { message: "Unable to mint frontend token" } },
       { status: 502 },
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
 }
 ```
 
-The browser storage client sends the token as `x-thesys-frontend-token` and refreshes it through the configured token route. The server API key must never reach browser code, logs, or generated output.
+For direct browser Conversations calls, the current [authentication guide](https://www.openui.com/docs/gateway/authentication) documents `Authorization: Bearer <frontend-token>`. The published `useOpenuiCloudStorage()` implementation inspected for this skill instead uses `x-thesys-frontend-token` and refreshes through its configured POST token route. Let the installed helper own its header/refresh contract; do not blindly rewrite it to match a raw-fetch example. Verify the accepted endpoint contract before implementing custom browser calls. Neither form permits exposing the server API key.
 
 ## Scope Users and Apps
 
@@ -177,7 +177,7 @@ The browser token protects direct storage calls, but the application `/api/chat`
 Use one verified design:
 
 1. **Host-owned mapping:** when the host has a trusted creation or binding path, transactionally store `{ conversationId, ownerUserId, appId? }` and check it before generation.
-2. **Documented Cloud membership check:** only when the installed package, current template, or current first-party documentation exposes the exact endpoint, credential, response shape, and pagination behavior for the scoped user.
+2. **Documented Gateway membership check:** only when the installed package, current template, or current first-party documentation exposes the exact endpoint, credential, response shape, and pagination behavior for the scoped user.
 
 Do not add a browser route that merely records ownership claimed by the browser. If neither design can establish ownership, keep the production generation route disabled and report the blocker.
 
@@ -193,29 +193,30 @@ Read [responses.md](responses.md) for request construction, adapters, tools, art
 
 ## Migrate Storage Deliberately
 
-Adding a Cloud generation endpoint does not authorize replacing the host database. When moving an existing application to Conversations:
+Adding a Gateway generation endpoint does not authorize replacing the host database. When moving an existing application to Conversations:
 
-1. Decide whether Cloud becomes the only durable store or runs beside the existing store during rollout.
+1. Decide whether Gateway becomes the only durable store or runs beside the existing store during rollout.
 2. Keep historical data accessible in its existing store unless a current first-party import API has been verified.
 3. Preserve old thread identifiers or maintain an explicit mapping; do not imply that records were imported when they were not.
 4. Test user and app isolation before removing the prior storage route.
 
 ## Verify
 
-1. Confirm Chat Completions routes do not use the Conversations API.
+1. Confirm Chat Completions calls do not use Responses history parameters; verify any separately configured framework storage integration explicitly.
 2. Confirm named Responses calls send only the new turn with `conversation` and `store: true`.
 3. Confirm the frontend-token route derives identity from the authenticated session, rate-limits requests, and never exposes `THESYS_API_KEY`.
 4. Confirm the browser uses the scoped token and the server generation route separately verifies `threadId` ownership.
 5. Create, retrieve, update, and delete a test conversation; list its items with pagination and verify their order.
 6. Reload `AgentInterface` and confirm the intended threads, items, and artifacts return.
 7. Test two users and, when applicable, two `app_id` values for disjoint thread lists and forbidden cross-user generation.
-8. Test token expiry/refresh, missing configuration, Cloud failures, and logged-out calls.
+8. Test token expiry/refresh, missing configuration, Gateway failures, and logged-out calls.
 9. Run the host formatter, typecheck, tests, and production build.
 
 ## First-Party References
 
-- `https://www.openui.com/docs/openui-cloud/api/conversations`
-- `https://www.openui.com/docs/openui-cloud/api/responses`
-- `https://www.openui.com/docs/openui-cloud/api/overview`
-- `https://www.openui.com/docs/openui-cloud/how-it-works`
+- `https://www.openui.com/docs/gateway/api/conversations`
+- `https://www.openui.com/docs/gateway/api/responses`
+- `https://www.openui.com/docs/gateway`
+- `https://www.openui.com/docs/gateway/authentication`
+- `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/frontend-token/route.ts`
 - `https://www.openui.com/docs/agent/reference/agentinterface-props`
