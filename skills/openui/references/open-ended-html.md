@@ -2,7 +2,7 @@
 
 Use this pattern when the user wants full generative UI, generated mini-apps, raw HTML, or a sandboxed iframe rather than a fixed component catalog.
 
-The canonical implementation is [`examples/html-artifact`](https://github.com/thesysdev/openui/tree/main/examples/html-artifact).
+The canonical implementation is [`examples/miscellaneous/html-artifact`](https://github.com/thesysdev/openui/tree/main/examples/miscellaneous/html-artifact).
 
 ## Pattern
 
@@ -28,7 +28,7 @@ Tell the model to:
 - omit Markdown fences;
 - escape newlines, quotes, and backslashes for the OpenUI Lang string.
 
-Keep one valid example in `promptOptions.examples`, then regenerate the checked-in system prompt.
+Keep one valid example in `promptOptions.examples`, then regenerate the prompt/spec according to the host's build convention. Current first-party examples generate these files locally and ignore them in Git; do not commit generated output automatically.
 
 ## Security
 
