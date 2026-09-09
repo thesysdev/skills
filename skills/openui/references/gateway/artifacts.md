@@ -1,10 +1,6 @@
 # Generate Standalone OpenUI Gateway Artifacts
 
-Read [the shared Gateway integration guide](integration.md) first. This reference preserves the specialized Artifact Chat Completions contract for standalone OpenUI Gateway slides/reports. It is separate from the Responses-versus-Chat-Completions choice for agent applications.
-
-## Source and Compatibility
-
-The examples reference the [first-party artifact API guide before the docs reorganization](https://github.com/thesysdev/openui/blob/bd22ca51c606a3a2ba8b8e72d3e03a16e6a18747/docs/content/docs/openui-cloud/api/artifacts.mdx). Its old URL now redirects to the Gateway introduction; this is a documentation change, not an API deprecation notice. Check endpoint, model, and SDK compatibility for the target app, and verify generation/editing before claiming runtime support. Preserve working managed artifacts rather than rebuilding them because a docs page moved.
+Read [the shared Gateway integration guide](integration.md) first. This bundled reference includes the client setup, generation, rendering, streaming, and editing examples for standalone OpenUI Gateway slides/reports. Use the snippets below as the implementation guide; fetching an external guide or waiting for a documentation update is not required. Adapt them to the target application's installed SDK versions and verify generation/editing before claiming runtime support.
 
 ## Choose the Artifact Lifecycle
 
@@ -18,7 +14,7 @@ Do not use the standalone artifact endpoint as an Agent Interface conversation s
 
 ## Configure the Client
 
-Keep `THESYS_API_KEY` on the application server and configure the stock OpenAI SDK for the artifact base URL:
+Install `openai` for server requests and `@openuidev/thesys` for the React viewers using the application's package manager. Create an API key in the [Thesys console](https://console.thesys.dev/keys), following the [authentication handoff](quickstart.md#complete-authentication-with-the-user) if user action is needed. Keep `THESYS_API_KEY` on the application server and configure the stock OpenAI SDK for the artifact base URL:
 
 ```ts
 import OpenAI from "openai";
@@ -36,6 +32,8 @@ POST https://api.thesys.dev/v1/artifact/chat/completions
 ```
 
 Use a current `{provider}/{model}` id from trusted server configuration. Preserve the host's model allowlist rather than accepting arbitrary browser-supplied model ids.
+
+Call this client from an authenticated application server route, not from browser code. In the examples, `model` is the allowed model id and `artifactId` is a stable application-owned id for the artifact being generated or edited.
 
 ## Generate an Artifact
 
@@ -61,20 +59,22 @@ if (!program) throw new Error("Artifact generation returned no program");
 
 `metadata.thesys` is a stringified object, not a nested metadata object. Validate the artifact id and type before constructing it.
 
-The response content is a validated OpenUI Lang program rooted at `SlideShow` for slides or `ReportView` for reports. Set `stream: true` to receive the program progressively, preserve the upstream Chat Completions event shape, and pass `isStreaming` to the viewer while accumulating content.
+The response content is a validated OpenUI Lang program rooted at `SlideShow` for slides or `ReportView` for reports. Use `c1_artifact_type: "report"` to generate a report with the same request shape. For progressive output, follow [Stream an Artifact](#stream-an-artifact).
 
 ## Render the Program
 
 Render the returned program with the matching managed viewer:
 
 ```tsx
+"use client";
+
 import { Presentation, Report } from "@openuidev/thesys";
 import "@openuidev/thesys/styles.css";
 
 export function Artifact({
   kind,
   program,
-  isStreaming,
+  isStreaming = false,
 }: {
   kind: "slides" | "report";
   program: string;
@@ -89,6 +89,32 @@ export function Artifact({
 ```
 
 Keep `@openuidev/thesys` imports inside the host framework's client boundary and import its stylesheet once. Preserve the product's loading, error, routing, and authorization behavior around the viewer.
+
+## Stream an Artifact
+
+Use `stream: true` to generate a new artifact progressively. This example generates a report; `artifactId` identifies that report. Accumulate the content deltas in order on the server:
+
+```ts
+const stream = await artifactClient.chat.completions.create({
+  model,
+  messages: [{ role: "user", content: "Create a report on Q4 results." }],
+  metadata: {
+    thesys: JSON.stringify({
+      id: artifactId,
+      c1_artifact_type: "report",
+    }),
+  },
+  stream: true,
+});
+
+let program = "";
+for await (const chunk of stream) {
+  program += chunk.choices[0]?.delta?.content ?? "";
+  // Forward the accumulated program to your application's viewer.
+}
+```
+
+Forward updates from the server route to the browser using the application's streaming transport. If proxying raw Chat Completions events, preserve their shape and accumulate content in the browser instead; do not confuse those events with the accumulated program string. Pass the accumulated program as the viewer's `response`, keep `isStreaming={true}` while receiving updates, and set it to `false` on completion or failure. Use `Presentation` for `"slides"` and `Report` for `"report"`. Preserve cancellation and error handling; persist the complete program only after successful generation.
 
 ## Edit an Artifact
 
@@ -112,7 +138,7 @@ const edited = await artifactClient.chat.completions.create({
 });
 ```
 
-The response is a patch-mode OpenUI Lang program merged against the assistant-message base. Keep the artifact id and type consistent, load the authoritative prior program from application storage, and authorize access before calling Gateway. Do not trust a browser-supplied base program or artifact id when the server can load them from its own store.
+The response is a patch-mode OpenUI Lang program merged against the assistant-message base. Keep the artifact id and type consistent, load `previousProgram` from authoritative application storage, and authorize access before calling Gateway. Interpret the edit in the context of that complete base program, then persist the resulting complete program for subsequent views and edits. Do not trust a browser-supplied base program or artifact id when the server can load them from its own store.
 
 ## Preserve Application Ownership
 
@@ -138,9 +164,10 @@ The endpoint supports the managed `slides` and `report` types. Do not invent arb
 7. Test missing configuration, invalid types, oversized inputs, empty output, Gateway failures, cancellation, and stream closure.
 8. Run the host formatter, typecheck, tests, and production build.
 
-## First-Party References
+## Supplementary First-Party References
 
-- Historical API contract: `https://github.com/thesysdev/openui/blob/bd22ca51c606a3a2ba8b8e72d3e03a16e6a18747/docs/content/docs/openui-cloud/api/artifacts.mdx`
+The standalone implementation examples are included above. These sources cover related in-conversation workflows and do not replace the standalone instructions:
+
 - `https://www.openui.com/docs/gateway/api/responses`
 - Current in-conversation implementation: `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/chat/route.ts`
 - Current managed renderer wiring: `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/components/cloud-chat.tsx`
