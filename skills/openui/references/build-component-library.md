@@ -69,7 +69,6 @@ The `root` must name a component in the library. Give the library a stable optio
 - Keep the library focused on components the model should generate. Do not expose an entire product design system by default.
 - Choose a predictable root that can render before its referenced children arrive, then keep `root = ...` first in generated examples for progressive streaming.
 - Use `componentGroups` and short group `notes` when they materially help the model choose related components or avoid an invalid combination.
-- Use `tagSchemaId()` for reusable non-component helper schemas when the generated signature would otherwise degrade to `any`.
 - Add one or two valid `PromptOptions.examples` for unusual component shapes. Do not compensate for ambiguous schemas with a long universal ruleset.
 
 Inspect the generated prompt after schema changes. A TypeScript-valid library can still produce ambiguous or unnecessarily large model instructions.
