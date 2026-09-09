@@ -10,7 +10,7 @@ Read this reference first for shared OpenUI Gateway integration requirements. Ga
 | New Gateway agent scaffold | [Gateway quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Gateway | [OSS migration](oss-migration.md) |
 
-Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol. The version-sensitive Artifact Chat Completions contract is outside this chat protocol choice; read its availability checkpoint before new standalone work.
+Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol. Artifact Chat Completions is a separate workload for standalone slides and reports.
 
 ## Preserve Existing Architecture
 
@@ -37,7 +37,7 @@ All Gateway generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
 - If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward. Do not infer a self-hosted architecture or rebuild a managed feature to bypass credentials.
-- Use `/v1/embed` for model generation and `/v1` for server-side Conversations access. The separate `/v1/artifact` contract requires the availability check in [artifacts.md](artifacts.md#check-current-availability). Do not reuse one base URL for every API.
+- Use `/v1/embed` for model generation, `/v1` for server-side Conversations access, and `/v1/artifact` for standalone artifacts following [artifacts.md](artifacts.md). Do not reuse one base URL for every API.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.
 - Validate request content type, byte size, message/item shapes, and role allowlists before forwarding.

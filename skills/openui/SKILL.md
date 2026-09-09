@@ -58,7 +58,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the user wants to define, extend, migrate, or validate a component library, read [references/build-component-library.md](references/build-component-library.md) completely before editing.
 - For any OpenUI Gateway integration, read [references/gateway/integration.md](references/gateway/integration.md) for the shared configuration, security, compatibility, and verification requirements.
 - If the task requires choosing a Gateway API for conversational generation, read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md). Responses and Chat Completions are the two choices; Conversations is an optional Responses persistence layer.
-- If the user wants standalone managed slide/report generation or editing, read the version-sensitive contract in [references/gateway/artifacts.md](references/gateway/artifacts.md); its former API docs were removed from the current site.
+- If the user wants standalone managed slide/report generation or editing, read [references/gateway/artifacts.md](references/gateway/artifacts.md) for generation, viewers, explicit edits, and application-owned persistence.
 - If the task involves Gateway-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md).
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Gateway validation, fallbacks, and production monitoring, also read [Reliability and observability](references/gateway/integration.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
@@ -76,9 +76,9 @@ OpenUI Gateway has two APIs for conversational generation: Responses and Embed C
 | Managed models or BYOK | Gateway generation endpoints; read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials |
 | Built-in or custom component libraries | Responses and Embed Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
 | Gateway-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [gateway/chat/conversations.md](references/gateway/chat/conversations.md) |
-| Hosted web search, image search, remote MCP, and artifacts inside agent turns | Responses |
-| App-owned function tools | Responses or Embed Chat Completions, with different tool-result protocols and application-owned execution loops |
-| Standalone slide/report generation and explicit program-based edits | Version-sensitive Artifact Chat Completions contract; verify availability using [gateway/artifacts.md](references/gateway/artifacts.md) |
+| Hosted web search, image search, remote MCP, and artifacts inside agent turns | [Responses hosted tools and artifacts](references/gateway/chat/responses.md#add-hosted-tools-and-artifacts) |
+| App-owned function tools | Follow the [Responses tool loop](references/gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions tool loop](references/gateway/chat/chat-completions.md#keep-function-tools-in-the-application); the application executes tools using the selected protocol |
+| Standalone slide/report generation and explicit program-based edits | [Artifact Chat Completions](references/gateway/artifacts.md), with application-owned persistence |
 | Responsive managed UI | `AgentInterface` plus `chatLibrary`, with the adapter and message format selected for the generation protocol |
 
 ## Route Gateway Integration and Migration Tasks

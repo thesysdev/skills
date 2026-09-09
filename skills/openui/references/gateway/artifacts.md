@@ -2,11 +2,9 @@
 
 Read [the shared Gateway integration guide](integration.md) first. This reference preserves the specialized Artifact Chat Completions contract for standalone OpenUI Gateway slides/reports. It is separate from the Responses-versus-Chat-Completions choice for agent applications.
 
-## Check Current Availability
+## Source and Compatibility
 
-The docs reorganization removed the standalone artifact API page; its old URL now redirects to the Gateway introduction. The examples below come from the [last pre-reorganization first-party guide](https://github.com/thesysdev/openui/blob/bd22ca51c606a3a2ba8b8e72d3e03a16e6a18747/docs/content/docs/openui-cloud/api/artifacts.mdx), not a current endpoint guarantee. Before a new integration, verify endpoint availability, request/edit semantics, and model support through current first-party service guidance or an authorized runtime check. If that cannot be established, report the gap rather than presenting this historical recipe as verified.
-
-The published `@openuidev/thesys` package still exports `Presentation` and `Report`, and the default `openui-cloud` template still uses `artifactTool()` with managed renderers. Those verify the viewer and in-conversation paths, not the standalone endpoint. Preserve an existing working artifact integration; do not infer deprecation or replace it with hand-built slides merely because a docs page moved.
+The examples reference the [first-party artifact API guide before the docs reorganization](https://github.com/thesysdev/openui/blob/bd22ca51c606a3a2ba8b8e72d3e03a16e6a18747/docs/content/docs/openui-cloud/api/artifacts.mdx). Its old URL now redirects to the Gateway introduction; this is a documentation change, not an API deprecation notice. Check endpoint, model, and SDK compatibility for the target app, and verify generation/editing before claiming runtime support. Preserve working managed artifacts rather than rebuilding them because a docs page moved.
 
 ## Choose the Artifact Lifecycle
 

@@ -15,13 +15,17 @@ Responses is the recommended starting point for new agent applications, not a ma
 
 ## Choose the State Model Separately
 
-Responses supports three history patterns:
+For a new Gateway chat that needs persistent threads, recommend `conversation` plus `store: true` with the Conversations API. Gateway then stores the history, and the application sends only the new turn.
 
-- Full `input` history owned by the application.
-- A `previous_response_id` chain stored without a named conversation.
-- A persistent named thread using `conversation` plus `store: true` and the Conversations API.
+Choose among the three Responses history patterns:
 
-Read [conversations.md](conversations.md) for the third pattern or a separately configured framework storage integration needing conversation/item CRUD, frontend tokens, or `user_id`/`app_id` isolation. Conversations is a storage companion, not another generation protocol.
+| Pattern | Use when |
+| --- | --- |
+| `conversation` plus `store: true` | Recommended for new persistent Gateway chats with named, reopenable threads |
+| Full `input` history | The existing application owns history or needs explicit control over the context sent to the model |
+| `previous_response_id` | Stored response chaining is enough; named threads and a conversation list are not needed |
+
+Preserve an existing application's history model unless the user requests a storage migration. Read [conversations.md](conversations.md) for named threads or a separately configured framework storage integration needing conversation/item CRUD, frontend tokens, or `user_id`/`app_id` isolation. Conversations is a storage companion, not another generation protocol.
 
 Embed Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [framework scaffold contracts](../quickstart.md#work-from-the-generated-app).
 
@@ -57,7 +61,7 @@ Read [build-component-library.md](../../build-component-library.md) before defin
 
 ## Keep Standalone Artifacts Separate
 
-Artifact Chat Completions is a specialized, version-sensitive contract for standalone slide and report programs. Its former docs were removed from the live site; read [artifacts.md](../artifacts.md) and verify current availability before new integration work. It is not a peer conversational generation protocol.
+Use Artifact Chat Completions for standalone slide/report generation and explicit edits, with application-owned persistence. Read [artifacts.md](../artifacts.md) for the request, viewer, and verification contracts. This is a separate workload, not another conversational generation protocol.
 
 When an artifact should live inside an agent conversation, use Responses with `artifactTool()` instead.
 

@@ -12,7 +12,7 @@ The current docs distinguish Gateway (model access and correction) from Observab
 - Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
 - Add `AgentInterface`, or keep an existing assistant-ui, CopilotKit, or custom chat surface and integrate only the OpenUI renderer.
 - Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
-- Keep the default starter's managed slides/reports; separately verify the historical standalone Artifact Chat Completions contract before new integrations.
+- Generate managed slides and reports inside chats or through the standalone artifact API.
 - Use built-in or custom component libraries with managed Gateway generation, including Gateway BYOK.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
 - Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
@@ -43,7 +43,7 @@ Once installed, try prompts such as:
 | [`gateway/chat/responses.md`](skills/openui/references/gateway/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
 | [`gateway/chat/chat-completions.md`](skills/openui/references/gateway/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
 | [`gateway/chat/conversations.md`](skills/openui/references/gateway/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
-| [`gateway/artifacts.md`](skills/openui/references/gateway/artifacts.md) | Version-sensitive standalone slide/report contract, availability checkpoint, viewers, and application-owned persistence |
+| [`gateway/artifacts.md`](skills/openui/references/gateway/artifacts.md) | Standalone slides/reports: generation, editing, viewers, and storage |
 | [`gateway/oss-migration.md`](skills/openui/references/gateway/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Gateway |
 | [`examples.md`](skills/openui/references/examples.md) | Complete first-party example catalog plus current existing-chat and runtime integration guides |
 | [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
@@ -52,12 +52,12 @@ Once installed, try prompts such as:
 
 ## OpenUI Building Blocks
 
-- **OpenUI Lang** — a compact, streaming-first language for model-generated interfaces.
-- **Runtime packages** — framework-agnostic core plus React, Vue, Svelte, and browser renderers.
-- **Component libraries** — built-in or custom components exposed to the model through typed schemas.
-- **Agent Interface** — a complete chat application shell with pluggable model and storage backends.
-- **OpenUI Gateway** — model access, eligible OpenUI Lang correction, provider fallbacks, and optional Responses persistence/hosted tools.
-- **OpenUI Observability** — independent production runtime monitoring for Gateway or direct-provider generation.
+- **OpenUI Lang** — a language for AI-generated interfaces.
+- **Runtime packages** — render those interfaces in React, Vue, Svelte, or the browser.
+- **Component libraries** — the components the model can use.
+- **Agent Interface** — a ready-made chat interface.
+- **OpenUI Gateway** — access models with automatic fallbacks and UI correction.
+- **OpenUI Observability** — monitor and debug generated interfaces in production.
 
 ## Learn More
 
