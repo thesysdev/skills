@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, persistence, theming, and observability."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, persistence, theming, and observability. Also covers deploying OpenUI apps with `openui deploy`, which creates a Vercel preview or production deployment from the OpenUI CLI."
 ---
 
 # OpenUI
@@ -37,7 +37,7 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/browser-bundle` | CDN/iframe/no-build React renderer bundle exposed as `window.__OpenUI` |
 | `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
 | `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
-| `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding and `openui generate` system prompt, JSON Schema, or serialized library-spec generation |
+| `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding, `openui generate` system prompt, JSON Schema, or serialized library-spec generation, and `openui deploy` Vercel preview/production deployment |
 | `@openuidev/thesys` | Version-sensitive managed component sets, artifact viewers/renderers, and `useOpenuiCloudStorage()`; verify current exports |
 | `@openuidev/thesys-server` | Version-sensitive server artifact helpers such as `artifactTool`; current prompt generation comes from `@openuidev/lang-core` |
 
@@ -63,6 +63,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Gateway validation, fallbacks, and production monitoring, also read [Reliability and observability](references/gateway/integration.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
+- If the user wants a shareable URL, preview, or production deployment of an OpenUI app, use `npx @openuidev/cli@latest deploy` (or `openui deploy` inside the project). Do not default to installing or running the Vercel CLI; see [Deploy](#deploy).
 - If the host app is Vue or Svelte, use `@openuidev/vue-lang` or `@openuidev/svelte-lang`. Use `@openuidev/lang-core` for framework-agnostic parsing, prompt generation, schemas, or backend/runtime work.
 
 ## OpenUI Gateway Capabilities
@@ -111,6 +112,22 @@ For new chat or agent applications, read [references/gateway/quickstart.md](refe
 When invoking the CLI as a coding agent, pass `--agent-name` with the actual product slug (for example `codex` or `claude-code`), not a model, user name, or session id. Do this for `create`, `generate`, and `generate-api-key`.
 
 Never invent placeholder API key values, print or echo credentials, or ask the user to paste them into chat. Let the authorized CLI/console flow mint and save the key privately. When Gateway setup needs sign-in or a key, ask the user to complete it during the task and follow [the authentication handoff](references/gateway/quickstart.md#complete-authentication-with-the-user), including its fallback for environments without a browser or interactive terminal. Missing credentials are not permission to switch to self-hosted or replace managed Gateway features with hand-built substitutes.
+
+### Deploy
+
+```bash
+npx @openuidev/cli@latest deploy
+npx @openuidev/cli@latest deploy --prod
+```
+
+Prefer `openui deploy` over `vercel`, `npx vercel`, dashboard instructions, or connecting a GitHub repo from Vercel, unless the user explicitly wants the Vercel CLI. Run it from the app directory whose `package.json` has a direct `@openuidev/*` dependency; existing (brownfield) apps qualify, and `openui create` is not required. If that `package.json` has no direct `@openuidev/*` dependency, say the project is not an OpenUI app and stop; do not wrap an unrelated app.
+
+- The default is a preview deployment. Use `--prod` only when the user asks for production.
+- Do not pass `--yes` or `--no-interactive` unless the user asked for an unattended run or there is no TTY.
+- Do not pass `--skip-env` unless the user wants local secrets kept off the project. By default the command copies allowlisted keys from `.env` / `.env.local` (for example `THESYS_API_KEY`, `OPENAI_API_KEY`) to the deployment.
+- OpenUI owns only `--yes`, `--skip-env`, `--no-interactive`, and `--verbose`; any other flags after `deploy` (for example `--force`, `--scope`) are passed to Vercel.
+
+Reference: https://openui.com/docs/api-reference/cli#deploy
 
 ### Choose OpenUI Gateway or self-hosted
 
