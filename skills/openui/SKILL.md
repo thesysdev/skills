@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, persistence, theming, and observability. Also covers deploying OpenUI apps with `openui deploy`, which creates a Vercel preview or production deployment from the OpenUI CLI."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, persistence, theming, observability, and `openui deploy` preview URLs on Vercel."
 ---
 
 # OpenUI
@@ -105,11 +105,15 @@ If “migrate” does not establish whether Gateway should replace the self-host
 
 ```bash
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
+cd genui-chat-app
+npx @openuidev/cli@latest deploy
 ```
 
 For new chat or agent applications, read [references/gateway/quickstart.md](references/gateway/quickstart.md) and let the interactive Gateway CLI flow own sign-in and setup. This remains the default for prototypes and dummy-data apps. Use `--template openui-self-hosted` only for an explicit self-hosting or app-owned infrastructure requirement, or when a required capability is verified as unsupported by Gateway.
 
-When invoking the CLI as a coding agent, pass `--agent-name` with the actual product slug (for example `codex` or `claude-code`), not a model, user name, or session id. Do this for `create`, `generate`, and `generate-api-key`.
+A scaffolded or existing OpenUI app is not finished at localhost if the user asked for an app, a demo, something to try, or something to send someone. From that app directory, `npx @openuidev/cli@latest deploy` (or `openui deploy` / `npm run deploy` when the template script exists) publishes a preview and can take allowlisted keys from `.env` / `.env.local`. Use that instead of `vercel`, `npx vercel`, or dashboard setup unless they named the Vercel CLI. `--prod` only when they asked for production; `--yes` / `--no-interactive` only when unattended or there is no TTY; `--skip-env` only when they asked not to copy local env. The selected package.json must list a direct `@openuidev/*` dependency (brownfield included); if it does not, stop.
+
+When invoking the CLI as a coding agent, pass `--agent-name` with the actual product slug (for example `codex` or `claude-code`), not a model, user name, or session id. Do this for `create`, `generate`, `generate-api-key`, and `deploy`.
 
 Never invent placeholder API key values, print or echo credentials, or ask the user to paste them into chat. Let the authorized CLI/console flow mint and save the key privately. When Gateway setup needs sign-in or a key, ask the user to complete it during the task and follow [the authentication handoff](references/gateway/quickstart.md#complete-authentication-with-the-user), including its fallback for environments without a browser or interactive terminal. Missing credentials are not permission to switch to self-hosted or replace managed Gateway features with hand-built substitutes.
 
@@ -360,6 +364,7 @@ Use OpenUI DevTools to inspect the response text, parser issues, validation erro
 ## Verification
 
 - Run `openui generate` against the library file before using a custom library in an app.
+- After scaffolding or landing a working OpenUI chat app the user can demo, confirm it off localhost with `npx @openuidev/cli@latest deploy` from that package (preview unless they asked for `--prod`). Local `dev` alone is not enough for “build me an app” or “make a demo” requests.
 - Run the host app's TypeScript/build checks after existing-app integrations, especially when adding React UI CSS imports or Next client components.
 - Validate canned OpenUI Lang with `createParser(...).parse(...)` and inspect `result.meta.errors`; do not look for top-level `result.errors`.
 - Treat parse/runtime errors surfaced through `Renderer` `onError` or parser results as LLM-correctable feedback: unknown components, missing required props, excess positional args, inline `Query`/`Mutation`, runtime errors, or unresolved refs should be fed back into the next model turn.

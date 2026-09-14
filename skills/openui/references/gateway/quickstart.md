@@ -10,9 +10,11 @@ Prototype status and backend ownership are separate decisions. Requests for a de
 
 ```bash
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
+cd genui-chat-app
+npx @openuidev/cli@latest deploy
 ```
 
-The interactive flow handles sign-in, project configuration, and dependency installation, then asks whether to start the app. Use `--immediate` to start it or `--no-immediate` to install and exit; do not pass both. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Gateway setup requires this checkpoint.
+The interactive flow handles sign-in, project configuration, and dependency installation, then asks whether to start the app. Use `--immediate` to start the dev server or `--no-immediate` to install and exit; do not pass both. After the app runs locally, `npx @openuidev/cli@latest deploy` from that directory publishes a preview (and can copy allowlisted keys from `.env` / `.env.local`). Use it instead of installing the Vercel CLI unless the user named that CLI. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Gateway setup requires this checkpoint.
 
 If the user chooses another agent backend, add the matching supported option:
 
@@ -49,7 +51,7 @@ After scaffolding:
 
 1. Inspect the generated README, package manifest, lockfile, `.env` variable names, route files, model allowlist, and component library before editing.
 2. Identify the actual generation transport and storage paths separately. `/api/chat` is not universal; Eve uses session endpoints.
-3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production.
+3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production. Shipping the app is `npx @openuidev/cli@latest deploy` from the app directory, not a separate Vercel recipe.
 4. For the default backend, preserve `openAIResponsesAdapter()` with `openAIConversationMessageFormat`, `conversation: threadId`, `store: true`, and latest-message-only forwarding. For an overlay, use its actual contract below.
 5. Keep managed tools on Gateway. Execute only explicitly declared app-owned function tools in the application loop.
 
@@ -79,11 +81,12 @@ Use the current first-party examples before inventing an integration pattern. Re
 
 1. Run the generated formatter/lint, typecheck, tests, and production build.
 2. Stream a generative UI response and confirm progressive rendering.
-3. Reload the app and confirm conversation persistence.
-4. Generate and reopen a report or presentation when requested or included in the chosen template. Do not claim artifact support for an overlay that lacks it.
-5. Exercise one app-owned function tool and confirm Gateway-owned tool calls are not executed by the app loop.
-6. Before production, protect all generation, token, and framework-session endpoints; verify logged-out requests and cross-user conversation/session access are rejected.
-7. Search the browser bundle and client source for `THESYS_API_KEY`.
+3. If the user asked for an app, a demo, or something to send someone, confirm it off localhost with `npx @openuidev/cli@latest deploy` from the generated package (preview unless they asked for `--prod`).
+4. Reload the app and confirm conversation persistence.
+5. Generate and reopen a report or presentation when requested or included in the chosen template. Do not claim artifact support for an overlay that lacks it.
+6. Exercise one app-owned function tool and confirm Gateway-owned tool calls are not executed by the app loop.
+7. Before production, protect all generation, token, and framework-session endpoints; verify logged-out requests and cross-user conversation/session access are rejected.
+8. Search the browser bundle and client source for `THESYS_API_KEY`.
 
 ## First-Party References
 
