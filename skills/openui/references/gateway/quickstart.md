@@ -1,6 +1,6 @@
 # Start a New OpenUI Gateway App
 
-Use this path for a new OpenUI chat or agent application unless the user explicitly requests self-hosting, no external service, or app-owned model/storage infrastructure. Inspect the generated Gateway template for package versions, route shapes, authentication setup, tools, models, and client wiring. Older templates may contain retired managed artifact paths; follow [Generic Agent Interface Artifacts](../artifacts.md) for current artifact behavior.
+Use this path for a new OpenUI chat or agent application unless the user explicitly requests self-hosting, no external service, or app-owned model/storage infrastructure. Inspect the generated Gateway template for package versions, route shapes, authentication setup, tools, models, and client wiring. Older templates may contain retired managed artifact paths; follow [Agent Interface Artifacts](../artifacts.md) for current artifact behavior.
 
 The current product name is OpenUI Gateway, but the CLI template identifier remains `openui-cloud`. Use Node.js 20 or later. Coding agents should append `--agent-name` with their own stable product slug to CLI commands; human-run commands can omit it.
 
@@ -60,7 +60,7 @@ After scaffolding:
 | `vercel-ai-sdk` | UIMessage stream, `vercelAIAdapter()`, `vercelAIMessageFormat` | Inspect `streamText()`'s model provider: `openai.chat()` is Chat Completions with full relevant messages, not a Responses conversation append |
 | `vercel-eve` | Native `/eve/v1/session*` NDJSON, `eveAdapter()` in current source | Preserve session ids, continuation tokens, and stream cursors; inspect its session and tool loop instead of assuming `/api/chat` |
 
-CLI docs and template source can differ. Do not overwrite a working native LangGraph stream with AG-UI, or assume that a Vercel AI SDK overlay uses Responses because the CLI overview says so. A `storage` prop alone does not prove that the generation route persists replies. Trace the write path and verify reloads; framework-managed storage does not add Responses parameters to Chat Completions calls.
+CLI docs and template source can differ. Do not overwrite a working native LangGraph stream with AG-UI, or assume that a Vercel AI SDK overlay uses Responses because the CLI overview says so. A `useOpenuiCloudStorage()` prop alone does not prove that the generation route persists replies. Trace the write path and verify reloads; framework-managed storage does not add Responses parameters to Chat Completions calls.
 
 Read [the Gateway integration guide](integration.md) for shared requirements, then choose [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) from the actual provider call. Read [Conversations](chat/conversations.md) when Gateway storage is used. Framework-to-browser streams need the framework adapter, independently of that provider choice.
 
@@ -69,7 +69,7 @@ Read [the Gateway integration guide](integration.md) for shared requirements, th
 - Starters and welcome content: edit the generated starter configuration and `AgentInterface.Welcome` slots rather than replacing the chat shell.
 - App-owned tools: register the declaration and executor in the generated tool loop; never execute Gateway-owned `thesys_*` calls.
 - Hosted tools: declare supported web search, image search, or MCP entries in the Responses request.
-- Artifacts: add an application tool and renderer for the user-requested content, then connect any required storage. Follow [Generic Agent Interface Artifacts](../artifacts.md) and verify tool calls and results reach the UI through the selected framework's adapter.
+- Artifacts: add an application tool and renderer for the user-requested content, then connect any required storage. Follow [Agent Interface Artifacts](../artifacts.md) and verify tool calls and results reach the UI through the selected framework's adapter.
 - Custom components: extend `openuiChatLibrary` or use a custom library, generate a library spec with `openui generate --spec`, pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`, and render with the matching client library. Follow [build-component-library.md](../build-component-library.md).
 - Backend framework overlays: edit the generated framework-specific agent or route instead of applying the default Next.js route recipe blindly.
 

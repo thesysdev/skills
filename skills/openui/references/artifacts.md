@@ -1,6 +1,6 @@
-# Generic Agent Interface Artifacts
+# Agent Interface Artifacts
 
-Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one generic artifact abstraction: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output. Reports and presentations are no longer built-in managed products.
+Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one artifact type: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output. Reports and presentations are no longer built-in managed products.
 
 Artifacts are independent of Gateway. Preserve the application's model provider, tool loop, stream adapter, and storage choices. With Gateway, use ordinary application function tools through [Responses](gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions](gateway/chat/chat-completions.md#keep-function-tools-in-the-application).
 
@@ -15,7 +15,7 @@ The renderer's `toolName` matches incoming tool calls. Its `type` is an applicat
 
 ## Supply Your Own View
 
-This example uses one generic renderer with an application-defined payload. `create_artifact`, `update_artifact`, `artifact`, and the payload fields are application conventions, not SDK tool names or a required wire schema. The host provides `renderContent`, which can dispatch to its own HTML, Markdown, presentation, or other view.
+This example uses one renderer with an application-defined payload. `create_artifact`, `update_artifact`, `artifact`, and the payload fields are application conventions, not SDK tool names or a required wire schema. The host provides `renderContent`, which can dispatch to its own HTML, Markdown, presentation, or other view.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -98,7 +98,7 @@ The parser is called during streaming and when a stored artifact opens:
 
 Keep a stable artifact id and increment its version after edits. Return `meta: null` for an early preview and `{ id, version, heading }` when registering a completed artifact in the thread. Registry metadata alone does not make the artifact durable.
 
-For persistence, implement the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) alongside thread storage. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
+For persistence, configure the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) alongside thread storage. Reuse the application's existing compatible implementation, including the artifact storage supplied by `useOpenuiCloudStorage()` when configured for Gateway, or implement the interface for the application's own backend. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
 
 Thread persistence, including Gateway Conversations, does not automatically implement artifact storage. Configure and verify each requested lifecycle separately. For an edit, load and authorize the stored artifact, apply the requested change, persist the new version, and emit the updated tool result for the same id.
 

@@ -22,7 +22,7 @@ Chat Completions is message-based. Keep the application's existing persistence a
 
 - Do not send only the latest message.
 - Do not add `conversation`, `previous_response_id`, or `store: true` Responses semantics.
-- Do not replace the host database or `restStorage` with Gateway Conversations merely to use the Gateway generation endpoint.
+- Do not replace the host database or `restStorage` with `useOpenuiCloudStorage()` merely to use the Gateway generation endpoint.
 - Preserve existing compaction, truncation, tool-result, and attachment behavior after checking Gateway/model compatibility.
 
 If the product wants server-side history injection via `conversation`, choose Responses and treat that as a separate protocol/storage migration. A framework can also manage Gateway storage independently of its Chat Completions model call; preserve an already-configured path and verify its writes and reloads. Do not infer this behavior merely from a storage hook being present.
@@ -108,7 +108,7 @@ Embed Chat Completions accepts function tools but does not execute them. Preserv
 
 Do not attach Responses-only hosted `web_search`, `image_search`, or remote MCP declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses.
 
-Generic artifacts use ordinary application function tools and custom Agent Interface renderers; follow [artifacts.md](../../artifacts.md). Ensure the browser receives both the tool call and its result. Raw Chat Completions deltas expose tool arguments, but the app-owned executor must also deliver its result through a supported UI stream, such as AG-UI with `agUIAdapter()`, or the host's existing tool-result transport. Appending a tool result only to model history is insufficient for the artifact renderer.
+Artifacts use ordinary application function tools and custom Agent Interface renderers; follow [artifacts.md](../../artifacts.md). Ensure the browser receives both the tool call and its result. Raw Chat Completions deltas expose tool arguments, but the app-owned executor must also deliver its result through a supported UI stream, such as AG-UI with `agUIAdapter()`, or the host's existing tool-result transport. Appending a tool result only to model history is insufficient for the artifact renderer.
 
 ## Keep Plain Text and Application-Owned UI Intact
 

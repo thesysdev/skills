@@ -21,7 +21,7 @@ const response = await embedClient.responses.create({
 
 The application sends only the new turn because Gateway supplies the earlier items from the named conversation. Do not also resend full history.
 
-Responses can instead use application-owned full `input` history or a `previous_response_id` chain. Those modes do not require a Conversations client, frontend-token route, or conversation ownership checks. Read [responses.md](responses.md) for all three generation patterns.
+Responses can instead use application-owned full `input` history or a `previous_response_id` chain. Those modes do not require a Conversations client, frontend-token route, `useOpenuiCloudStorage()`, or conversation ownership checks. Read [responses.md](responses.md) for all three generation patterns.
 
 ## Choose the Access Plane
 
@@ -30,8 +30,7 @@ Use the access plane that matches the caller:
 | Caller | Credential | Recommended path |
 | --- | --- | --- |
 | Application server | Server-side `THESYS_API_KEY` | Stock OpenAI SDK with base URL `https://api.thesys.dev/v1`, or direct server calls to `/v1/conversations*` |
-| Browser `AgentInterface` through host routes | Existing application session | `restStorage` or custom `ChatStorage`; authenticated server routes translate to Gateway Conversations |
-| Browser calling Gateway directly | Short-lived scoped frontend token | Custom `ChatStorage` matching the current Conversations HTTP and token-refresh contracts |
+| Browser `AgentInterface` | Short-lived scoped frontend token | `useOpenuiCloudStorage()`; do not expose the server key or proxy every browser storage read by default |
 
 The generation proxy remains an application server route using the server key. A browser frontend token does not authorize that proxy automatically.
 
@@ -82,29 +81,30 @@ Prefer the installed OpenAI SDK methods for these operations. Verify current pag
 
 ## Connect Agent Interface Storage
 
-Use `restStorage` when authenticated application routes implement its REST contract, or implement `ChatStorage` directly for a different route shape. For example:
+In a React client module, use `useOpenuiCloudStorage()` for Gateway thread listing, item reload, and configured artifact storage. The hook currently comes from `@openuidev/thesys`:
 
 ```tsx
 "use client";
 
-import { AgentInterface, restStorage } from "@openuidev/react-ui";
-
-const storage = restStorage({ baseUrl: "/api/chat/storage" });
+import { AgentInterface } from "@openuidev/react-ui";
+import { useOpenuiCloudStorage } from "@openuidev/thesys";
 
 export function GatewayAgent() {
+  const storage = useOpenuiCloudStorage({
+    token: "/api/frontend-token",
+    apiBaseUrl: "https://api.thesys.dev",
+    features: { artifact: true },
+  });
+
   return <AgentInterface llm={llm} storage={storage} />;
 }
 ```
 
-The host must implement those routes; `restStorage` does not directly speak the Gateway Conversations API. Follow the [storage endpoint contract](https://www.openui.com/docs/agent/reference/adapters-and-formats), translate conversation records to `Thread`, and convert stored items into the message shape expected by the selected storage `messageFormat`. Preserve tool-call ids and paired results. Create and bind the Gateway conversation to the authenticated owner before returning its id, and persist the initial user turn exactly once across creation and generation.
+Keep the `@openuidev/thesys` import in the host framework's client boundary. Preserve the product's existing shell, theme, slots, routing, and authentication guard. Adding Gateway storage does not require replacing a working chat UI or component library.
 
-For server-proxied storage, authorize every list/read/write operation and use the server-only Conversations client; no frontend token is needed in the browser. For direct browser storage, implement a custom `ChatStorage` and the scoped token flow below. Preserve the product's existing shell, theme, slots, routing, and authentication guard.
-
-Generic artifacts use a separately configured `ChatStorage.artifact` implementation. Thread storage alone does not provide durable artifact listing, loading, or editing; follow [artifacts.md](../../artifacts.md).
+The hook's storage is independent of the artifact renderer. Keep the tool result, stored content, and application-provided renderer consistent; follow [artifacts.md](../../artifacts.md). Preserve an existing compatible artifact store.
 
 ## Mint Frontend Tokens
-
-Use this flow only for direct browser access to Gateway. Skip it when storage calls go through authenticated application routes.
 
 The application server mints a short-lived token with `POST https://api.thesys.dev/v1/frontend-tokens`. Derive `user_id` from authenticated server state and optionally include one stable `app_id`. Never accept the authoritative identity from the request body.
 
@@ -160,7 +160,7 @@ export async function POST(req: Request) {
 }
 ```
 
-For direct browser Conversations calls, the current [authentication guide](https://www.openui.com/docs/gateway/authentication) documents `Authorization: Bearer <frontend-token>`. Verify accepted endpoint and token-refresh behavior when implementing a custom storage client. Never expose the server API key.
+For direct browser Conversations calls, the current [authentication guide](https://www.openui.com/docs/gateway/authentication) documents `Authorization: Bearer <frontend-token>`. The published `useOpenuiCloudStorage()` implementation inspected for this skill instead uses `x-thesys-frontend-token` and refreshes through its configured POST token route. Let the installed helper own its header/refresh contract; do not blindly rewrite it to match a raw-fetch example. Verify the accepted endpoint contract before implementing custom browser calls. Neither form permits exposing the server API key.
 
 ## Scope Users and Apps
 
@@ -170,11 +170,11 @@ For direct browser Conversations calls, the current [authentication guide](https
 - Use conversation `metadata` for application data, not as the authorization source for ownership.
 - Keep token minting, generation authorization, and any server-side conversation operations on the same identity convention.
 
-The scoped frontend token limits direct browser conversation access to its user and optional app. The server key remains organization-level authority. Authorize application-owned artifacts in their own storage and tool routes.
+The scoped frontend token limits browser conversation and artifact access to its user and optional app. The server key remains organization-level authority.
 
 ## Authorize the Generation Route Separately
 
-The application `/api/chat` route calls Responses with the server key. Possession of a `threadId` is not proof that the authenticated user owns that conversation. Direct browser tokens and authenticated storage routes do not authorize generation automatically.
+The browser token protects direct storage calls, but the application `/api/chat` route calls Responses with the server key. Possession of a `threadId` is not proof that the authenticated user owns that conversation.
 
 Use one verified design:
 
@@ -206,12 +206,12 @@ Adding a Gateway generation endpoint does not authorize replacing the host datab
 
 1. Confirm Chat Completions calls do not use Responses history parameters; verify any separately configured framework storage integration explicitly.
 2. Confirm named Responses calls send only the new turn with `conversation` and `store: true`.
-3. For direct browser access, confirm the frontend-token route derives identity from the authenticated session, rate-limits requests, and never exposes `THESYS_API_KEY`. For server-proxied storage, verify every storage route enforces session identity and ownership.
-4. Confirm the selected storage access plane and server generation route each verify `threadId` ownership.
+3. Confirm the frontend-token route derives identity from the authenticated session, rate-limits requests, and never exposes `THESYS_API_KEY`.
+4. Confirm the browser uses the scoped token and the server generation route separately verifies `threadId` ownership.
 5. Create, retrieve, update, and delete a test conversation; list its items with pagination and verify their order.
 6. Reload `AgentInterface` and confirm the intended threads and items return. Verify artifacts separately when their storage is configured.
 7. Test two users and, when applicable, two `app_id` values for disjoint thread lists and forbidden cross-user generation.
-8. Test token expiry/refresh when using direct browser access, plus missing configuration, Gateway failures, and logged-out calls.
+8. Test token expiry/refresh, missing configuration, Gateway failures, and logged-out calls.
 9. Run the host formatter, typecheck, tests, and production build.
 
 ## First-Party References

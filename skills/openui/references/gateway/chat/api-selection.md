@@ -59,7 +59,7 @@ For plain-text passthrough, omit the managed generative UI prompt and preserve t
 
 Read [build-component-library.md](../../build-component-library.md) before defining or migrating a library. Keep the runtime library and serialized spec synchronized.
 
-## Add Generic Artifacts Independently
+## Add Artifacts Independently
 
 Agent Interface artifacts use application tool calls and custom renderers with either generation protocol. Read [artifacts.md](../../artifacts.md) for the tool-result, renderer, and optional persistence contracts.
 

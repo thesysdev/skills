@@ -12,7 +12,7 @@ The current docs distinguish Gateway (model access and correction) from Observab
 - Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
 - Add `AgentInterface`, or keep an existing assistant-ui, CopilotKit, or custom chat surface and integrate only the OpenUI renderer.
 - Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
-- Add generic Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.
+- Add Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.
 - Use built-in or custom component libraries with managed Gateway generation, including Gateway BYOK.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
 - Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
@@ -43,7 +43,7 @@ Once installed, try prompts such as:
 | [`gateway/chat/responses.md`](skills/openui/references/gateway/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and in-conversation artifacts |
 | [`gateway/chat/chat-completions.md`](skills/openui/references/gateway/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
 | [`gateway/chat/conversations.md`](skills/openui/references/gateway/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
-| [`artifacts.md`](skills/openui/references/artifacts.md) | Generic Agent Interface artifacts: tool results, custom renderers, editing, and optional storage |
+| [`artifacts.md`](skills/openui/references/artifacts.md) | Agent Interface artifacts: tool results, custom renderers, editing, and optional storage |
 | [`gateway/oss-migration.md`](skills/openui/references/gateway/oss-migration.md) | Migration runbook from self-hosted OpenUI to OpenUI Gateway |
 | [`examples.md`](skills/openui/references/examples.md) | Complete first-party example catalog plus current existing-chat and runtime integration guides |
 | [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |

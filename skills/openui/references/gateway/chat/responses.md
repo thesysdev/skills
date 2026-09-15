@@ -1,6 +1,6 @@
 # Integrate OpenUI Gateway with the Responses API
 
-Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events or new agents that need hosted tools. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration. Generic artifacts use application tools with either protocol.
+Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events or new agents that need hosted tools. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration. Artifacts use application tools with either protocol.
 
 Conversations is optional. Read [conversations.md](conversations.md) only when the application needs persistent named Gateway threads, item APIs, browser storage, frontend tokens, or Gateway user/app isolation.
 
@@ -42,7 +42,7 @@ Use exactly one Responses history pattern:
 | --- | --- | --- |
 | Full `input` history | The application already owns storage or needs explicit context control | Load, authorize, bound, and resend the relevant Responses input items |
 | `previous_response_id` | Turns should form a stored response chain without a named/listable conversation | Persist and authorize the latest response id; send only the new turn with `store: true` |
-| `conversation` plus `store: true` | The product needs persistent named Gateway threads, item CRUD, or browser thread storage | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
+| `conversation` plus `store: true` | The product needs persistent named Gateway threads, item CRUD, or `useOpenuiCloudStorage()` | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
 
 Do not combine full history with `conversation`, or combine `previous_response_id` with `conversation`. Do not add frontend tokens or Gateway browser storage to the first two patterns.
 
@@ -63,7 +63,7 @@ const embedClient = new OpenAI({
 
 Use a current `{provider}/{model}` id selected through trusted server configuration. Preserve a host model allowlist and reject arbitrary browser-supplied model ids.
 
-Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies.
+Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies. Add `@openuidev/thesys` when using `useOpenuiCloudStorage()` for Gateway storage.
 
 ## Choose the Model-Facing Prompt
 
@@ -210,7 +210,7 @@ This example uses the named-conversation state model. Apply the identity and aut
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-For artifacts, declare an application function tool and register its custom renderer with Agent Interface. Follow [Generic Agent Interface Artifacts](../../artifacts.md); the application owns content generation, rendering, and any durable artifact store.
+For artifacts, declare an application function tool and register its custom renderer with Agent Interface. Follow [Agent Interface Artifacts](../../artifacts.md); the application owns content generation, rendering, and any durable artifact store.
 
 ## App-Owned Function Tools
 

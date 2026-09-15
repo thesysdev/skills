@@ -6,11 +6,11 @@ Read this reference first for shared OpenUI Gateway integration requirements. Ga
 | --- | --- |
 | Conversational generation | [Choose a chat generation API](chat/api-selection.md), then read either [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) |
 | Gateway-managed persistent threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
-| Artifact creation, rendering, or editing in Agent Interface | [Generic artifacts](../artifacts.md) |
+| Artifact creation, rendering, or editing in Agent Interface | [Artifacts](../artifacts.md) |
 | New Gateway agent scaffold | [Gateway quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Gateway | [OSS migration](oss-migration.md) |
 
-Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol. Generic Agent Interface artifacts use application tools and renderers with either protocol.
+Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol. Agent Interface artifacts use application tools and renderers with either protocol.
 
 ## Preserve Existing Architecture
 
@@ -45,6 +45,8 @@ All Gateway generation calls need a trusted server boundary:
 - Keep trusted application instructions separate from user content. Never concatenate user text into system or developer instructions.
 
 Install only packages required by the selected runbook and installed peer ranges. `@openuidev/lang-core` owns current prompt generation, including `generateSystemPrompt({ cloud: true, library })`. Use `@openuidev/react-ui` for Agent Interface, its built-in React libraries, and `defineArtifactRenderer` for application-provided artifact views.
+
+`useOpenuiCloudStorage()` and `useLayout()` currently import from `@openuidev/thesys`. Their planned move to React UI has not happened in the inspected release; preserve those imports until the installed exports support changing them. See the [hook guidance](../../SKILL.md#hooks-currently-in-openuidevthesys).
 
 ## Configure BYOK
 

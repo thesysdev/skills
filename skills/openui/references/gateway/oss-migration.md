@@ -50,7 +50,7 @@ If the existing application uses `chat.completions.create()` and the user did no
 2. Point the existing OpenAI-compatible client at the Gateway Embed base URL and replace provider-specific model ids with an allowed current `{provider}/{model}` value.
 3. For managed generative UI, put `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` in the trusted system-message position, using the existing client library's serialized spec. Preserve trusted application behavior through the helper's documented instructions option.
 4. Keep the complete relevant `messages` history, including assistant tool calls and tool results.
-5. Keep the host persistence layer. Do not add Gateway Conversations or a frontend-token route.
+5. Keep the host persistence layer. Do not add Gateway Conversations, `useOpenuiCloudStorage()`, or a frontend-token route.
 6. Keep app-owned function tool execution and its bounded loop.
 7. Pair raw Chat Completions SSE with `openAIAdapter()` or an SDK readable stream with `openAIReadableStreamAdapter()`, using `openAIMessageFormat`.
 
@@ -66,15 +66,15 @@ Apply this map only when the user chose Responses and Gateway Conversations. Do 
 | Full message history sent per turn                   | Latest message only plus `conversation: threadId`                                                      |
 | `openAIReadableStreamAdapter()` or `openAIAdapter()` | `openAIResponsesAdapter()`                                                                             |
 | `openAIMessageFormat`                                | `openAIConversationMessageFormat`                                                                      |
-| In-memory, `restStorage`, or custom `ChatStorage`    | `ChatStorage` backed by Gateway Conversations through host routes or verified scoped browser access |
+| In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })` from `@openuidev/thesys` |
 | `openuiLibrary`/`openuiChatLibrary`                  | Keep the same client library and generate its serialized spec |
 | `library.prompt(...)` in the provider route          | `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` using the matching serialized spec |
-| App-owned artifact loop/renderers                    | Keep the generic artifact tools, custom renderers, and artifact store; verify result delivery through the new adapter |
-| No browser storage credential                        | Existing session for host storage routes, or a scoped frontend token for direct Gateway browser access |
+| App-owned artifact loop/renderers                    | Keep the artifact tools, custom renderers, and artifact store; verify result delivery through the new adapter |
+| No browser storage credential                        | Short-lived frontend token scoped to the authenticated `user_id` |
 
 Preserve branding, theme, starters, slots, navigation, route placement, error boundaries, analytics, and authentication unless the user requests a redesign.
 
-For the generation contract, read [Responses](chat/responses.md). For persistent named threads, storage access, and identity, also read [Conversations](chat/conversations.md).
+For the generation contract, read [Responses](chat/responses.md). For persistent named threads, frontend tokens, and identity, also read [Conversations](chat/conversations.md).
 
 ### Migrate AgentInterface apps to Responses
 
@@ -83,7 +83,7 @@ For the generation contract, read [Responses](chat/responses.md). For persistent
 3. In Next.js, move the Gateway UI into a separate client component and match the
    installed first-party template's dynamic-rendering boundary. Add an
    `ssr: false` client loader only when the production build requires it.
-4. Connect `ChatStorage` to Gateway Conversations using the access plane in [Conversations](chat/conversations.md#connect-agent-interface-storage). Add a frontend-token route only for direct browser access.
+4. Replace self-hosted thread storage with `useOpenuiCloudStorage()` and add the frontend-token route as described in [Conversations](chat/conversations.md#connect-agent-interface-storage). Preserve the application's artifact store and renderer contract.
 5. Generate the existing component library's serialized spec, pass it to `generateSystemPrompt({ cloud: true, library, ... })`, and render with the matching runtime library. Preserve custom artifact renderer registration and its tool-result contract.
 6. Replace the provider `/api/chat` implementation with the Gateway proxy while preserving independent API authentication, conversation authorization, rate limiting, request validation, abort propagation, error handling, and the route URL expected by the client.
 7. Keep the previous provider/storage code until the Gateway path builds and passes tests. Remove it only for an explicitly confirmed replacement migration.
@@ -100,7 +100,7 @@ For an Agent Interface migration:
 
 1. Introduce `AgentInterface` at the requested route or surface.
 2. Move reusable branding and surrounding layout into `AgentInterface` props/slots.
-3. Add the generation route from [Responses](chat/responses.md) and the selected storage wiring from [Conversations](chat/conversations.md).
+3. Add the generation route from [Responses](chat/responses.md) and the frontend-token and storage wiring from [Conversations](chat/conversations.md).
 4. Retain the old Renderer surface until behavior parity is verified; then remove it only for replacement migrations.
 
 For a renderer-preserving or custom component-library migration:
@@ -127,7 +127,7 @@ Select the mode on the server or through trusted deployment configuration. Do no
 
 - **Historical conversations/artifacts:** no import path is established by the repository sources. Preserve the old store read-only or export it separately; do not fabricate Gateway records.
 - **Custom tool execution:** supported. For Chat Completions, preserve the application's standard assistant-tool/result loop. For Responses, declare `type: "function"` tools and use the current template's bounded loop from [Responses](chat/responses.md#app-owned-function-tools). Never execute or answer Gateway-owned `thesys_*` function calls in the Responses loop.
-- **Artifact-producing tools:** preserve the application's tool execution, payloads, and custom views using [Generic Agent Interface Artifacts](../artifacts.md). Verify both calls and results reach the UI, and retain the artifact store unless its migration was requested.
+- **Artifact-producing tools:** preserve the application's tool execution, payloads, and custom views using [Agent Interface Artifacts](../artifacts.md). Verify both calls and results reach the UI, and retain the artifact store unless its migration was requested.
 - **Attachments and media:** preserve an attachment-capable self-hosted path until the installed Gateway client, generation input, storage, and size-limit contracts are verified end to end.
 - **Non-React clients:** Gateway generation can retain a compatible existing renderer and its matching library spec. Agent Interface artifact registration uses React; preserve another runtime's own artifact views and tool-result transport.
 
