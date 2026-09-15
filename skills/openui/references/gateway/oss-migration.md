@@ -66,7 +66,7 @@ Apply this map only when the user chose Responses and Gateway Conversations. Do 
 | Full message history sent per turn                   | Latest message only plus `conversation: threadId`                                                      |
 | `openAIReadableStreamAdapter()` or `openAIAdapter()` | `openAIResponsesAdapter()`                                                                             |
 | `openAIMessageFormat`                                | `openAIConversationMessageFormat`                                                                      |
-| In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })` from `@openuidev/thesys` |
+| In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })` from `@openuidev/react-ui` |
 | `openuiLibrary`/`openuiChatLibrary`                  | Keep the same client library and generate its serialized spec |
 | `library.prompt(...)` in the provider route          | `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` using the matching serialized spec |
 | App-owned artifact loop/renderers                    | Keep the artifact tools, custom renderers, and artifact store; verify result delivery through the new adapter |

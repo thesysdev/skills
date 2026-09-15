@@ -81,13 +81,12 @@ Prefer the installed OpenAI SDK methods for these operations. Verify current pag
 
 ## Connect Agent Interface Storage
 
-In a React client module, use `useOpenuiCloudStorage()` for Gateway thread listing, item reload, and configured artifact storage. The hook currently comes from `@openuidev/thesys`:
+In a React client module, use `useOpenuiCloudStorage()` from `@openuidev/react-ui` for Gateway thread listing, item reload, and configured artifact storage. See the [hook guidance](../../../SKILL.md#gateway-storage-hook) for version compatibility.
 
 ```tsx
 "use client";
 
-import { AgentInterface } from "@openuidev/react-ui";
-import { useOpenuiCloudStorage } from "@openuidev/thesys";
+import { AgentInterface, useOpenuiCloudStorage } from "@openuidev/react-ui";
 
 export function GatewayAgent() {
   const storage = useOpenuiCloudStorage({
@@ -100,7 +99,7 @@ export function GatewayAgent() {
 }
 ```
 
-Keep the `@openuidev/thesys` import in the host framework's client boundary. Preserve the product's existing shell, theme, slots, routing, and authentication guard. Adding Gateway storage does not require replacing a working chat UI or component library.
+Keep the hook in the host framework's client boundary. For a headless chat UI, import it directly from `@openuidev/react-headless`. Preserve the product's existing shell, theme, slots, routing, and authentication guard. Adding Gateway storage does not require replacing a working chat UI or component library.
 
 The hook's storage is independent of the artifact renderer. Keep the tool result, stored content, and application-provided renderer consistent; follow [artifacts.md](../../artifacts.md). Preserve an existing compatible artifact store.
 

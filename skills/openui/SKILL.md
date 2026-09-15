@@ -40,22 +40,16 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
 | `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
 | `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding and `openui generate` system prompt, JSON Schema, or serialized library-spec generation |
-| `@openuidev/thesys` | Current import source for `useOpenuiCloudStorage()` and `useLayout()`; see the hook guidance below |
 
 Choose the package for the target runtime. For backend-only parsing or prompt/schema generation, prefer `@openuidev/lang-core` or the CLI instead of pulling in a UI framework.
 
 `@openuidev/react-ui` re-exports the `@openuidev/react-headless` surface, so React UI apps can import adapters, message formats, storage helpers, hooks, and message types from `@openuidev/react-ui`. Keep `@openuidev/react-headless` as the direct import when building a custom/headless chat UI without OpenUI's visual components.
 
-### Hooks currently in `@openuidev/thesys`
+### Gateway Storage Hook
 
-These two hooks still require `@openuidev/thesys`:
+Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuidev/react-headless` for a headless chat UI. It provides Gateway-backed `ChatStorage` with scoped frontend-token authentication and refresh; follow [Conversations](references/gateway/chat/conversations.md).
 
-| Hook | Use for |
-| --- | --- |
-| `useOpenuiCloudStorage(options)` | Gateway-backed `ChatStorage` with scoped frontend-token authentication and refresh; follow [Conversations](references/gateway/chat/conversations.md) |
-| `useLayout()` | The `mobile`/`tablet`/`desktop` breakpoint inside an existing `SlideShowContainer`; this is different from React UI's `useLayoutContext()` |
-
-Their move to `@openuidev/react-ui` is planned. Keep the current imports until the installed React UI version exports them. For component libraries and artifact renderers, use React UI or the application's own implementation.
+The storage-hook import requires a release containing the export added in [OpenUI #1179](https://github.com/thesysdev/openui/pull/1179). Verify installed React UI/Headless exports before updating older applications. For component libraries and artifact renderers, use React UI or the application's own implementation.
 
 ## Choose The Starting Point
 

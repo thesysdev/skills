@@ -46,7 +46,7 @@ All Gateway generation calls need a trusted server boundary:
 
 Install only packages required by the selected runbook and installed peer ranges. `@openuidev/lang-core` owns current prompt generation, including `generateSystemPrompt({ cloud: true, library })`. Use `@openuidev/react-ui` for Agent Interface, its built-in React libraries, and `defineArtifactRenderer` for application-provided artifact views.
 
-`useOpenuiCloudStorage()` and `useLayout()` currently import from `@openuidev/thesys`. Their planned move to React UI has not happened in the inspected release; preserve those imports until the installed exports support changing them. See the [hook guidance](../../SKILL.md#hooks-currently-in-openuidevthesys).
+Import `useOpenuiCloudStorage()` from `@openuidev/react-ui` for Gateway storage. See the [hook guidance](../../SKILL.md#gateway-storage-hook) for version compatibility.
 
 ## Configure BYOK
 

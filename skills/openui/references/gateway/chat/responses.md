@@ -63,7 +63,7 @@ const embedClient = new OpenAI({
 
 Use a current `{provider}/{model}` id selected through trusted server configuration. Preserve a host model allowlist and reject arbitrary browser-supplied model ids.
 
-Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies. Add `@openuidev/thesys` when using `useOpenuiCloudStorage()` for Gateway storage.
+Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies. Import `useOpenuiCloudStorage()` from `@openuidev/react-ui` when adding Gateway storage.
 
 ## Choose the Model-Facing Prompt
 
