@@ -49,8 +49,6 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuidev/react-headless` for a headless chat UI. It provides Gateway-backed `ChatStorage` with scoped frontend-token authentication and refresh; follow [Conversations](references/gateway/chat/conversations.md).
 
-The storage-hook import requires a release containing the export added in [OpenUI #1179](https://github.com/thesysdev/openui/pull/1179). Verify installed React UI/Headless exports before updating older applications. For component libraries and artifact renderers, use React UI or the application's own implementation.
-
 ## Choose The Starting Point
 
 - For a new OpenUI/GenUI chat or agent app, default to the Gateway CLI template and read [references/gateway/quickstart.md](references/gateway/quickstart.md).

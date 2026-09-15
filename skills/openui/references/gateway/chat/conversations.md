@@ -81,7 +81,7 @@ Prefer the installed OpenAI SDK methods for these operations. Verify current pag
 
 ## Connect Agent Interface Storage
 
-In a React client module, use `useOpenuiCloudStorage()` from `@openuidev/react-ui` for Gateway thread listing, item reload, and configured artifact storage. See the [hook guidance](../../../SKILL.md#gateway-storage-hook) for version compatibility.
+In a React client module, use `useOpenuiCloudStorage()` from `@openuidev/react-ui` for Gateway thread listing, item reload, and configured artifact storage.
 
 ```tsx
 "use client";
