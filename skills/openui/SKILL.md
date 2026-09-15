@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, persistence, theming, and observability."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, and observability."
 ---
 
 # OpenUI
@@ -9,7 +9,9 @@ OpenUI is a full-stack Generative UI framework centered on **OpenUI Lang**, a co
 
 Work from the user's app or project first. Inspect installed packages, generated templates, and lockfiles before giving API advice. When installed source is missing or the task targets `latest`, use only first-party OpenUI sources: the GitHub repo at `https://github.com/thesysdev/openui` and docs at `https://www.openui.com`.
 
-Current docs separate **OpenUI Gateway** (hosted model access and OpenUI Lang correction), **OpenUI Observability** (production error monitoring), and **Agent Interface** (the React chat UI). OpenUI Cloud is the former name for the hosted setup; use Gateway in current prose and keep its runbooks under `references/gateway/`. This naming change is not a backend migration or a reason to remove existing capabilities. Preserve the compatibility identifiers `openui-cloud`, `cloud: true`, `THESYS_API_KEY`, `@openuidev/thesys*`, `useOpenuiCloudStorage()`, and `@openuidev/observability-cloud`; do not invent Gateway-renamed flags, packages, or exports.
+Current docs separate **OpenUI Gateway** (hosted model access and OpenUI Lang correction), **OpenUI Observability** (production error monitoring), and **Agent Interface** (the React chat UI). OpenUI Cloud is the former name for the hosted setup; use Gateway in current prose and keep its runbooks under `references/gateway/`. Preserve the compatibility identifiers `openui-cloud`, `cloud: true`, `THESYS_API_KEY`, and `@openuidev/observability-cloud`; do not invent Gateway-renamed flags, packages, or exports.
+
+Agent Interface has one generic artifact abstraction. An application tool produces the content and an application-provided renderer displays it: HTML, Markdown, a presentation, or anything else the user needs. Reports and presentations are no longer supported as built-in managed products. Older templates or cached docs may still show those paths; use the generic artifact workflow below.
 
 ## First Checks Before Answering
 
@@ -38,8 +40,6 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
 | `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
 | `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding and `openui generate` system prompt, JSON Schema, or serialized library-spec generation |
-| `@openuidev/thesys` | Version-sensitive managed component sets, artifact viewers/renderers, and `useOpenuiCloudStorage()`; verify current exports |
-| `@openuidev/thesys-server` | Version-sensitive server artifact helpers such as `artifactTool`; current prompt generation comes from `@openuidev/lang-core` |
 
 Choose the package for the target runtime. For backend-only parsing or prompt/schema generation, prefer `@openuidev/lang-core` or the CLI instead of pulling in a UI framework.
 
@@ -50,7 +50,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - For a new OpenUI/GenUI chat or agent app, default to the Gateway CLI template and read [references/gateway/quickstart.md](references/gateway/quickstart.md).
 - A prototype, demo, MVP, local development, or dummy/mock/sample data does not imply self-hosting. Neither does the absence of an existing Thesys account or configured `THESYS_API_KEY`; treat Gateway sign-in and credential entry as a human setup checkpoint.
 - Use the self-hosted CLI template only when the user explicitly requests self-hosting, no external service, app-owned model/storage infrastructure, or a verified requirement unsupported by Gateway. Do not silently change the backend to avoid a credential checkpoint.
-- If a new chat or agent app should create dynamic presentations or reports, keep the Gateway default and use `artifactTool()` with the managed artifact renderers. Do not recreate the slide/report system as custom components merely because the request uses dummy data or credentials are not configured.
+- If a chat or agent app should create artifacts, use an application tool and custom renderer through the generic [artifact workflow](references/artifacts.md). Content format does not determine the generation protocol or storage owner.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
 - For an existing assistant-ui, CopilotKit, or custom chat UI, preserve its shell, runtime, and transport. Use the [existing-chat integration guides](references/examples.md#existing-chat-ui-integration-guides) to replace only the relevant renderer slot.
@@ -58,8 +58,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 - If the user wants to define, extend, migrate, or validate a component library, read [references/build-component-library.md](references/build-component-library.md) completely before editing.
 - For any OpenUI Gateway integration, read [references/gateway/integration.md](references/gateway/integration.md) for the shared configuration, security, compatibility, and verification requirements.
 - If the task requires choosing a Gateway API for conversational generation, read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md). Responses and Chat Completions are the two choices; Conversations is an optional Responses persistence layer.
-- If the user wants standalone managed slide/report generation or editing, use the bundled code examples in [references/gateway/artifacts.md](references/gateway/artifacts.md) for client setup, generation, streaming, viewers, explicit edits, and application-owned persistence.
-- If the task involves Gateway-managed persistent threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md).
+- If the task involves Gateway-managed persistent threads, conversation items, frontend tokens, or `user_id`/`app_id`, read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md).
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Gateway validation, fallbacks, and production monitoring, also read [Reliability and observability](references/gateway/integration.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
@@ -67,19 +66,19 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 ## OpenUI Gateway Capabilities
 
-OpenUI Gateway has two APIs for conversational generation: Responses and Embed Chat Completions. Responses is recommended for new chat or agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Artifact Chat Completions is a separate, specialized endpoint for standalone slide and report programs. Read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md) when choosing a conversational generation protocol or state model.
+OpenUI Gateway has two APIs for conversational generation: Responses and Embed Chat Completions. Responses is recommended for new chat or agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md) when choosing a conversational generation protocol or state model.
 
 | Capability | Available through |
 |---|---|
-| Managed OpenUI Lang validation/correction | Responses and Embed Chat Completions configured with `generateSystemPrompt({ cloud: true })`; plain-text traffic is not UI-corrected |
+| Managed OpenUI Lang validation/correction | Responses and Embed Chat Completions configured with `generateSystemPrompt({ cloud: true, library })` using the client's serialized library spec; plain-text traffic is not UI-corrected |
 | Model routing and provider fallbacks | Gateway generation endpoints; verify model compatibility and account configuration |
 | Managed models or BYOK | Gateway generation endpoints; read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials |
 | Built-in or custom component libraries | Responses and Embed Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
-| Gateway-managed persistent conversations and browser thread storage | Responses plus Conversations and a scoped frontend token; follow [gateway/chat/conversations.md](references/gateway/chat/conversations.md) |
-| Hosted web search, image search, remote MCP, and artifacts inside agent turns | [Responses hosted tools and artifacts](references/gateway/chat/responses.md#add-hosted-tools-and-artifacts) |
+| Gateway-managed persistent conversations and browser thread storage | Responses plus Conversations through authenticated app routes or scoped browser access; follow [gateway/chat/conversations.md](references/gateway/chat/conversations.md) |
+| Hosted web search, image search, and remote MCP | [Responses hosted tools](references/gateway/chat/responses.md#add-hosted-tools) |
 | App-owned function tools | Follow the [Responses tool loop](references/gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions tool loop](references/gateway/chat/chat-completions.md#keep-function-tools-in-the-application); the application executes tools using the selected protocol |
-| Standalone slide/report generation and explicit program-based edits | [Artifact Chat Completions](references/gateway/artifacts.md), with application-owned persistence |
-| Responsive managed UI | `AgentInterface` plus `chatLibrary`, with the adapter and message format selected for the generation protocol |
+| Generic artifacts in Agent Interface | Application tool calls plus custom renderers and optional artifact storage; follow [artifacts.md](references/artifacts.md) |
+| Responsive React UI | `AgentInterface` plus `openuiChatLibrary` or a custom library, with the adapter and message format selected for the generation protocol |
 
 ## Route Gateway Integration and Migration Tasks
 
@@ -92,7 +91,7 @@ Choose the matching path:
 | Existing Chat Completions application | Read [references/gateway/integration.md](references/gateway/integration.md) and [references/gateway/chat/chat-completions.md](references/gateway/chat/chat-completions.md); keep app-owned history unless migration is requested |
 | Existing Responses application | Read [references/gateway/integration.md](references/gateway/integration.md) and [references/gateway/chat/responses.md](references/gateway/chat/responses.md); preserve the selected Responses history pattern |
 | New or existing Responses app using Gateway-managed threads | Also read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md) for the persistence, identity, token, and authorization plane |
-| Standalone managed slide/report generation or explicit editing | Read [references/gateway/integration.md](references/gateway/integration.md) and [references/gateway/artifacts.md](references/gateway/artifacts.md); verify the endpoint contract and keep persistence in the application |
+| Artifact creation, rendering, or editing in Agent Interface | Read [references/artifacts.md](references/artifacts.md); preserve the host's generation protocol and implement the requested tool, renderer, and persistence |
 | Existing non-React client | Read [references/gateway/integration.md](references/gateway/integration.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
 | Existing self-hosted/open-source app moving to Gateway | Read [references/gateway/oss-migration.md](references/gateway/oss-migration.md), [references/gateway/integration.md](references/gateway/integration.md), and the protocol-specific runbook selected after inspecting the host |
 
@@ -120,16 +119,16 @@ Use Gateway when the user wants managed production infrastructure for an Agent I
 
 For a new Gateway app, use [references/gateway/quickstart.md](references/gateway/quickstart.md). For an existing app, read [references/gateway/integration.md](references/gateway/integration.md) and preserve its Chat Completions or Responses protocol unless the user requests migration. Do not assume Gateway generation also requires Gateway Conversations: Chat Completions applications retain their own messages and persistence.
 
-Version-sensitive: verify exact environment variables, prompt-helper options, `@openuidev/thesys*` exports, adapters, and route helpers against the installed package and current generated template. Current managed prompt compilation uses `generateSystemPrompt({ cloud: true })` from `@openuidev/lang-core`; current server artifact helpers such as `artifactTool()` come from `@openuidev/thesys-server`.
+Version-sensitive: verify exact environment variables, prompt-helper options, adapters, and route helpers against the installed package and current generated template. Current managed prompt compilation uses `generateSystemPrompt({ cloud: true, library })` from `@openuidev/lang-core`, with a serialized spec of the library used by the client.
 
-Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model allowlist, and read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials. Use [references/build-component-library.md](references/build-component-library.md) when the client does not use the built-in managed library.
+Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model allowlist, and read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials. Use [references/build-component-library.md](references/build-component-library.md) to keep the prompt spec and client library synchronized.
 
 ### Wire Agent Interface
 
 Use `AgentInterface` from `@openuidev/react-ui` for the full chat surface. It owns the layout, sidebar, thread list, composer, routing, and workspace rail. Configure the backend through two independent channels:
 
 - `llm` is required. Use `fetchLLM({ url, streamAdapter, messageFormat })` for normal HTTP POST routes.
-- `storage` is optional. Omit it for in-memory conversations; use `restStorage({ baseUrl })` or Gateway storage for persisted threads and artifacts.
+- `storage` is optional. Omit it for in-memory conversations; use `restStorage({ baseUrl })` or custom `ChatStorage` for persisted threads. Add `ChatStorage.artifact` separately for durable artifact browsing and editing.
 - Optional props include `artifactRenderers`, `artifactCategories`, `componentLibrary`, `components`, theme/branding, starters, routing, and children/slots.
 
 `AgentInterface` is a full app shell, not automatically a compact embedded widget. It measures its own container, switches to mobile layout below 768px, and still renders shell chrome unless slots override it. For a narrow assistant rail around 390px, prefer `Renderer` plus `openuiChatLibrary` when the host owns the chat layout; if using `AgentInterface`, replace slots such as `Sidebar`, `ThreadHeader`, `Composer`, or `Workspace` and scope CSS overrides to a host wrapper around `.openui-agent-*`.
@@ -351,7 +350,7 @@ Use OpenUI DevTools to inspect the response text, parser issues, validation erro
 - For Gateway, confirm the server key never appears in client code and the adapter/format pair matches the actual browser stream. Responses with named conversations sends only the latest turn; direct browser storage uses a scoped frontend token. Chat Completions supplies relevant history through the app/framework; preserve its independently selected storage owner.
 - Test invalid request bodies and provider-item injection, missing configuration, upstream failures, abort handling, and stream closure without a real key when possible.
 - Verify logged-out requests cannot use any Gateway proxy or token route. For Gateway Conversations, verify one authenticated user cannot address another user's conversation id; for app-owned storage, preserve and test the host authorization model.
-- With an authorized test key, smoke-test streaming and the selected persistence model. Test a managed report or presentation only when the selected API and product flow support it.
+- With an authorized test key, smoke-test streaming and the selected persistence model. When artifacts are requested, exercise the application tool, custom renderer, and any configured reopening/editing flow.
 - Vite large chunk warnings from default React UI/chat libraries are not automatically failures; chart/UI dependencies can be substantial.
 - For scoped agent tests, keep caches/stores inside the assigned workspace when needed, for example `npm_config_cache=$PWD/.npm-cache npm install` or `pnpm install --store-dir .pnpm-store`.
 
@@ -385,6 +384,7 @@ Useful React UI exports:
 - `openuiLibrary`: OpenUI's full built-in library for charts, tables, forms, cards, images, layout, and other app UI.
 - `openuiChatLibrary`: OpenUI's chat-optimized built-in library with follow-ups, steps, and callouts.
 - `AgentInterface`: full chat app shell with backend `llm` and optional `storage` channels.
+- `defineArtifactRenderer`: connect application tool results to an inline preview and custom full view through `artifactRenderers`.
 - `fetchLLM`, `restStorage`, stream adapters, and message formats: Agent Interface backend wiring for Gateway or direct providers; match the actual browser transport and storage owner.
 - `FullScreen`, `Copilot`, `BottomTray`: prebuilt chat surfaces.
 - `ThemeProvider`, `createTheme`, `useTheme`, `ThemeProps`, and `ThemeMode`: theming. Read [references/theme-provider.md](references/theme-provider.md) before integrating them.

@@ -2,6 +2,8 @@
 
 Use this pattern when the user wants full generative UI, generated mini-apps, raw HTML, or a sandboxed iframe rather than a fixed component catalog.
 
+For an application tool that returns HTML and opens it through a custom artifact renderer, use [Generic Agent Interface Artifacts](artifacts.md). The pattern below embeds HTML in the assistant's OpenUI Lang response; both approaches can use the same sandboxed HTML view.
+
 The canonical implementation is [`examples/miscellaneous/html-artifact`](https://github.com/thesysdev/openui/tree/main/examples/miscellaneous/html-artifact).
 
 ## Pattern

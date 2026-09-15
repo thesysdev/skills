@@ -24,7 +24,7 @@ Distinguish these goals before removing code:
 
 If the request says only “migrate to Gateway,” default to code migration and preserve historical data in place. Do not claim data migration unless a current first-party import API is documented and verified.
 
-If the app uses OSS components, ask whether the user wants to keep them or switch to Gateway's `chatLibrary`. Treat backend, storage, and component-library migration as separate choices; moving to Gateway does not automatically authorize replacing the visible component set.
+Keep the application's existing component library and pass its serialized spec to Gateway. Treat backend, storage, and component-library migration as separate choices; moving to Gateway does not automatically authorize replacing the visible component set.
 
 ## Classify the Existing App
 
@@ -32,7 +32,7 @@ Inventory the project before editing:
 
 | Shape                        | Typical signals                                                              | Migration character                                                           |
 | ---------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Self-hosted `AgentInterface` | `fetchLLM`, `ChatLLM`, `restStorage`, `openuiLibrary` or `openuiChatLibrary` | Mostly mechanical adapter/storage/library swap                                |
+| Self-hosted `AgentInterface` | `fetchLLM`, `ChatLLM`, `restStorage`, `openuiLibrary` or `openuiChatLibrary` | Rewire generation and any requested storage changes; retain the library |
 | Legacy flat-prop chat        | `apiUrl`, `threadApiUrl`, `processMessage`, old renderer names               | First migrate to current `AgentInterface`, then migrate backend               |
 | Renderer-only GenUI          | `Renderer`, `library.prompt()`, app-owned messages and model stream          | Keep the renderer or adopt Agent Interface; choose Gateway state and generation APIs explicitly |
 | Custom component library     | `defineComponent`, `createLibrary`, custom prompt options                    | Reuse the runtime library and generate the matching serialized spec for Gateway |
@@ -48,9 +48,9 @@ If the existing application uses `chat.completions.create()` and the user did no
 
 1. Read [Chat Completions](chat/chat-completions.md).
 2. Point the existing OpenAI-compatible client at the Gateway Embed base URL and replace provider-specific model ids with an allowed current `{provider}/{model}` value.
-3. For managed generative UI, put `generateSystemPrompt({ cloud: true, ... })` from `@openuidev/lang-core` in the trusted system-message position. Preserve trusted application behavior through the helper's documented instructions option.
+3. For managed generative UI, put `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` in the trusted system-message position, using the existing client library's serialized spec. Preserve trusted application behavior through the helper's documented instructions option.
 4. Keep the complete relevant `messages` history, including assistant tool calls and tool results.
-5. Keep the host persistence layer. Do not add Gateway Conversations, `useOpenuiCloudStorage()`, or a frontend-token route.
+5. Keep the host persistence layer. Do not add Gateway Conversations or a frontend-token route.
 6. Keep app-owned function tool execution and its bounded loop.
 7. Pair raw Chat Completions SSE with `openAIAdapter()` or an SDK readable stream with `openAIReadableStreamAdapter()`, using `openAIMessageFormat`.
 
@@ -66,15 +66,15 @@ Apply this map only when the user chose Responses and Gateway Conversations. Do 
 | Full message history sent per turn                   | Latest message only plus `conversation: threadId`                                                      |
 | `openAIReadableStreamAdapter()` or `openAIAdapter()` | `openAIResponsesAdapter()`                                                                             |
 | `openAIMessageFormat`                                | `openAIConversationMessageFormat`                                                                      |
-| In-memory, `restStorage`, or custom `ChatStorage`    | `useOpenuiCloudStorage({ token: "/api/frontend-token" })`                                              |
-| `openuiLibrary`/`openuiChatLibrary`                  | `chatLibrary` from `@openuidev/thesys` when the user chooses Gateway components                          |
-| `library.prompt(...)` in the provider route          | `generateSystemPrompt({ cloud: true, ... })` from `@openuidev/lang-core`; pass a generated spec when preserving a custom library |
-| App-owned artifact loop/renderers                    | Managed `artifactTool({ artifacts: ["slides", "report"] })` plus managed renderers for stock artifacts |
-| No browser storage credential                        | Short-lived frontend token scoped to the authenticated `user_id`                                       |
+| In-memory, `restStorage`, or custom `ChatStorage`    | `ChatStorage` backed by Gateway Conversations through host routes or verified scoped browser access |
+| `openuiLibrary`/`openuiChatLibrary`                  | Keep the same client library and generate its serialized spec |
+| `library.prompt(...)` in the provider route          | `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` using the matching serialized spec |
+| App-owned artifact loop/renderers                    | Keep the generic artifact tools, custom renderers, and artifact store; verify result delivery through the new adapter |
+| No browser storage credential                        | Existing session for host storage routes, or a scoped frontend token for direct Gateway browser access |
 
 Preserve branding, theme, starters, slots, navigation, route placement, error boundaries, analytics, and authentication unless the user requests a redesign.
 
-For the generation contract, read [Responses](chat/responses.md). For persistent named threads, frontend tokens, and identity, also read [Conversations](chat/conversations.md).
+For the generation contract, read [Responses](chat/responses.md). For persistent named threads, storage access, and identity, also read [Conversations](chat/conversations.md).
 
 ### Migrate AgentInterface apps to Responses
 
@@ -83,14 +83,14 @@ For the generation contract, read [Responses](chat/responses.md). For persistent
 3. In Next.js, move the Gateway UI into a separate client component and match the
    installed first-party template's dynamic-rendering boundary. Add an
    `ssr: false` client loader only when the production build requires it.
-4. Replace self-hosted storage with `useOpenuiCloudStorage()` and add the frontend-token route.
-5. If the user chose Gateway components, replace the stock OSS library with `chatLibrary` and register the managed report/presentation renderers. If they keep a custom library, generate its serialized spec, pass it to `generateSystemPrompt({ cloud: true, library, ... })`, and render with the matching runtime library.
+4. Connect `ChatStorage` to Gateway Conversations using the access plane in [Conversations](chat/conversations.md#connect-agent-interface-storage). Add a frontend-token route only for direct browser access.
+5. Generate the existing component library's serialized spec, pass it to `generateSystemPrompt({ cloud: true, library, ... })`, and render with the matching runtime library. Preserve custom artifact renderer registration and its tool-result contract.
 6. Replace the provider `/api/chat` implementation with the Gateway proxy while preserving independent API authentication, conversation authorization, rate limiting, request validation, abort propagation, error handling, and the route URL expected by the client.
 7. Keep the previous provider/storage code until the Gateway path builds and passes tests. Remove it only for an explicitly confirmed replacement migration.
 8. Remove provider dependencies, environment variables, storage routes, and dead adapters only when no other application path uses them.
 9. Update environment examples and deployment configuration without committing secrets.
 
-Do not send both full history and a Gateway conversation id. Doing so can duplicate context. Do not leave `library.prompt()` in the managed Gateway route; `generateSystemPrompt({ cloud: true, ... })` from `@openuidev/lang-core` supplies the managed instructions for the built-in library or the provided serialized custom-library spec.
+Do not send both full history and a Gateway conversation id. Doing so can duplicate context. Use `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core` in the managed Gateway route, supplying the serialized spec for the actual client library.
 
 ## Handle Renderer-Only and Custom-Library Apps
 
@@ -100,7 +100,7 @@ For an Agent Interface migration:
 
 1. Introduce `AgentInterface` at the requested route or surface.
 2. Move reusable branding and surrounding layout into `AgentInterface` props/slots.
-3. Add the generation route from [Responses](chat/responses.md) and the frontend-token and storage wiring from [Conversations](chat/conversations.md).
+3. Add the generation route from [Responses](chat/responses.md) and the selected storage wiring from [Conversations](chat/conversations.md).
 4. Retain the old Renderer surface until behavior parity is verified; then remove it only for replacement migrations.
 
 For a renderer-preserving or custom component-library migration:
@@ -109,7 +109,7 @@ For a renderer-preserving or custom component-library migration:
 - **Will Gateway generation receive matching component instructions?** Generate a serialized spec with `openui generate --spec` and pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`.
 - **Who owns history?** Use Responses with `conversation` plus `store: true` for Gateway persistence, or choose Embed Chat Completions when the application should continue resending its own history.
 
-Regenerate the spec whenever the runtime library contract changes. Do not pair the built-in Gateway prompt with a custom client library; the model and renderer must use the same component contract. Read [build-component-library.md](../build-component-library.md) for the complete workflow.
+Regenerate the spec whenever the runtime library contract changes. The model and renderer must use the same component contract. Read [build-component-library.md](../build-component-library.md) for the complete workflow.
 
 ## Handle Dual Mode
 
@@ -127,9 +127,9 @@ Select the mode on the server or through trusted deployment configuration. Do no
 
 - **Historical conversations/artifacts:** no import path is established by the repository sources. Preserve the old store read-only or export it separately; do not fabricate Gateway records.
 - **Custom tool execution:** supported. For Chat Completions, preserve the application's standard assistant-tool/result loop. For Responses, declare `type: "function"` tools and use the current template's bounded loop from [Responses](chat/responses.md#app-owned-function-tools). Never execute or answer Gateway-owned `thesys_*` function calls in the Responses loop.
-- **Custom artifact-producing tools:** managed `artifactTool()` covers the documented report and slide path inside Responses. Use [artifacts.md](artifacts.md) for standalone slide/report programs; do not infer support for arbitrary custom artifact types.
+- **Artifact-producing tools:** preserve the application's tool execution, payloads, and custom views using [Generic Agent Interface Artifacts](../artifacts.md). Verify both calls and results reach the UI, and retain the artifact store unless its migration was requested.
 - **Attachments and media:** preserve an attachment-capable self-hosted path until the installed Gateway client, generation input, storage, and size-limit contracts are verified end to end.
-- **Non-React clients:** Gateway generation can retain a compatible existing renderer and its matching library spec. Managed `@openuidev/thesys` components and artifact viewers are a separate React client contract; verify parity before promising them on another runtime.
+- **Non-React clients:** Gateway generation can retain a compatible existing renderer and its matching library spec. Agent Interface artifact registration uses React; preserve another runtime's own artifact views and tool-result transport.
 
 ## Verify
 
@@ -137,7 +137,7 @@ Select the mode on the server or through trusted deployment configuration. Do no
 2. Search for stale adapter/format pairs, browser-exposed keys, and obsolete provider routes. For Responses conversations reject duplicate full-history sends; for Chat Completions reject accidental latest-message-only sends.
 3. Exercise both modes independently when dual mode is retained.
 4. Verify existing self-hosted data remains accessible or deliberately archived; do not describe it as imported without evidence.
-5. With an authorized test key, verify streaming, the selected persistence owner, and user isolation. Verify a managed artifact only when the selected surface supports that lifecycle.
+5. With an authorized test key, verify streaming, the selected persistence owner, and user isolation. Verify existing artifact creation, custom rendering, and any configured reopening/editing flow.
 6. Compare user-visible behavior—theme, starters, navigation, tools, and custom components—and explicitly list any capability intentionally left self-hosted.
 
 ## First-Party References

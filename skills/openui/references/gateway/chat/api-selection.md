@@ -8,7 +8,7 @@ Responses and Embed Chat Completions are the two conversational generation choic
 
 | Protocol | Endpoint | Use when | Continue with |
 | --- | --- | --- | --- |
-| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new chat or agent app, preserving an existing Responses integration, or needing hosted tools or artifacts inside turns | [responses.md](responses.md) |
+| Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new chat or agent app, preserving an existing Responses integration, or needing hosted tools | [responses.md](responses.md) |
 | Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, plain-text passthrough, app-owned messages, or app-run function tools | [chat-completions.md](chat-completions.md) |
 
 Responses is the recommended starting point for new agent applications, not a mandatory migration target. Preserve an existing Chat Completions protocol unless the user requests migration or needs a Responses-only capability.
@@ -50,20 +50,20 @@ For managed Gateway generative UI:
 - Pass `{ cloud: true }`.
 - Responses: put the generated prompt in `instructions`.
 - Embed Chat Completions: put it in a `role: "system"` message.
-- With the built-in `chatLibrary`, omit `library`.
-- With a custom library, pass the serialized `library` spec and optional trusted `instructions`/`promptOptions`.
+- Pass the serialized `library` spec for the actual client library, whether it is `openuiLibrary`, `openuiChatLibrary`, or a custom library.
+- Add optional trusted `instructions`/`promptOptions` for that library.
 
 For application-owned/self-hosted generative UI sent through Embed Chat Completions, omit `cloud: true` and compile the full prompt from the application's serialized `library` and `promptOptions`. The application then owns validation and correction.
 
 For plain-text passthrough, omit the managed generative UI prompt and preserve the application's trusted system/developer instructions.
 
-Read [build-component-library.md](../../build-component-library.md) before defining or migrating a custom library. Never pair a custom runtime library with the built-in model-facing prompt or a stale serialized spec.
+Read [build-component-library.md](../../build-component-library.md) before defining or migrating a library. Keep the runtime library and serialized spec synchronized.
 
-## Keep Standalone Artifacts Separate
+## Add Generic Artifacts Independently
 
-Use Artifact Chat Completions for standalone slide/report generation and explicit edits, with application-owned persistence. Read [artifacts.md](../artifacts.md) for the request, viewer, and verification contracts. This is a separate workload, not another conversational generation protocol.
+Agent Interface artifacts use application tool calls and custom renderers with either generation protocol. Read [artifacts.md](../../artifacts.md) for the tool-result, renderer, and optional persistence contracts.
 
-When an artifact should live inside an agent conversation, use Responses with `artifactTool()` instead.
+Content format does not require a protocol migration. Preserve the host tool loop and ensure its client adapter receives both the tool call and result.
 
 ## First-Party References
 

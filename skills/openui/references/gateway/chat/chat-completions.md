@@ -10,7 +10,7 @@ The Embed Chat Completions endpoint supports three distinct modes:
 
 | Mode | System prompt | Output owner |
 | --- | --- | --- |
-| Managed generative UI | `generateSystemPrompt({ cloud: true })` | Gateway assembles the managed component prompt and validates/repairs OpenUI Lang |
+| Managed generative UI | `generateSystemPrompt({ cloud: true, library })` | Gateway uses the supplied library spec and validates/repairs OpenUI Lang |
 | Plain text passthrough | Existing application system/developer messages; omit the managed prompt sentinel | Gateway routes the selected model and returns text |
 | Application-owned generative UI | `generateSystemPrompt({ library, promptOptions })` without `cloud: true` | Application owns the full prompt, validation, correction, and renderer contract |
 
@@ -22,7 +22,7 @@ Chat Completions is message-based. Keep the application's existing persistence a
 
 - Do not send only the latest message.
 - Do not add `conversation`, `previous_response_id`, or `store: true` Responses semantics.
-- Do not replace the host database or `restStorage` with `useOpenuiCloudStorage()` merely to use the Gateway generation endpoint.
+- Do not replace the host database or `restStorage` with Gateway Conversations merely to use the Gateway generation endpoint.
 - Preserve existing compaction, truncation, tool-result, and attachment behavior after checking Gateway/model compatibility.
 
 If the product wants server-side history injection via `conversation`, choose Responses and treat that as a separate protocol/storage migration. A framework can also manage Gateway storage independently of its Chat Completions model call; preserve an already-configured path and verify its writes and reloads. Do not infer this behavior merely from a storage hook being present.
@@ -33,6 +33,7 @@ Use the stock OpenAI SDK and keep the key on the server:
 
 ```ts
 import { generateSystemPrompt } from "@openuidev/lang-core";
+import librarySpec from "./generated/library-spec.json";
 import OpenAI from "openai";
 
 const embedClient = new OpenAI({
@@ -47,6 +48,7 @@ const stream = await embedClient.chat.completions.create({
       role: "system",
       content: generateSystemPrompt({
         cloud: true,
+        library: librarySpec,
         instructions: trustedApplicationInstructions,
       }),
     },
@@ -59,7 +61,7 @@ const stream = await embedClient.chat.completions.create({
 
 Move existing trusted system behavior into the helper's `instructions` or another currently documented trusted-instruction seam. Do not blindly append every prior system message, and never include user-authored content there. Avoid sending duplicate managed prompts on later turns.
 
-For a custom component library, follow [build-component-library.md](../../build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library.
+Generate `librarySpec` from the same library the client renders, including `openuiChatLibrary` in the example below. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps.
 
 ## Match the Client Stream
 
@@ -71,9 +73,10 @@ import {
   fetchLLM,
   openAIAdapter,
   openAIMessageFormat,
+  openuiChatLibrary,
 } from "@openuidev/react-ui";
-import { chatLibrary } from "@openuidev/thesys";
-import "@openuidev/thesys/styles.css";
+import "@openuidev/react-ui/components.css";
+import "@openuidev/react-ui/styles/index.css";
 
 const llm = fetchLLM({
   url: "/api/chat",
@@ -82,7 +85,7 @@ const llm = fetchLLM({
 });
 
 export function GatewayChat() {
-  return <AgentInterface llm={llm} componentLibrary={chatLibrary} />;
+  return <AgentInterface llm={llm} componentLibrary={openuiChatLibrary} />;
 }
 ```
 
@@ -103,11 +106,13 @@ Embed Chat Completions accepts function tools but does not execute them. Preserv
 5. Append the assistant tool-call message and one `role: "tool"` result for each call.
 6. Repeat with a bounded iteration count until the model returns the final answer.
 
-Do not attach Responses-only hosted `web_search`, `image_search`, remote MCP, or `artifactTool()` declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses. For standalone slide/report generation, use Artifact Chat Completions as a separate call and follow [artifacts.md](../artifacts.md).
+Do not attach Responses-only hosted `web_search`, `image_search`, or remote MCP declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses.
+
+Generic artifacts use ordinary application function tools and custom Agent Interface renderers; follow [artifacts.md](../../artifacts.md). Ensure the browser receives both the tool call and its result. Raw Chat Completions deltas expose tool arguments, but the app-owned executor must also deliver its result through a supported UI stream, such as AG-UI with `agUIAdapter()`, or the host's existing tool-result transport. Appending a tool result only to model history is insufficient for the artifact renderer.
 
 ## Keep Plain Text and Application-Owned UI Intact
 
-For plain text passthrough, retain the existing trusted prompt and omit `generateSystemPrompt({ cloud: true })`. The Gateway endpoint then acts as the compatible model gateway.
+For plain text passthrough, retain the existing trusted prompt and omit the managed generative UI prompt. The Gateway endpoint then acts as the compatible model gateway.
 
 For application-owned generative UI, compile the complete prompt from the runtime library spec without `cloud: true`:
 
@@ -118,7 +123,7 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-In that mode the application—not Gateway's managed component path—owns prompt assembly, output validation/correction, and the renderer contract. Do not describe it as managed Gateway UI validation.
+In that mode the application owns prompt assembly, output validation/correction, and the renderer contract. Do not describe it as managed Gateway UI validation.
 
 ## Adapt the Server Route
 

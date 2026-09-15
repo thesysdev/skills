@@ -1,6 +1,6 @@
 # Integrate OpenUI Gateway with the Responses API
 
-Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events, new agents that need hosted tools, or workflows that need artifacts inside the agent stream. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration.
+Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events or new agents that need hosted tools. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration. Generic artifacts use application tools with either protocol.
 
 Conversations is optional. Read [conversations.md](conversations.md) only when the application needs persistent named Gateway threads, item APIs, browser storage, frontend tokens, or Gateway user/app isolation.
 
@@ -12,7 +12,7 @@ Conversations is optional. Read [conversations.md](conversations.md) only when t
 4. [Choose the Model-Facing Prompt](#choose-the-model-facing-prompt)
 5. [Match the Client Stream](#match-the-client-stream)
 6. [Adapt the Generation Route](#adapt-the-generation-route)
-7. [Add Hosted Tools and Artifacts](#add-hosted-tools-and-artifacts)
+7. [Add Hosted Tools](#add-hosted-tools)
 8. [Run Application Function Tools](#app-owned-function-tools)
 9. [Reliability and Observability](#reliability-and-observability)
 10. [Verify](#verify)
@@ -25,7 +25,7 @@ The Responses endpoint is:
 POST https://api.thesys.dev/v1/embed/responses
 ```
 
-It provides Responses-compatible requests and events, managed generative UI, hosted tools, and artifacts inside agent turns. Preserve the host framework, route shape, authentication, history owner, renderer, component library, and working tool behavior unless the user requested a migration.
+It provides Responses-compatible requests and events, managed generative UI, and hosted tools. Preserve the host framework, route shape, authentication, history owner, renderer, component library, and working tool behavior unless the user requested a migration.
 
 Do not conflate these choices:
 
@@ -42,7 +42,7 @@ Use exactly one Responses history pattern:
 | --- | --- | --- |
 | Full `input` history | The application already owns storage or needs explicit context control | Load, authorize, bound, and resend the relevant Responses input items |
 | `previous_response_id` | Turns should form a stored response chain without a named/listable conversation | Persist and authorize the latest response id; send only the new turn with `store: true` |
-| `conversation` plus `store: true` | The product needs persistent named Gateway threads, item CRUD, or `useOpenuiCloudStorage()` | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
+| `conversation` plus `store: true` | The product needs persistent named Gateway threads, item CRUD, or browser thread storage | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
 
 Do not combine full history with `conversation`, or combine `previous_response_id` with `conversation`. Do not add frontend tokens or Gateway browser storage to the first two patterns.
 
@@ -63,7 +63,7 @@ const embedClient = new OpenAI({
 
 Use a current `{provider}/{model}` id selected through trusted server configuration. Preserve a host model allowlist and reject arbitrary browser-supplied model ids.
 
-Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `@openuidev/thesys`, `openai`, and the installed peer dependencies. Add `@openuidev/thesys-server` only for server helpers such as `artifactTool()`.
+Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies.
 
 ## Choose the Model-Facing Prompt
 
@@ -71,16 +71,18 @@ Use current managed prompt compilation from `@openuidev/lang-core`:
 
 ```ts
 import { generateSystemPrompt } from "@openuidev/lang-core";
+import librarySpec from "./generated/library-spec.json";
 
 const instructions = generateSystemPrompt({
   cloud: true,
+  library: librarySpec,
   instructions: trustedApplicationInstructions,
 });
 ```
 
 Pass the result as the Responses `instructions` value. Keep user-authored content out of trusted instructions, preambles, rules, and examples.
 
-For a custom component library, follow [build-component-library.md](../../build-component-library.md): generate a serialized spec, pass it as `library` with `cloud: true`, and render with the matching runtime library. Do not combine a custom client library with the built-in model-facing prompt.
+Generate `librarySpec` from the same library the client renders, including `openuiChatLibrary` in the example below. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps. Regenerate it when the library changes.
 
 ## Match the Client Stream
 
@@ -92,9 +94,10 @@ import {
   fetchLLM,
   openAIConversationMessageFormat,
   openAIResponsesAdapter,
+  openuiChatLibrary,
 } from "@openuidev/react-ui";
-import { chatLibrary } from "@openuidev/thesys";
-import "@openuidev/thesys/styles.css";
+import "@openuidev/react-ui/components.css";
+import "@openuidev/react-ui/styles/index.css";
 
 const llm = fetchLLM({
   url: "/api/chat",
@@ -103,7 +106,7 @@ const llm = fetchLLM({
 });
 
 export function GatewayChat() {
-  return <AgentInterface llm={llm} componentLibrary={chatLibrary} />;
+  return <AgentInterface llm={llm} componentLibrary={openuiChatLibrary} />;
 }
 ```
 
@@ -129,7 +132,7 @@ Build the request according to the chosen history owner. The alternatives below 
 ```ts
 const common = {
   model,
-  instructions: generateSystemPrompt({ cloud: true }),
+  instructions,
   stream: true as const,
 };
 
@@ -162,35 +165,32 @@ const persistent = await embedClient.responses.create(
 );
 ```
 
-These snippets show the state distinction, not a drop-in route. The host must supply `authorizedInputHistory`, `authorizedPreviousResponseId`, or `authorizedConversationId` from its actual authentication and persistence boundaries. For named conversations, implement the separate ownership and frontend-token contract in [conversations.md](conversations.md#authorize-the-generation-route-separately).
+These snippets show the state distinction, not a drop-in route. The host must supply `authorizedInputHistory`, `authorizedPreviousResponseId`, or `authorizedConversationId` from its actual authentication and persistence boundaries. For named conversations, implement the separate ownership and storage-access contract in [conversations.md](conversations.md#authorize-the-generation-route-separately).
 
-## Add Hosted Tools and Artifacts
+## Add Hosted Tools
 
 OpenUI Gateway executes hosted tools server-side inside the Responses request. Application function tools still execute on the application server.
 
-The current [Hosted Tools guide](https://www.openui.com/docs/gateway/api/responses/hosted-tools) documents search and MCP. Managed slides/reports remain in the default CLI template and published artifact helpers/renderers; verify those installed contracts before adding them to another framework. Their omission from the reorganized API page is not evidence that the default template's artifact path should be rebuilt locally.
+The current [Hosted Tools guide](https://www.openui.com/docs/gateway/api/responses/hosted-tools) documents search and MCP.
 
 | Capability | Declaration | Execution owner |
 | --- | --- | --- |
-| Slides and reports | `artifactTool({ artifacts: ["slides", "report"] })` | Gateway |
 | Web search | `{ type: "web_search" }` | Gateway |
 | Image search | `{ type: "image_search" }` | Gateway |
 | Remote MCP server | `{ type: "mcp", server_label, server_url, headers? }` | Gateway |
 | Application function | `{ type: "function", name, description, parameters }` | Application server |
 
-Add persistent reports or presentations inside a named agent conversation with the server helper:
+For example, add hosted search and MCP to a named conversation:
 
 ```ts
-import { artifactTool } from "@openuidev/thesys-server";
 import type { Tool } from "openai/resources/responses/responses";
 
 const response = await embedClient.responses.create({
   model,
   conversation: authorizedConversationId,
   input: latestTurn,
-  instructions: generateSystemPrompt({ cloud: true }),
+  instructions,
   tools: [
-    artifactTool({ artifacts: ["slides", "report"] }) as unknown as Tool,
     { type: "web_search" },
     { type: "image_search" } as unknown as Tool,
     {
@@ -206,11 +206,11 @@ const response = await embedClient.responses.create({
 
 Keep compatibility casts scoped to Gateway extensions missing from the installed OpenAI SDK tool union. Do not weaken unrelated types.
 
-This artifact example uses the named-conversation state model so follow-up turns and browser storage can reopen the artifact. Apply the identity and authorization contract in [conversations.md](conversations.md); hosted search, MCP, and application function tools can also be used with the other Responses history patterns.
+This example uses the named-conversation state model. Apply the identity and authorization contract in [conversations.md](conversations.md); hosted search, MCP, and application function tools can also be used with the other Responses history patterns.
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-Managed artifacts are separate stored objects. Register the installed `presentationArtifactRenderer` and `reportArtifactRenderer` client exports, and add Gateway storage when the product must persist and reopen them. Follow-up turns in the same stored conversation can edit them. For standalone generation or explicit program-based editing outside an agent stream, follow [artifacts.md](../artifacts.md) instead.
+For artifacts, declare an application function tool and register its custom renderer with Agent Interface. Follow [Generic Agent Interface Artifacts](../../artifacts.md); the application owns content generation, rendering, and any durable artifact store.
 
 ## App-Owned Function Tools
 
@@ -223,6 +223,8 @@ Use the current Gateway template's `src/lib/tool-loop.ts` as the reference imple
 3. Bound the number of continuation iterations and validate every tool argument before execution.
 
 Do not reuse a Chat Completions assistant/tool-message loop; Responses uses `function_call` and `function_call_output` items.
+
+For artifact-producing tools, ensure the client stream includes the paired tool result as well as the call. Sending a `function_call_output` only in the model continuation does not guarantee that the browser receives it; verify the loop's event forwarding with the selected adapter.
 
 ## Reliability and Observability
 
@@ -242,7 +244,7 @@ When production monitoring is required, follow [the shared Gateway integration g
 6. For named conversations, run every identity, token, ownership, CRUD, isolation, and reload check in [conversations.md](conversations.md#verify).
 7. Test invalid input-item injection, request limits, missing configuration, Gateway 4xx/5xx, cancellation, and stream closure.
 8. Exercise every declared hosted and application-owned tool; confirm the application never executes Gateway-owned calls.
-9. If artifacts are enabled, generate, reopen, and edit one supported artifact through the selected state model.
+9. If artifacts are enabled, exercise the application tool and custom view; verify reopening and editing when artifact storage is configured.
 10. Run representative UI prompts repeatedly and inspect settled parser/renderer errors.
 11. Run the host formatter, typecheck, tests, and production build.
 
