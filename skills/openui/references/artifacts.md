@@ -2,6 +2,8 @@
 
 Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one artifact type: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output.
 
+For the surrounding chat shell, backend connections, message rendering, and navigation, read [Agent Interface](agent-interface.md). This guide covers its artifact workflow.
+
 Artifacts are independent of Gateway. Preserve the application's model provider, tool loop, stream adapter, and storage choices. With Gateway, use ordinary application function tools through [Responses](gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions](gateway/chat/chat-completions.md#keep-function-tools-in-the-application).
 
 ## Connect a Tool to a Renderer

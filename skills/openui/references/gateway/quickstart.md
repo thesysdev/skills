@@ -66,6 +66,8 @@ Read [the Gateway integration guide](integration.md) for shared requirements, th
 
 ## Extend the Starter
 
+Read [Agent Interface](../agent-interface.md) for the chat shell, backend channels, message rendering, layout, and navigation.
+
 - Starters and welcome content: edit the generated starter configuration and `AgentInterface.Welcome` slots rather than replacing the chat shell.
 - App-owned tools: register the declaration and executor in the generated tool loop; never execute Gateway-owned `thesys_*` calls.
 - Hosted tools: declare supported web search, image search, or MCP entries in the Responses request.

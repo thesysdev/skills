@@ -11,7 +11,7 @@ Work from the user's app or project first. Inspect installed packages, generated
 
 Current docs separate **OpenUI Gateway** (hosted model access and OpenUI Lang correction), **OpenUI Observability** (production error monitoring), and **Agent Interface** (the React chat UI). OpenUI Cloud is the former name for the hosted setup; use Gateway in current prose and keep its runbooks under `references/gateway/`. Preserve the compatibility identifiers `openui-cloud`, `cloud: true`, `THESYS_API_KEY`, and `@openuidev/observability-cloud`; do not invent Gateway-renamed flags, packages, or exports.
 
-Agent Interface has one artifact type. An application tool produces the content and an application-provided renderer displays it: HTML, Markdown, a presentation, or anything else the user needs. Reports and presentations are no longer supported as built-in managed products. Older templates or cached docs may still show those paths; use the artifact workflow below.
+The [Agent Interface guide](references/agent-interface.md) covers the chat shell, backend connections, message rendering, customization, and navigation. Agent Interface includes an artifact workspace: an application tool produces content and an application-provided renderer displays it. Follow the dedicated [artifact guide](references/artifacts.md) for tool results, custom views, edits, and storage.
 
 ## First Checks Before Answering
 
@@ -52,6 +52,7 @@ Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuid
 ## Choose The Starting Point
 
 - For a new OpenUI/GenUI chat or agent app, default to the Gateway CLI template and read [references/gateway/quickstart.md](references/gateway/quickstart.md).
+- For Agent Interface setup, backend wiring, message rendering, layout, or navigation, read [references/agent-interface.md](references/agent-interface.md).
 - A prototype, demo, MVP, local development, or dummy/mock/sample data does not imply self-hosting. Neither does the absence of an existing Thesys account or configured `THESYS_API_KEY`; treat Gateway sign-in and credential entry as a human setup checkpoint.
 - Use the self-hosted CLI template only when the user explicitly requests self-hosting, no external service, app-owned model/storage infrastructure, or a verified requirement unsupported by Gateway. Do not silently change the backend to avoid a credential checkpoint.
 - If a chat or agent app should create artifacts, use an application tool and custom renderer through the [artifact workflow](references/artifacts.md). Content format does not determine the generation protocol or storage owner.
@@ -82,7 +83,7 @@ OpenUI Gateway has two APIs for conversational generation: Responses and Embed C
 | Hosted web search, image search, and remote MCP | [Responses hosted tools](references/gateway/chat/responses.md#add-hosted-tools) |
 | App-owned function tools | Follow the [Responses tool loop](references/gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions tool loop](references/gateway/chat/chat-completions.md#keep-function-tools-in-the-application); the application executes tools using the selected protocol |
 | Artifacts in Agent Interface | Application tool calls plus custom renderers and optional artifact storage; follow [artifacts.md](references/artifacts.md) |
-| Responsive React UI | `AgentInterface` plus `openuiChatLibrary` or a custom library, with the adapter and message format selected for the generation protocol |
+| Responsive React UI | [Agent Interface](references/agent-interface.md) plus `openuiChatLibrary` or a custom library, with the adapter and message format selected for the generation protocol |
 
 ## Route Gateway Integration and Migration Tasks
 
@@ -129,59 +130,9 @@ Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model 
 
 ### Wire Agent Interface
 
-Use `AgentInterface` from `@openuidev/react-ui` for the full chat surface. It owns the layout, sidebar, thread list, composer, routing, and workspace rail. Configure the backend through two independent channels:
+Read [Agent Interface](references/agent-interface.md) for setup, streaming adapters, conversation storage, message rendering, shell customization, theming, routing, and verification. Configure `llm` and optional `storage` independently, and match the browser's actual stream format.
 
-- `llm` is required. Use `fetchLLM({ url, streamAdapter, messageFormat })` for normal HTTP POST routes.
-- `storage` is optional. Omit it for in-memory conversations; use `useOpenuiCloudStorage()` for Gateway storage, or `restStorage({ baseUrl })`/custom `ChatStorage` for application-owned storage. Configure `ChatStorage.artifact` for durable artifact browsing and editing.
-- Optional props include `artifactRenderers`, `artifactCategories`, `componentLibrary`, `components`, theme/branding, starters, routing, and children/slots.
-
-`AgentInterface` is a full app shell, not automatically a compact embedded widget. It measures its own container, switches to mobile layout below 768px, and still renders shell chrome unless slots override it. For a narrow assistant rail around 390px, prefer `Renderer` plus `openuiChatLibrary` when the host owns the chat layout; if using `AgentInterface`, replace slots such as `Sidebar`, `ThreadHeader`, `Composer`, or `Workspace` and scope CSS overrides to a host wrapper around `.openui-agent-*`.
-
-The following example is for an app-owned Chat Completions route and REST storage, not the default Gateway scaffold. Preserve the generated adapter/format pair for Gateway and framework overlays; see [the scaffold contract table](references/gateway/quickstart.md#work-from-the-generated-app).
-
-```tsx
-import {
-  AgentInterface,
-  fetchLLM,
-  restStorage,
-  openAIReadableStreamAdapter,
-  openAIMessageFormat,
-} from "@openuidev/react-ui";
-
-const llm = fetchLLM({
-  url: "/api/chat",
-  streamAdapter: openAIReadableStreamAdapter(),
-  messageFormat: openAIMessageFormat,
-});
-
-const storage = restStorage({ baseUrl: "/api/chat/storage" });
-
-export function Chat() {
-  return <AgentInterface llm={llm} storage={storage} />;
-}
-```
-
-`fetchLLM` talks only to the app's own route and posts `{ threadId, messages }`; the provider API key stays server-side in that route. The route must return a streaming `Response` that the selected adapter can parse. Call adapter factories, for example `agUIAdapter()`, `openAIAdapter()`, `openAIReadableStreamAdapter()`, `openAIResponsesAdapter()`, or `langGraphAdapter()`, and pair them with the matching message format when one is needed.
-
-There are two valid `llm` wiring patterns:
-
-- Use `fetchLLM({ url, streamAdapter, messageFormat })` for ordinary POST-to-route integrations. The option is named `streamAdapter`.
-- Implement `ChatLLM` directly when the scaffold or app needs custom transport. Direct `ChatLLM` objects use `streamProtocol`, not `streamAdapter`.
-
-```ts
-import { type ChatLLM, openAIAdapter } from "@openuidev/react-ui";
-
-const llm: ChatLLM = {
-  streamProtocol: openAIAdapter(),
-  send: ({ threadId, messages, signal }) =>
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ threadId, messages }),
-      signal,
-    }),
-};
-```
+Agent Interface includes an artifact workspace. For application tools that produce content to preview, open, revisit, or edit, follow the dedicated [artifact workflow](references/artifacts.md).
 
 ### Integrate into existing apps
 

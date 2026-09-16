@@ -6,6 +6,7 @@ Read this reference first for shared OpenUI Gateway integration requirements. Ga
 | --- | --- |
 | Conversational generation | [Choose a chat generation API](chat/api-selection.md), then read either [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) |
 | Gateway-managed persistent threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
+| Agent Interface setup or customization | [Agent Interface](../agent-interface.md) |
 | Artifact creation, rendering, or editing in Agent Interface | [Artifacts](../artifacts.md) |
 | New Gateway agent scaffold | [Gateway quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Gateway | [OSS migration](oss-migration.md) |
