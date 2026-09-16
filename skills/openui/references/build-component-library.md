@@ -4,7 +4,6 @@ Read this reference completely when defining, extending, migrating, or validatin
 
 ## Choose the Smallest Library Change
 
-- Use `chatLibrary` from `@openuidev/thesys` for the managed Gateway chat component set.
 - Use `openuiLibrary` or `openuiChatLibrary` from `@openuidev/react-ui` for the built-in open-source React libraries.
 - Add domain-specific components when the built-in set cannot express the application's objects or actions.
 - Build a custom library when the application must use its own design system, needs a focused domain vocabulary, or targets another supported runtime.
@@ -86,6 +85,12 @@ When tools are enabled, provide valid `toolExamples` that use the application's 
 
 ## Generate the Handover Spec
 
+For Gateway generation, export the selected library even when using a built-in React UI library:
+
+```ts
+export { openuiChatLibrary as library } from "@openuidev/react-ui";
+```
+
 Generate the serialized library spec whenever component names, descriptions, prop schemas, root, groups, or prompt options change:
 
 ```bash
@@ -117,10 +122,10 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-For managed OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
+For OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
 
 ```ts
-const managedPrompt = generateSystemPrompt({
+const gatewayPrompt = generateSystemPrompt({
   cloud: true,
   library: librarySpec,
   instructions: "Optional trusted application instructions.",
@@ -129,9 +134,9 @@ const managedPrompt = generateSystemPrompt({
 ```
 
 - Responses API: pass the result as `instructions`.
-- Embed Chat Completions: pass the result as the `role: "system"` message content.
+- Chat Completions: pass the result as the `role: "system"` message content.
 
-`promptOptions` is valid on the managed Gateway path only alongside a custom `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
+Pass `promptOptions` alongside the matching serialized `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
 
 ## Connect the Renderer
 
@@ -147,7 +152,7 @@ For renderer-only surfaces:
 <Renderer library={appLibrary} response={response} isStreaming={isStreaming} />
 ```
 
-Do not combine the built-in Gateway prompt with a custom renderer library, or a stale generated spec with a newer runtime library. Unknown components, incorrect positional arguments, and blank or partial renders often indicate this mismatch.
+Keep the generated Gateway library spec synchronized with the client library, including when using a built-in React UI library. Unknown components, incorrect positional arguments, and blank or partial renders often indicate a mismatch.
 
 ## Verify
 
