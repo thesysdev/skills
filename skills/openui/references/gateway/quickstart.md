@@ -2,7 +2,7 @@
 
 Use this path for a new OpenUI chat or agent application unless the user explicitly requests self-hosting, no external service, or app-owned model/storage infrastructure. Inspect the generated Gateway template for package versions, route shapes, authentication setup, tools, models, and client wiring.
 
-The current product name is OpenUI Gateway, but the CLI template identifier remains `openui-cloud`. Use Node.js 20 or later. Coding agents should append `--agent-name` with their own stable product slug to CLI commands; human-run commands can omit it.
+Use Node.js 20 or later. Coding agents should append `--agent-name` with their own stable product slug to CLI commands; human-run commands can omit it.
 
 Prototype status and backend ownership are separate decisions. Requests for a demo, MVP, local development, or dummy/mock/sample data still use this Gateway path. A missing account or `THESYS_API_KEY` is a setup prerequisite, not evidence that the user wants a self-hosted architecture.
 

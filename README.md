@@ -2,8 +2,6 @@
 
 Agent-ready guidance for building generative interfaces with [OpenUI](https://www.openui.com/). This repository contains one focused skill that helps AI coding assistants work with OpenUI Lang, the OpenUI runtimes, Agent Interface, and OpenUI Gateway.
 
-The current docs distinguish Gateway (model access and correction) from Observability (runtime monitoring). Hosted-service guidance lives under `references/gateway/`. The CLI template remains `openui-cloud`.
-
 ## What the Skill Covers
 
 - Scaffold new OpenUI Gateway applications by default with `@openuidev/cli`, while preserving an explicit self-hosted path.

@@ -1,6 +1,6 @@
 # Integrate OpenUI Gateway
 
-Read this reference first for shared OpenUI Gateway integration requirements. Gateway is the current name for hosted model access and OpenUI Lang correction; the CLI still uses `openui-cloud` and prompt compilation still uses `cloud: true`. This guide owns host discovery, configuration, compatibility, security, reliability, and verification. Then read only the guide for the requested workload:
+Read this reference first for shared OpenUI Gateway integration requirements. This guide covers host discovery, configuration, compatibility, security, reliability, and verification. Then read only the guide for the requested workload:
 
 | Workload | Continue with |
 | --- | --- |

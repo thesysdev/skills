@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway (formerly OpenUI Cloud), and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, and observability."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway, and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, and observability."
 ---
 
 # OpenUI
@@ -9,7 +9,7 @@ OpenUI is a full-stack Generative UI framework centered on **OpenUI Lang**, a co
 
 Work from the user's app or project first. Inspect installed packages, generated templates, and lockfiles before giving API advice. When installed source is missing or the task targets `latest`, use only first-party OpenUI sources: the GitHub repo at `https://github.com/thesysdev/openui` and docs at `https://www.openui.com`.
 
-Current docs separate **OpenUI Gateway** (hosted model access and OpenUI Lang correction), **OpenUI Observability** (production error monitoring), and **Agent Interface** (the React chat UI). OpenUI Cloud is the former name for the hosted setup; use Gateway in current prose and keep its runbooks under `references/gateway/`. Preserve the compatibility identifiers `openui-cloud`, `cloud: true`, `THESYS_API_KEY`, and `@openuidev/observability-cloud`; do not invent Gateway-renamed flags, packages, or exports.
+**OpenUI Gateway** provides hosted model access and OpenUI Lang correction, **OpenUI Observability** monitors production errors, and **Agent Interface** provides the React chat UI.
 
 The [Agent Interface guide](references/agent-interface.md) covers the chat shell, backend connections, message rendering, customization, and navigation. Agent Interface includes an artifact workspace: an application tool produces content and an application-provided renderer displays it. Follow the dedicated [artifact guide](references/artifacts.md) for tool results, custom views, edits, and storage.
 
