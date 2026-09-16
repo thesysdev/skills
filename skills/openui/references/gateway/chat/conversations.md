@@ -2,7 +2,7 @@
 
 Read [the shared Gateway integration guide](../integration.md) first. Use this reference when an application needs persistent named Responses threads, conversation-item access, browser thread storage, scoped frontend tokens, or multi-user/multi-app isolation.
 
-Conversations is a storage and identity plane, not a generation protocol. Responses can read/append its history automatically. Embed Chat Completions still requires application/framework-supplied `messages`; do not add Responses state parameters to it. A framework may independently use Gateway storage, but that requires a verified write/reload integration, not just a model endpoint change.
+Conversations is a storage and identity plane, not a generation protocol. Responses can read/append its history automatically. Chat Completions still requires application/framework-supplied `messages`; do not add Responses state parameters to it. A framework may independently use Gateway storage, but that requires a verified write/reload integration, not just a model endpoint change.
 
 ## Choose the State Model First
 

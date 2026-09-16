@@ -134,7 +134,7 @@ const managedPrompt = generateSystemPrompt({
 ```
 
 - Responses API: pass the result as `instructions`.
-- Embed Chat Completions: pass the result as the `role: "system"` message content.
+- Chat Completions: pass the result as the `role: "system"` message content.
 
 Pass `promptOptions` alongside the matching serialized `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
 

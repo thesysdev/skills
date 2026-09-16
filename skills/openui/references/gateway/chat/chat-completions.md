@@ -70,7 +70,7 @@ For client adapter configuration, follow [Agent Interface stream wiring](../../a
 
 ## Keep Function Tools in the Application
 
-Embed Chat Completions accepts function tools but does not execute them. Preserve or implement the standard application loop:
+Chat Completions accepts function tools but does not execute them. Preserve or implement the standard application loop:
 
 1. Send the complete relevant messages plus function declarations.
 2. Read `tool_calls` from the assistant message.

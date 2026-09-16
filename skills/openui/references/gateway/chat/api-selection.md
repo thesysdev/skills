@@ -4,12 +4,12 @@ Use this reference only to choose the generation protocol and state model for an
 
 ## Choose the Generation Protocol
 
-Responses and Embed Chat Completions are the two conversational generation choices:
+Responses and Chat Completions are the two conversational generation choices:
 
 | Protocol | Endpoint | Use when | Continue with |
 | --- | --- | --- | --- |
 | Responses | `POST https://api.thesys.dev/v1/embed/responses` | Building a new chat or agent app, preserving an existing Responses integration, or needing hosted tools | [responses.md](responses.md) |
-| Embed Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, plain-text passthrough, app-owned messages, or app-run function tools | [chat-completions.md](chat-completions.md) |
+| Chat Completions | `POST https://api.thesys.dev/v1/embed/chat/completions` | Preserving an existing `chat.completions.create()` application, plain-text passthrough, app-owned messages, or app-run function tools | [chat-completions.md](chat-completions.md) |
 
 Responses is the recommended starting point for new agent applications, not a mandatory migration target. Preserve an existing Chat Completions protocol unless the user requests migration or needs a Responses-only capability.
 
@@ -27,7 +27,7 @@ Choose among the three Responses history patterns:
 
 Preserve an existing application's history model unless the user requests a storage migration. Read [conversations.md](conversations.md) for named threads or a separately configured framework storage integration needing conversation/item CRUD, frontend tokens, or `user_id`/`app_id` isolation. Conversations is a storage companion, not another generation protocol.
 
-Embed Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [generated-backend checks](../quickstart.md#work-from-the-generated-app).
+Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [generated-backend checks](../quickstart.md#work-from-the-generated-app).
 
 ## Preserve the Stream Contract
 
@@ -43,7 +43,7 @@ For managed Gateway generative UI:
 
 - Pass `{ cloud: true, library }` with the serialized spec of the client library.
 - Responses: put the generated prompt in `instructions`.
-- Embed Chat Completions: put it in a `role: "system"` message.
+- Chat Completions: put it in a `role: "system"` message.
 - Add optional trusted `instructions`/`promptOptions` for that library.
 
 For ordinary model traffic, preserve the application's existing trusted prompt without calling `generateSystemPrompt()`. Gateway provides model routing and provider fallbacks without OpenUI Lang correction.

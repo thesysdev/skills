@@ -71,14 +71,14 @@ Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuid
 
 ## OpenUI Gateway Capabilities
 
-OpenUI Gateway has two APIs for conversational generation: Responses and Embed Chat Completions. Responses is recommended for new chat or agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md) when choosing a conversational generation protocol or state model.
+OpenUI Gateway has two APIs for conversational generation: Responses and Chat Completions. Responses is recommended for new chat or agent applications; existing Chat Completions applications can retain their protocol and app-owned history. Conversations optionally adds named-thread persistence to Responses. Read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md) when choosing a conversational generation protocol or state model.
 
 | Capability | Available through |
 |---|---|
-| Managed OpenUI Lang validation/correction | Responses and Embed Chat Completions configured with `generateSystemPrompt({ cloud: true, library })` using the client's serialized library spec; plain-text traffic is not UI-corrected |
+| Managed OpenUI Lang validation/correction | Responses and Chat Completions configured with `generateSystemPrompt({ cloud: true, library })` using the client's serialized library spec; plain-text traffic is not UI-corrected |
 | Model routing and provider fallbacks | Gateway generation endpoints; verify model compatibility and account configuration |
 | Managed models or BYOK | Gateway generation endpoints; read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials |
-| Built-in or custom component libraries | Responses and Embed Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
+| Built-in or custom component libraries | Responses and Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
 | Gateway-managed persistent conversations and browser thread storage | Responses plus Conversations and `useOpenuiCloudStorage()` with a scoped frontend token; follow [gateway/chat/conversations.md](references/gateway/chat/conversations.md) |
 | Hosted web search, image search, and remote MCP | [Responses hosted tools](references/gateway/chat/responses.md#add-hosted-tools) |
 | App-owned function tools | Follow the [Responses tool loop](references/gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions tool loop](references/gateway/chat/chat-completions.md#keep-function-tools-in-the-application); the application executes tools using the selected protocol |
