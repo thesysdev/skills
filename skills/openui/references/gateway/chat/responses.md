@@ -25,7 +25,7 @@ The Responses endpoint is:
 POST https://api.thesys.dev/v1/embed/responses
 ```
 
-It provides Responses-compatible requests and events, managed generative UI, and hosted tools. Preserve the host framework, route shape, authentication, history owner, renderer, component library, and working tool behavior unless the user requested a migration.
+It provides Responses-compatible requests and events, OpenUI Lang generation and correction, and hosted tools. Preserve the host framework, route shape, authentication, history owner, renderer, component library, and working tool behavior unless the user requested a migration.
 
 Do not conflate these choices:
 
@@ -62,11 +62,11 @@ const embedClient = new OpenAI({
 
 Use a current `{provider}/{model}` id selected through trusted server configuration. Preserve a host model allowlist and reject arbitrary browser-supplied model ids.
 
-Use `openai` for the server client and `@openuidev/lang-core` when configuring managed OpenUI Lang generation.
+Use `openai` for the server client and `@openuidev/lang-core` when configuring OpenUI Lang generation through Gateway.
 
 ## Choose the Model-Facing Prompt
 
-Use current managed prompt compilation from `@openuidev/lang-core`:
+Configure the Gateway prompt with `@openuidev/lang-core`:
 
 ```ts
 import { generateSystemPrompt } from "@openuidev/lang-core";
@@ -197,7 +197,7 @@ Do not reuse a Chat Completions assistant/tool-message loop; Responses uses `fun
 
 ## Reliability and Observability
 
-Managed UI generation validates and repairs output against the selected component contract. Preserve the Gateway stream and matching adapter; do not insert a second blind stream-rewriting layer.
+Gateway UI generation validates and repairs output against the selected component contract. Preserve the Gateway stream and matching adapter; do not insert a second blind stream-rewriting layer.
 
 Run representative prompts repeatedly against the actual component library and model choices. Compare parser/renderer failures, partial renders, latency, and cost rather than trusting one successful generation. Use OpenUI DevTools during development.
 

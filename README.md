@@ -13,7 +13,7 @@ The current docs distinguish Gateway (model access and correction) from Observab
 - Set up and customize Agent Interface, including streaming, storage, message rendering, layout, theming, navigation, and artifacts; preserve an existing assistant-ui, CopilotKit, or custom chat surface when only the OpenUI renderer is needed.
 - Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
 - Add Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.
-- Use built-in or custom component libraries with managed Gateway generation, including Gateway BYOK.
+- Use built-in or custom component libraries with OpenUI Gateway generation, including Gateway BYOK.
 - Migrate legacy JSON UI or self-hosted OpenUI implementations.
 - Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
 

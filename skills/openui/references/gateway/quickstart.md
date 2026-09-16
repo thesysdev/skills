@@ -51,11 +51,11 @@ After scaffolding:
 2. Identify the actual generation transport and storage paths separately. `/api/chat` is not universal; Eve uses session endpoints.
 3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production.
 4. For the default backend, preserve `conversation: threadId`, `store: true`, and latest-message-only forwarding. For a framework overlay, inspect its provider call and persistence contract.
-5. Keep managed tools on Gateway. Execute only explicitly declared app-owned function tools in the application loop.
+5. Keep hosted tools on Gateway. Execute only explicitly declared app-owned function tools in the application loop.
 
 Inspect the generated backend's provider call and persistence separately. A framework may expose its own browser protocol even when it calls Chat Completions or Responses on the server. Follow [Agent Interface stream wiring](../agent-interface.md#match-the-browser-stream) for the adapter and message-format mapping.
 
-A configured storage client alone does not prove that the generation route persists replies. Trace the write path and verify reloads; framework-managed storage does not add Responses parameters to Chat Completions calls.
+A configured storage client alone does not prove that the generation route persists replies. Trace the write path and verify reloads; a framework's storage layer does not add Responses parameters to Chat Completions calls.
 
 Read [the Gateway integration guide](integration.md) for shared requirements, then choose [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) from the actual provider call. Read [Conversations](chat/conversations.md) when Gateway storage is used. Framework-to-browser streams need the framework adapter, independently of that provider choice.
 

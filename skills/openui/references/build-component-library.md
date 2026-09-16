@@ -122,10 +122,10 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-For managed OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
+For OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
 
 ```ts
-const managedPrompt = generateSystemPrompt({
+const gatewayPrompt = generateSystemPrompt({
   cloud: true,
   library: librarySpec,
   instructions: "Optional trusted application instructions.",

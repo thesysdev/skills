@@ -5,7 +5,7 @@ Read this reference first for shared OpenUI Gateway integration requirements. Ga
 | Workload | Continue with |
 | --- | --- |
 | Conversational generation | [Choose a chat generation API](chat/api-selection.md), then read either [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) |
-| Gateway-managed persistent threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
+| Persistent Gateway threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
 | Agent Interface setup or customization | [Agent Interface](../agent-interface.md) |
 | New Gateway agent scaffold | [Gateway quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Gateway | [OSS migration](oss-migration.md) |
@@ -36,7 +36,7 @@ Use the installed application and current first-party template as the source of 
 All Gateway generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
-- If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward. Do not infer a self-hosted architecture or rebuild a managed feature to bypass credentials.
+- If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward. Do not infer a self-hosted architecture or rebuild a Gateway feature to bypass credentials.
 - Configure the generation client with `https://api.thesys.dev/v1/embed` for `/chat/completions` or `/responses`. Configure the Conversations client with `https://api.thesys.dev/v1` for `/conversations`.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.
@@ -44,7 +44,7 @@ All Gateway generation calls need a trusted server boundary:
 - Propagate abort signals and close streams on success, failure, and cancellation without rewriting the upstream event protocol.
 - Keep trusted application instructions separate from user content. Never concatenate user text into system or developer instructions.
 
-Install the server SDK required by the selected runbook. Managed OpenUI Lang generation uses `generateSystemPrompt({ cloud: true, library })` from `@openuidev/lang-core`. Client setup is covered in [Agent Interface](../agent-interface.md).
+Install the server SDK required by the selected runbook. OpenUI Lang generation through Gateway uses `generateSystemPrompt({ cloud: true, library })` from `@openuidev/lang-core`. Client setup is covered in [Agent Interface](../agent-interface.md).
 
 ## Configure BYOK
 
@@ -70,9 +70,9 @@ Gateway's HTTP APIs are independent of the client framework. Preserve an existin
 
 ## Reliability and Observability
 
-Managed generative UI validates and corrects eligible OpenUI Lang errors against the selected component contract. This does not validate business data, execute application tools safely, or repair arbitrary JSON/component code. Preserve the selected stream contract; do not add a second blind stream-rewriting layer. Provider fallback behavior depends on model compatibility and account configuration; verify it for strict model or data-residency requirements.
+Gateway validates and corrects eligible OpenUI Lang errors against the selected component contract. This does not validate business data, execute application tools safely, or repair arbitrary JSON/component code. Preserve the selected stream contract; do not add a second blind stream-rewriting layer. Provider fallback behavior depends on model compatibility and account configuration; verify it for strict model or data-residency requirements.
 
-Managed correction does not make model output deterministic. Run a representative prompt set repeatedly against the application's actual library and compare structural failures, partial renders, latency, and cost. In development, use OpenUI DevTools to inspect settled streams and parser/renderer errors.
+Gateway correction does not make model output deterministic. Run a representative prompt set repeatedly against the application's actual library and compare structural failures, partial renders, latency, and cost. In development, use OpenUI DevTools to inspect settled streams and parser/renderer errors.
 
 OpenUI Observability is independent of Gateway and also works with direct-provider generation. For production monitoring, follow the [installation guide](https://www.openui.com/docs/observability/installation), use `@openuidev/observability-cloud`, and create a separate [client instrumentation key](https://console.thesys.dev/client-api-keys). That key is browser-visible; `THESYS_API_KEY` remains server-only. Initialize once before rendering and verify runtime events in the dashboard. Observability detects errors; it does not correct them.
 

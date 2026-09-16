@@ -2,7 +2,7 @@
 
 Read [the shared Gateway integration guide](../integration.md) first. Use this runbook when an existing application calls `chat.completions.create()`, owns a `messages` array, or should retain app-owned conversation persistence and function-tool execution.
 
-The central invariant is protocol preservation: moving model access or managed UI generation to OpenUI Gateway does not require moving the application to Responses or Gateway Conversations.
+The central invariant is protocol preservation: moving model access or UI generation to OpenUI Gateway does not require moving the application to Responses or Gateway Conversations.
 
 ## Supported Shapes
 
@@ -10,7 +10,7 @@ Choose whether Gateway should compile and correct OpenUI Lang or forward the app
 
 | Mode | System prompt | Output owner |
 | --- | --- | --- |
-| Managed generative UI | `generateSystemPrompt({ cloud: true, library })` | Gateway uses the supplied library spec and validates/repairs OpenUI Lang |
+| Gateway generative UI | `generateSystemPrompt({ cloud: true, library })` | Gateway uses the supplied library spec and validates/repairs OpenUI Lang |
 | Existing prompt / plain text | Preserve the application's system/developer messages | Gateway provides model routing and provider fallbacks without OpenUI Lang correction |
 
 Do not infer the mode from the endpoint alone. Preserve the existing output mode unless the user asks to change it.
@@ -26,7 +26,7 @@ Chat Completions is message-based. Keep the application's existing persistence a
 
 If the product wants server-side history injection via `conversation`, choose Responses and treat that as a separate protocol/storage migration. A framework can also manage Gateway storage independently of its Chat Completions model call; preserve an already-configured path and verify its writes and reloads. Verify the storage integration separately from the model call.
 
-## Configure Managed Generative UI
+## Configure Gateway Generative UI
 
 Use the stock OpenAI SDK and keep the key on the server:
 
@@ -58,7 +58,7 @@ const stream = await embedClient.chat.completions.create({
 });
 ```
 
-Move existing trusted system behavior into the helper's `instructions` or another currently documented trusted-instruction seam. Do not blindly append every prior system message, and never include user-authored content there. Avoid sending duplicate managed prompts on later turns.
+Move existing trusted system behavior into the helper's `instructions` or another currently documented trusted-instruction seam. Do not blindly append every prior system message, and never include user-authored content there. Avoid sending duplicate Gateway prompt configurations on later turns.
 
 Generate `librarySpec` from the same library the client renders. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps.
 
@@ -83,9 +83,9 @@ Do not attach Responses-only hosted `web_search`, `image_search`, or remote MCP 
 
 ## Keep the Existing Prompt
 
-For ordinary model traffic, pass the application's trusted system/developer messages directly. Do not call `generateSystemPrompt()` or add the managed OpenUI configuration. This path uses Gateway's model routing and provider fallbacks; it does not enable OpenUI Lang correction.
+For ordinary model traffic, pass the application's trusted system/developer messages directly. Do not call `generateSystemPrompt()` or add Gateway's OpenUI Lang configuration. This path uses Gateway's model routing and provider fallbacks; it does not enable OpenUI Lang correction.
 
-If the application already generates its own UI prompt, retain that prompt and its existing validation behavior. Opt into managed generation only when requested, using the explicit library configuration above.
+If the application already generates its own UI prompt, retain that prompt and its existing validation behavior. Opt into Gateway generative UI only when requested, using the explicit library configuration above.
 
 ## Adapt the Server Route
 
@@ -103,7 +103,7 @@ Preserve the host's framework and existing route contract. The route should:
 
 1. Run the shared checks in [the Gateway integration guide](../integration.md#shared-verification).
 2. Confirm the request uses `/v1/embed/chat/completions` and the expected `chat.completions.create()` shape.
-3. Confirm every turn includes the intended history and exactly one managed system prompt when managed UI is enabled.
+3. Confirm every turn includes the intended history and exactly one Gateway prompt configuration when OpenUI Lang generation is enabled.
 4. Confirm the route preserves the stream format expected by the existing client.
 5. Reload a persisted thread and confirm its intended storage owner restores it; separately verify any explicit framework-to-Gateway storage integration.
 6. Exercise a multi-step function tool and confirm assistant tool calls plus every tool result remain in history.

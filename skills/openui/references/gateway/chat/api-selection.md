@@ -37,9 +37,9 @@ Client adapters are covered in [Agent Interface](../../agent-interface.md#match-
 
 ## Choose the Prompt Mode
 
-Use `generateSystemPrompt()` from `@openuidev/lang-core` when opting into managed OpenUI Lang generation.
+Use `generateSystemPrompt()` from `@openuidev/lang-core` when opting into OpenUI Lang generation through Gateway.
 
-For managed Gateway generative UI:
+For OpenUI Gateway generative UI:
 
 - Pass `{ cloud: true, library }` with the serialized spec of the client library.
 - Responses: put the generated prompt in `instructions`.

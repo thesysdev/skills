@@ -25,9 +25,9 @@ Continue using `chat.completions.create()` with the application's existing syste
 
 Read [Chat Completions](chat/chat-completions.md) for endpoint details. An application already using Responses should preserve that protocol and its history model; follow [Responses](chat/responses.md). A change to the model provider does not require adopting Gateway Conversations or migrating stored data.
 
-## Add Managed Generative UI When Requested
+## Add Gateway Generative UI When Requested
 
-Managed OpenUI Lang generation is a separate opt-in. Follow [component-library handoff](../build-component-library.md) to export the existing library spec and configure `generateSystemPrompt({ cloud: true, library })` in the selected generation request. The application's renderer must use the matching library.
+OpenUI Lang generation through Gateway is a separate opt-in. Follow [component-library handoff](../build-component-library.md) to export the existing library spec and configure `generateSystemPrompt({ cloud: true, library })` in the selected generation request. The application's renderer must use the matching library.
 
 For ordinary model traffic, keep the existing prompt directly; no OpenUI prompt helper is needed.
 
@@ -36,5 +36,5 @@ For ordinary model traffic, keep the existing prompt directly; no OpenUI prompt 
 - Confirm requests use the Gateway key, base URL, and provider-qualified model id.
 - Verify incremental streaming, cancellation, and the existing error behavior.
 - Exercise a function-tool flow and check that message history and persistence still work.
-- When managed generative UI is enabled, confirm output uses the expected library and renders correctly.
+- When Gateway generative UI is enabled, confirm output uses the expected library and renders correctly.
 - Run the host's relevant checks before removing an unused provider configuration.
