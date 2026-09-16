@@ -7,17 +7,16 @@ Read this reference first for shared OpenUI Gateway integration requirements. Ga
 | Conversational generation | [Choose a chat generation API](chat/api-selection.md), then read either [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) |
 | Gateway-managed persistent threads for a Responses chat | [Responses](chat/responses.md) plus [Conversations](chat/conversations.md) |
 | Agent Interface setup or customization | [Agent Interface](../agent-interface.md) |
-| Artifact creation, rendering, or editing in Agent Interface | [Artifacts](../artifacts.md) |
 | New Gateway agent scaffold | [Gateway quickstart](quickstart.md), then the generated template |
 | Existing self-hosted/OpenUI OSS application moving to Gateway | [OSS migration](oss-migration.md) |
 
-Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol. Agent Interface artifacts use application tools and renderers with either protocol.
+Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol.
 
 ## Preserve Existing Architecture
 
 In an existing application, do not migrate from Chat Completions to Responses merely because Responses is the default starter backend. Preserve the host protocol unless the user requests migration or needs Responses-specific conversation appends, hosted web/image search, or remote MCP.
 
-Treat generation protocol, message persistence, client renderer, component library, tools, and artifact lifecycle as separate choices. Do not silently replace one because another changes.
+Treat generation protocol, message persistence, client rendering, component library, and tools as separate choices. Do not silently replace one because another changes.
 
 ## Audit the Host
 
@@ -28,7 +27,7 @@ Before editing, inspect:
 3. Who owns history and how it is stored: browser memory, host database, `restStorage`, Gateway Conversations, `previous_response_id`, or full-history requests.
 4. The client adapter and message format, including whether the server returns raw `data:` SSE or an OpenAI SDK readable stream.
 5. Authentication, stable user identity, authorization, rate limits, request-size limits, CSP/proxy rules, and abort behavior.
-6. Existing model selection, provider credentials, tools, artifacts, attachments, component libraries, themes, slots, and tests.
+6. Existing model selection, provider credentials, tools, attachments, component libraries, and tests.
 
 Use the installed application and current first-party template as the source of truth. Do not paste a generic Next.js route over a different framework or orchestration layer.
 
@@ -38,16 +37,14 @@ All Gateway generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
 - If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward. Do not infer a self-hosted architecture or rebuild a managed feature to bypass credentials.
-- Use `/v1/embed` for model generation and `/v1` for server-side Conversations access. Do not reuse one base URL for every API.
+- Configure the generation client with `https://api.thesys.dev/v1/embed` for `/chat/completions` or `/responses`. Configure the Conversations client with `https://api.thesys.dev/v1` for `/conversations`.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.
 - Validate request content type, byte size, message/item shapes, and role allowlists before forwarding.
 - Propagate abort signals and close streams on success, failure, and cancellation without rewriting the upstream event protocol.
 - Keep trusted application instructions separate from user content. Never concatenate user text into system or developer instructions.
 
-Install only packages required by the selected runbook and installed peer ranges. `@openuidev/lang-core` owns current prompt generation, including `generateSystemPrompt({ cloud: true, library })`. Use `@openuidev/react-ui` for Agent Interface, its built-in React libraries, and `defineArtifactRenderer` for application-provided artifact views.
-
-Import `useOpenuiCloudStorage()` from `@openuidev/react-ui` for Gateway storage.
+Install the server SDK required by the selected runbook. Managed OpenUI Lang generation uses `generateSystemPrompt({ cloud: true, library })` from `@openuidev/lang-core`. Client setup is covered in [Agent Interface](../agent-interface.md).
 
 ## Configure BYOK
 
@@ -69,7 +66,7 @@ Model availability changes independently of this skill. The [Models guide](https
 
 The model-facing prompt and browser renderer must use the same component contract. Use `openuiLibrary`, `openuiChatLibrary`, or the application's custom library; pass its generated spec to `generateSystemPrompt({ cloud: true, library })` and the matching runtime library to the renderer. Read [build-component-library.md](../build-component-library.md) before building, extending, or migrating a library.
 
-Gateway's HTTP APIs do not require React or Agent Interface. Preserve an existing Vue, Svelte, native, or custom UI when its renderer supports the selected library. Agent Interface and its artifact renderer registration are React APIs; other clients supply their own views.
+Gateway's HTTP APIs are independent of the client framework. Preserve an existing renderer when it supports the selected library.
 
 ## Reliability and Observability
 
@@ -103,4 +100,3 @@ For prompt-cost or latency work, consult [Prompt Caching](https://www.openui.com
 - `https://www.openui.com/docs/gateway/byok`
 - `https://www.openui.com/docs/gateway/reliability`
 - `https://www.openui.com/docs/gateway/generate-openui-lang`
-- `https://www.openui.com/docs/agent/reference/adapters-and-formats`

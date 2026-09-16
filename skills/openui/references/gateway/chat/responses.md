@@ -1,6 +1,6 @@
 # Integrate OpenUI Gateway with the Responses API
 
-Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events or new agents that need hosted tools. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration. Artifacts use application tools with either protocol.
+Read [the shared Gateway integration guide](../integration.md) first. Use this runbook for applications that already consume Responses events or new agents that need hosted tools. Do not apply it to an existing Chat Completions application unless the user has chosen a protocol migration.
 
 Conversations is optional. Read [conversations.md](conversations.md) only when the application needs persistent named Gateway threads, item APIs, browser storage, frontend tokens, or Gateway user/app isolation.
 
@@ -10,7 +10,7 @@ Conversations is optional. Read [conversations.md](conversations.md) only when t
 2. [Choose the History Model](#choose-the-history-model)
 3. [Configure the Generation Client](#configure-the-generation-client)
 4. [Choose the Model-Facing Prompt](#choose-the-model-facing-prompt)
-5. [Match the Client Stream](#match-the-client-stream)
+5. [Relay the Stream](#relay-the-stream)
 6. [Adapt the Generation Route](#adapt-the-generation-route)
 7. [Add Hosted Tools](#add-hosted-tools)
 8. [Run Application Function Tools](#app-owned-function-tools)
@@ -32,7 +32,6 @@ Do not conflate these choices:
 - Responses is the generation protocol.
 - Full `input`, `previous_response_id`, and `conversation` are alternative history models.
 - Conversations is a named-thread storage API used by only one of those models.
-- `AgentInterface` and `Renderer` are client presentation choices.
 
 ## Choose the History Model
 
@@ -42,7 +41,7 @@ Use exactly one Responses history pattern:
 | --- | --- | --- |
 | Full `input` history | The application already owns storage or needs explicit context control | Load, authorize, bound, and resend the relevant Responses input items |
 | `previous_response_id` | Turns should form a stored response chain without a named/listable conversation | Persist and authorize the latest response id; send only the new turn with `store: true` |
-| `conversation` plus `store: true` | The product needs persistent named Gateway threads, item CRUD, or `useOpenuiCloudStorage()` | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
+| `conversation` plus `store: true` | The product needs persistent named Gateway threads or item CRUD | Authorize the conversation id and send only the new turn; follow [conversations.md](conversations.md) |
 
 Do not combine full history with `conversation`, or combine `previous_response_id` with `conversation`. Do not add frontend tokens or Gateway browser storage to the first two patterns.
 
@@ -63,7 +62,7 @@ const embedClient = new OpenAI({
 
 Use a current `{provider}/{model}` id selected through trusted server configuration. Preserve a host model allowlist and reject arbitrary browser-supplied model ids.
 
-Install only the packages required by the selected runtime and features. Typical managed React integrations use `@openuidev/lang-core`, `@openuidev/react-ui`, `openai`, and the installed peer dependencies. Import `useOpenuiCloudStorage()` from `@openuidev/react-ui` when adding Gateway storage.
+Use `openai` for the server client and `@openuidev/lang-core` when configuring managed OpenUI Lang generation.
 
 ## Choose the Model-Facing Prompt
 
@@ -82,39 +81,13 @@ const instructions = generateSystemPrompt({
 
 Pass the result as the Responses `instructions` value. Keep user-authored content out of trusted instructions, preambles, rules, and examples.
 
-Generate `librarySpec` from the same library the client renders, including `openuiChatLibrary` in the example below. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps. Regenerate it when the library changes.
+Generate `librarySpec` from the same library the client renders. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps. Regenerate it when the library changes.
 
-## Match the Client Stream
+## Relay the Stream
 
-Pair the Responses event stream with the Responses adapter:
+A direct proxy should preserve the raw Responses SSE events, including errors and completion. If a framework owns the agent loop, retain its existing browser transport and request contract.
 
-```tsx
-import {
-  AgentInterface,
-  fetchLLM,
-  openAIConversationMessageFormat,
-  openAIResponsesAdapter,
-  openuiChatLibrary,
-} from "@openuidev/react-ui";
-import "@openuidev/react-ui/components.css";
-import "@openuidev/react-ui/styles/index.css";
-
-const llm = fetchLLM({
-  url: "/api/chat",
-  streamAdapter: openAIResponsesAdapter(),
-  messageFormat: openAIConversationMessageFormat,
-});
-
-export function GatewayChat() {
-  return <AgentInterface llm={llm} componentLibrary={openuiChatLibrary} />;
-}
-```
-
-For a direct Responses proxy, preserve the raw Responses SSE event shape and use the Responses adapter. For a framework-owned agent, its browser transport may be UIMessage, LangGraph, or AG-UI instead; preserve that supported adapter pair rather than forcing Responses SSE onto it. See [framework scaffold contracts](../quickstart.md#work-from-the-generated-app). Do not add another blind repair layer.
-
-The exact browser request produced by a message format is version-sensitive. Inspect the installed formatter and route before validating or reconstructing input. If the application uses a custom UI, it may consume the Responses stream directly and render settled or streaming OpenUI Lang with `Renderer` instead of adopting `AgentInterface`.
-
-When using Gateway browser storage, add the `storage` prop separately by following [conversations.md](conversations.md#connect-agent-interface-storage).
+Keep request validation consistent with the selected history model and the actual client payload. For browser adapters and UI setup, follow [Agent Interface](../../agent-interface.md#match-the-browser-stream).
 
 ## Adapt the Generation Route
 
@@ -210,8 +183,6 @@ This example uses the named-conversation state model. Apply the identity and aut
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-For artifacts, declare an application function tool and register its custom renderer with Agent Interface. Follow [Agent Interface Artifacts](../../artifacts.md); the application owns content generation, rendering, and any durable artifact store.
-
 ## App-Owned Function Tools
 
 The model emits a `function_call`; the application executes the authorized function and continues with a `function_call_output` until the model returns a final response.
@@ -224,8 +195,6 @@ Use the current Gateway template's `src/lib/tool-loop.ts` as the reference imple
 
 Do not reuse a Chat Completions assistant/tool-message loop; Responses uses `function_call` and `function_call_output` items.
 
-For artifact-producing tools, ensure the client stream includes the paired tool result as well as the call. Sending a `function_call_output` only in the model continuation does not guarantee that the browser receives it; verify the loop's event forwarding with the selected adapter.
-
 ## Reliability and Observability
 
 Managed UI generation validates and repairs output against the selected component contract. Preserve the Gateway stream and matching adapter; do not insert a second blind stream-rewriting layer.
@@ -237,16 +206,15 @@ When production monitoring is required, follow [the shared Gateway integration g
 ## Verify
 
 1. Run the shared checks in [the Gateway integration guide](../integration.md#shared-verification).
-2. Confirm the model call uses `/v1/embed/responses`; a direct proxy uses `openAIResponsesAdapter()`, while a framework stream uses its own matching adapter.
+2. Confirm the model call uses `/v1/embed/responses` and the route preserves the stream format expected by its client.
 3. Confirm exactly one history pattern is active: full `input`, `previous_response_id`, or `conversation`.
 4. For full history, verify authorized storage is loaded and bounded on every turn without `conversation` or `previous_response_id`.
 5. For a response-id chain, verify ids are stored and authorized and each continuation sets `store: true`.
 6. For named conversations, run every identity, token, ownership, CRUD, isolation, and reload check in [conversations.md](conversations.md#verify).
 7. Test invalid input-item injection, request limits, missing configuration, Gateway 4xx/5xx, cancellation, and stream closure.
 8. Exercise every declared hosted and application-owned tool; confirm the application never executes Gateway-owned calls.
-9. If artifacts are enabled, exercise the application tool and custom view; verify reopening and editing when artifact storage is configured.
-10. Run representative UI prompts repeatedly and inspect settled parser/renderer errors.
-11. Run the host formatter, typecheck, tests, and production build.
+9. Run representative UI prompts repeatedly and inspect settled parser/renderer errors.
+10. Run the host formatter, typecheck, tests, and production build.
 
 ## First-Party References
 
@@ -255,6 +223,4 @@ When production monitoring is required, follow [the shared Gateway integration g
 - `https://www.openui.com/docs/gateway/api/conversations`
 - `https://www.openui.com/docs/gateway/api/responses/hosted-tools`
 - `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/chat/route.ts`
-- `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/components/cloud-chat.tsx`
 - `https://www.openui.com/docs/gateway/generate-openui-lang`
-- `https://www.openui.com/docs/agent/reference/adapters-and-formats`

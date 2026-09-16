@@ -27,43 +27,28 @@ Choose among the three Responses history patterns:
 
 Preserve an existing application's history model unless the user requests a storage migration. Read [conversations.md](conversations.md) for named threads or a separately configured framework storage integration needing conversation/item CRUD, frontend tokens, or `user_id`/`app_id` isolation. Conversations is a storage companion, not another generation protocol.
 
-Embed Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [framework scaffold contracts](../quickstart.md#work-from-the-generated-app).
+Embed Chat Completions requires the application/framework to supply relevant `messages`; it does not apply Responses `conversation` or `previous_response_id` semantics. Preserve app-owned storage by default. If an existing framework intentionally uses Gateway storage separately, preserve and verify its write/reload path rather than forcing a protocol migration. See [generated-backend checks](../quickstart.md#work-from-the-generated-app).
 
-## Match the Client Contract
+## Preserve the Stream Contract
 
-| Server response | Agent Interface stream adapter | Message format |
-| --- | --- | --- |
-| Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` for Gateway conversations; verify the installed format for other Responses history modes |
-| Raw Chat Completions `data:` SSE | `openAIAdapter()` | `openAIMessageFormat` |
-| OpenAI SDK Chat Completions `.toReadableStream()` | `openAIReadableStreamAdapter()` | `openAIMessageFormat` |
+For Responses with `conversation: threadId` and `store: true`, send only the new turn. For Chat Completions, retain the complete relevant `messages` array. Preserve the event shape expected by the application's client.
 
-For Responses with `conversation: threadId` and `store: true`, send only the latest user turn. Do not also resend full history. For Chat Completions, retain the complete relevant `messages` array. Preserve the upstream event shape when proxying either stream.
-
-This table covers direct provider-stream proxies. A framework may instead return a UIMessage, LangGraph, AG-UI, or Eve stream; select the browser adapter from that actual stream, not from the model API hidden behind the framework.
+Client adapters are covered in [Agent Interface](../../agent-interface.md#match-the-browser-stream), including frameworks that expose a different browser stream from their underlying model API.
 
 ## Choose the Prompt Mode
 
-Use `generateSystemPrompt()` from `@openuidev/lang-core` for current prompt compilation.
+Use `generateSystemPrompt()` from `@openuidev/lang-core` when opting into managed OpenUI Lang generation.
 
 For managed Gateway generative UI:
 
-- Pass `{ cloud: true }`.
+- Pass `{ cloud: true, library }` with the serialized spec of the client library.
 - Responses: put the generated prompt in `instructions`.
 - Embed Chat Completions: put it in a `role: "system"` message.
-- Pass the serialized `library` spec for the actual client library, whether it is `openuiLibrary`, `openuiChatLibrary`, or a custom library.
 - Add optional trusted `instructions`/`promptOptions` for that library.
 
-For application-owned/self-hosted generative UI sent through Embed Chat Completions, omit `cloud: true` and compile the full prompt from the application's serialized `library` and `promptOptions`. The application then owns validation and correction.
-
-For plain-text passthrough, omit the managed generative UI prompt and preserve the application's trusted system/developer instructions.
+For ordinary model traffic, preserve the application's existing trusted prompt without calling `generateSystemPrompt()`. Gateway provides model routing and provider fallbacks without OpenUI Lang correction.
 
 Read [build-component-library.md](../../build-component-library.md) before defining or migrating a library. Keep the runtime library and serialized spec synchronized.
-
-## Add Artifacts Independently
-
-Agent Interface artifacts use application tool calls and custom renderers with either generation protocol. Read [artifacts.md](../../artifacts.md) for the tool-result, renderer, and optional persistence contracts.
-
-Content format does not require a protocol migration. Preserve the host tool loop and ensure its client adapter receives both the tool call and result.
 
 ## First-Party References
 

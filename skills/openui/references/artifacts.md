@@ -9,11 +9,11 @@ Artifacts are independent of Gateway. Preserve the application's model provider,
 ## Connect a Tool to a Renderer
 
 1. Declare an application tool that creates or updates the requested content. Define and validate its arguments and result; execute it through the application's existing tool loop.
-2. Deliver the tool call and its paired result to Agent Interface through the selected stream adapter. A result supplied only to the next model request is not automatically visible to the UI; verify the transport emits the corresponding tool-result event.
+2. Deliver the tool call and its paired result to Agent Interface through the selected stream adapter. A result supplied only to the next model request is not automatically visible to the UI; verify the transport emits the corresponding tool-result event. Raw Chat Completions deltas contain tool arguments; the application executor must forward results through its UI transport as well. Check the same result delivery when continuing Responses with `function_call_output`.
 3. Use `defineArtifactRenderer` from `@openuidev/react-ui` to parse the tool envelope, show an inline `preview`, and supply the full `actual` view.
 4. Register a stable renderer array with `AgentInterface.artifactRenderers`.
 
-The renderer's `toolName` matches incoming tool calls. Its `type` is an application-chosen identifier for stored-artifact lookup; it is not a built-in list of supported content formats. Choose the payload and renderer around the user's content instead of imposing report/slide schemas.
+The renderer's `toolName` matches incoming tool calls. Its `type` is an application-chosen identifier for stored-artifact lookup; it is not a built-in list of supported content formats. Choose the payload and renderer around the user's content.
 
 ## Supply Your Own View
 
@@ -100,9 +100,9 @@ The parser is called during streaming and when a stored artifact opens:
 
 Keep a stable artifact id and increment its version after edits. Return `meta: null` for an early preview and `{ id, version, heading }` when registering a completed artifact in the thread. Registry metadata alone does not make the artifact durable.
 
-For persistence, configure the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) alongside thread storage. Reuse the application's existing compatible implementation, including the artifact storage supplied by `useOpenuiCloudStorage()` when configured for Gateway, or implement the interface for the application's own backend. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
+For persistence, implement the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) against the application's backend, or reuse its existing compatible adapter. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
 
-Thread persistence, including Gateway Conversations, does not automatically implement artifact storage. Configure and verify each requested lifecycle separately. For an edit, load and authorize the stored artifact, apply the requested change, persist the new version, and emit the updated tool result for the same id.
+Combine thread storage and the application's artifact adapter in one stable `ChatStorage` object: `{ thread: conversationStorage.thread, artifact: appArtifactStorage }`. When using Gateway for threads, configure the hook with `features: { artifact: false }` as shown in [Agent Interface](agent-interface.md#choose-conversation-storage), then supply the application's artifact adapter. Configure and verify thread and artifact persistence separately. For an edit, load and authorize the stored artifact, apply the requested change, persist the new version, and emit the updated tool result for the same id.
 
 ## Verify
 

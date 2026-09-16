@@ -47,7 +47,7 @@ Choose the package for the target runtime. For backend-only parsing or prompt/sc
 
 ### Gateway Storage Hook
 
-Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuidev/react-headless` for a headless chat UI. It provides Gateway-backed `ChatStorage` with scoped frontend-token authentication and refresh; follow [Conversations](references/gateway/chat/conversations.md).
+Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuidev/react-headless` for a headless chat UI. Follow [Agent Interface storage](references/agent-interface.md#choose-conversation-storage) for configuration and [Conversations](references/gateway/chat/conversations.md) for the token and authorization contract.
 
 ## Choose The Starting Point
 
@@ -82,8 +82,15 @@ OpenUI Gateway has two APIs for conversational generation: Responses and Embed C
 | Gateway-managed persistent conversations and browser thread storage | Responses plus Conversations and `useOpenuiCloudStorage()` with a scoped frontend token; follow [gateway/chat/conversations.md](references/gateway/chat/conversations.md) |
 | Hosted web search, image search, and remote MCP | [Responses hosted tools](references/gateway/chat/responses.md#add-hosted-tools) |
 | App-owned function tools | Follow the [Responses tool loop](references/gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions tool loop](references/gateway/chat/chat-completions.md#keep-function-tools-in-the-application); the application executes tools using the selected protocol |
-| Artifacts in Agent Interface | Application tool calls plus custom renderers and optional artifact storage; follow [artifacts.md](references/artifacts.md) |
-| Responsive React UI | [Agent Interface](references/agent-interface.md) plus `openuiChatLibrary` or a custom library, with the adapter and message format selected for the generation protocol |
+
+## Agent Interface Capabilities
+
+Agent Interface owns the client chat experience. Its UI and artifact configuration are independent of Gateway's generation APIs.
+
+| Capability | Available through |
+| --- | --- |
+| Responsive UI components | [Agent Interface](references/agent-interface.md) plus `openuiChatLibrary` or a custom library, with the adapter and message format selected for the generation protocol |
+| Artifacts in Agent Interface | Application tool calls plus custom renderers and optional application-owned artifact storage; follow [artifacts.md](references/artifacts.md) |
 
 ## Route Gateway Integration and Migration Tasks
 
@@ -96,7 +103,6 @@ Choose the matching path:
 | Existing Chat Completions application | Read [references/gateway/integration.md](references/gateway/integration.md) and [references/gateway/chat/chat-completions.md](references/gateway/chat/chat-completions.md); keep app-owned history unless migration is requested |
 | Existing Responses application | Read [references/gateway/integration.md](references/gateway/integration.md) and [references/gateway/chat/responses.md](references/gateway/chat/responses.md); preserve the selected Responses history pattern |
 | New or existing Responses app using Gateway-managed threads | Also read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md) for the persistence, identity, token, and authorization plane |
-| Artifact creation, rendering, or editing in Agent Interface | Read [references/artifacts.md](references/artifacts.md); preserve the host's generation protocol and implement the requested tool, renderer, and persistence |
 | Existing non-React client | Read [references/gateway/integration.md](references/gateway/integration.md); require a current first-party managed client/runtime or preserve the existing renderer and report the verified boundary |
 | Existing self-hosted/open-source app moving to Gateway | Read [references/gateway/oss-migration.md](references/gateway/oss-migration.md), [references/gateway/integration.md](references/gateway/integration.md), and the protocol-specific runbook selected after inspecting the host |
 

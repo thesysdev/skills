@@ -48,8 +48,6 @@ import {
   openuiChatLibrary,
   useOpenuiCloudStorage,
 } from "@openuidev/react-ui";
-import "@openuidev/react-ui/components.css";
-import "@openuidev/react-ui/styles/index.css";
 
 const llm = fetchLLM({
   url: "/api/chat",
@@ -58,7 +56,10 @@ const llm = fetchLLM({
 });
 
 export function Agent() {
-  const storage = useOpenuiCloudStorage({ token: "/api/frontend-token" });
+  const storage = useOpenuiCloudStorage({
+    token: "/api/frontend-token",
+    features: { artifact: false },
+  });
 
   return (
     <div style={{ height: "100dvh" }}>
@@ -80,7 +81,14 @@ export function Agent() {
 
 The server must use the matching serialized library spec with `generateSystemPrompt({ cloud: true, library })`; follow [component-library handoff](build-component-library.md). `componentLibrary` configures rendering in the browser; it does not configure the model's prompt.
 
-Import the styles once at the location allowed by the host framework. For Tailwind layers and provider ownership, follow [the theme guide](theme-provider.md). In Next.js, keep the interactive interface in a client module and retain server authentication in the surrounding page/layout. Give the interface a usable height within the host layout; the example's viewport height is appropriate for a full-page app.
+Import the styles once in the application's global CSS, as in the maintained [Vercel AI SDK example](https://github.com/thesysdev/openui/blob/main/examples/agent-frameworks/vercel-ai-sdk/src/app/globals.css):
+
+```css
+@import "@openuidev/react-ui/components.css";
+@import "@openuidev/react-ui/styles/index.css";
+```
+
+For Tailwind layers and provider ownership, follow [the theme guide](theme-provider.md). In Next.js, keep the interactive interface in a client module and retain server authentication in the surrounding page/layout. Give the interface a usable height within the host layout; the example's viewport height is appropriate for a full-page app.
 
 ## Match the Browser Stream
 
@@ -91,7 +99,12 @@ Select the adapter from the bytes returned to the browser. A framework may call 
 | Responses SSE | `openAIResponsesAdapter()` | `openAIConversationMessageFormat` for the Gateway conversation route above; preserve the route's selected history model |
 | Raw Chat Completions SSE | `openAIAdapter()` | `openAIMessageFormat` |
 | OpenAI SDK Chat Completions `toReadableStream()` | `openAIReadableStreamAdapter()` | `openAIMessageFormat` |
-| Framework stream, such as Vercel AI SDK, LangGraph, AG-UI, or Eve | The framework's adapter | Match its request contract; inspect [the scaffold contracts](gateway/quickstart.md#work-from-the-generated-app) or [framework examples](examples.md) |
+| Vercel AI SDK UIMessage stream | `vercelAIAdapter()` | `vercelAIMessageFormat` |
+| Native LangGraph SSE | `langGraphAdapter()` | `langGraphMessageFormat` |
+| Agent Server AG-UI relay | `agUIAdapter()` | The relay's request contract |
+| Eve session NDJSON | `eveAdapter()` with the framework's session transport | Preserve session ids, continuation tokens, and stream cursors; inspect the [framework example](examples.md) |
+
+For Responses with Gateway Conversations, the backend appends only the new turn; Chat Completions receives the full relevant history. Preserve the generated framework transport even if it uses another provider API internally. Read the closest [framework example](examples.md) before changing its adapter.
 
 `fetchLLM({ url, streamAdapter, messageFormat })` posts to the application's route, converts outgoing messages, and forwards cancellation. Its body includes `threadId`, `runId`, `messages`, `tools`, and `context`; inspect the host route before changing which fields it consumes. Provider keys belong on the server.
 
@@ -126,9 +139,11 @@ Call adapter factories with `()`. Verify text deltas, tool calls, tool results, 
 | Persistence owner | `storage` configuration |
 | --- | --- |
 | In-memory conversations | Omit `storage` |
-| Gateway Conversations | `useOpenuiCloudStorage({ token: "/api/frontend-token" })` from `@openuidev/react-ui`; follow [Conversations](gateway/chat/conversations.md) |
+| Gateway Conversations | `useOpenuiCloudStorage({ token: "/api/frontend-token", features: { artifact: false } })` from `@openuidev/react-ui`; follow [Conversations](gateway/chat/conversations.md) |
 | Application backend following the REST adapter's endpoints | `restStorage({ baseUrl: "/api/chat/storage" })` from `@openuidev/react-ui` |
 | Existing database or framework with another API | Implement `ChatStorage` around that API |
+
+With a token-route URL, `useOpenuiCloudStorage()` lazily POSTs to mint a frontend token and handles refresh and retry. It sends `x-thesys-frontend-token` on storage requests. Keep that header contract inside the hook; the [Conversations guide](gateway/chat/conversations.md#mint-frontend-tokens) covers the server token route and separate generation authorization.
 
 `ChatStorage.thread` supplies `listThreads`, `createThread`, `getMessages`, `updateThread`, and `deleteThread`. Match the installed `restStorage` endpoint and message-format contract before adopting it; setting a base URL does not create those server routes.
 
@@ -136,7 +151,7 @@ Trace who persists completed user, assistant, and tool messages. The generation 
 
 Agent Interface captures storage when its provider mounts. Remount the interface when the authenticated identity or storage configuration changes so a session cannot retain another user's store. Keep adapters stable during ordinary renders.
 
-Artifact persistence uses the separate optional `ChatStorage.artifact` interface. `restStorage` supplies thread storage only. Configure artifact storage when users must browse or reopen saved artifacts; follow [the artifact storage workflow](artifacts.md#handle-streaming-and-storage).
+Use the Gateway hook for thread storage with `features: { artifact: false }`, as shown above. Artifact persistence belongs to the application: supply its own `ChatStorage.artifact` adapter when users must browse or reopen saved content. `restStorage` also supplies thread storage only. Follow [the artifact storage workflow](artifacts.md#handle-streaming-and-storage) for combining the two channels.
 
 ## Render Messages and Generated UI
 
