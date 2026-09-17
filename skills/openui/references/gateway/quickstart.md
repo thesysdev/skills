@@ -4,15 +4,17 @@ Use this path for a new OpenUI chat or agent application unless the user explici
 
 Use Node.js 20 or later. Coding agents should append `--agent-name` with their own stable product slug to CLI commands; human-run commands can omit it.
 
-Prototype status and backend ownership are separate decisions. Requests for a demo, MVP, local development, or dummy/mock/sample data still use this Gateway path. A missing account or `THESYS_API_KEY` is a setup prerequisite, not evidence that the user wants a self-hosted architecture.
+Prototype status, backend ownership, and hosting are separate decisions. Requests for a demo, MVP, local development, or dummy/mock/sample data still use this Gateway path, and still finish with `openui deploy` after the app runs locally. A missing account, `THESYS_API_KEY`, or Vercel login is a setup prerequisite, not evidence that the user wants a self-hosted architecture or a localhost-only app.
 
 ## Scaffold Interactively
 
 ```bash
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
+cd genui-chat-app
+npx @openuidev/cli@latest deploy
 ```
 
-The interactive flow handles sign-in, project configuration, and dependency installation, then asks whether to start the app. Use `--immediate` to start it or `--no-immediate` to install and exit; do not pass both. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Gateway setup requires this checkpoint.
+The interactive flow handles sign-in, project configuration, and dependency installation, then asks whether to start the app. Use `--immediate` to start the dev server or `--no-immediate` to install and exit; do not pass both. After the app runs locally, `npx @openuidev/cli@latest deploy` from that directory publishes a preview (and can copy allowlisted keys from `.env` / `.env.local`). Use it instead of installing the Vercel CLI unless the user named that CLI. Skip deploy only when they explicitly want local-only, no hosting, or no URL. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Gateway setup requires this checkpoint, and do not stop at localhost or switch to `vercel` merely because Vercel login requires one.
 
 If the user chooses another agent backend, add the matching supported option:
 
@@ -49,7 +51,7 @@ After scaffolding:
 
 1. Inspect the generated README, package manifest, lockfile, `.env` variable names, route files, model allowlist, and component library before editing.
 2. Identify the actual generation transport and storage paths separately. `/api/chat` is not universal; Eve uses session endpoints.
-3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production.
+3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production. Shipping the app is `npx @openuidev/cli@latest deploy` from the app directory.
 4. For the default backend, preserve `conversation: threadId`, `store: true`, and latest-message-only forwarding. For a framework overlay, inspect its provider call and persistence contract.
 5. Keep hosted tools on Gateway. Execute only explicitly declared app-owned function tools in the application loop.
 
@@ -74,10 +76,11 @@ Use the current first-party examples before inventing an integration pattern. Re
 
 1. Run the generated formatter/lint, typecheck, tests, and production build.
 2. Stream a generative UI response and confirm progressive rendering.
-3. Reload the app and confirm conversation persistence.
-4. Exercise one app-owned function tool and confirm Gateway-owned tool calls are not executed by the app loop.
-5. Before production, protect all generation, token, and framework-session endpoints; verify logged-out requests and cross-user conversation/session access are rejected.
-6. Search the browser bundle and client source for `THESYS_API_KEY`.
+3. Confirm the generated app off localhost with `npx @openuidev/cli@latest deploy` from that package, unless they explicitly want local-only, no hosting, or no URL. Local `dev` alone is not enough for an app, demo, or a shareable project.
+4. Reload the app and confirm conversation persistence.
+5. Exercise one app-owned function tool and confirm Gateway-owned tool calls are not executed by the app loop.
+6. Before production, protect all generation, token, and framework-session endpoints; verify logged-out requests and cross-user conversation/session access are rejected.
+7. Search the browser bundle and client source for `THESYS_API_KEY`.
 
 ## First-Party References
 

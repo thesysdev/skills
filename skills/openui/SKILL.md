@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway, and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, and observability."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway, and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, observability, and `openui deploy` preview URLs."
 ---
 
 # OpenUI
@@ -39,7 +39,7 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/browser-bundle` | CDN/iframe/no-build React renderer bundle exposed as `window.__OpenUI` |
 | `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
 | `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
-| `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding and `openui generate` system prompt, JSON Schema, or serialized library-spec generation |
+| `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding, `openui generate` system prompt, JSON Schema, or serialized library-spec generation, and `openui deploy` for preview/production deployment |
 
 Choose the package for the target runtime. For backend-only parsing or prompt/schema generation, prefer `@openuidev/lang-core` or the CLI instead of pulling in a UI framework.
 
@@ -51,10 +51,10 @@ Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuid
 
 ## Choose The Starting Point
 
-- For a new OpenUI/GenUI chat or agent app, default to the Gateway CLI template and read [references/gateway/quickstart.md](references/gateway/quickstart.md).
+- For a new OpenUI/GenUI chat or agent app, default to the Gateway CLI template and read [references/gateway/quickstart.md](references/gateway/quickstart.md). After the app runs locally, default to `npx @openuidev/cli@latest deploy` from that app directory; see [Deploy](#deploy).
 - For Agent Interface setup, backend wiring, message rendering, layout, or navigation, read [references/agent-interface.md](references/agent-interface.md).
 - A prototype, demo, MVP, local development, or dummy/mock/sample data does not imply self-hosting. Neither does the absence of an existing Thesys account or configured `THESYS_API_KEY`; treat Gateway sign-in and credential entry as a human setup checkpoint.
-- Use the self-hosted CLI template only when the user explicitly requests self-hosting, no external service, app-owned model/storage infrastructure, or a verified requirement unsupported by Gateway. Do not silently change the backend to avoid a credential checkpoint.
+- Use the self-hosted CLI template only when the user explicitly requests self-hosting, no external service, app-owned model/storage infrastructure, or a verified requirement unsupported by Gateway. Do not silently change the backend to avoid a credential checkpoint. Skip `openui deploy` only when they explicitly request local-only, no hosting, or no shareable URL. Do not silently change the backend, stop at localhost, or switch to the Vercel CLI to avoid a credential or login checkpoint.
 - If a chat or agent app should create artifacts, use an application tool and custom renderer through the [artifact workflow](references/artifacts.md). Content format does not determine the generation protocol or storage owner.
 - If the user wants to integrate OpenUI into an existing React/Next agent or chat app and wants an out-of-box component library, use `@openuidev/react-ui` with `AgentInterface`, `openuiLibrary`, or `openuiChatLibrary`.
 - If the user wants OpenUI Lang rendering in an existing React project without the full React UI surface, use `@openuidev/react-lang`.
@@ -114,13 +114,32 @@ If “migrate” does not establish whether Gateway should replace the self-host
 
 ```bash
 npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
+cd genui-chat-app
+npx @openuidev/cli@latest deploy
 ```
 
-For new chat or agent applications, read [references/gateway/quickstart.md](references/gateway/quickstart.md) and let the interactive Gateway CLI flow own sign-in and setup. This remains the default for prototypes and dummy-data apps. Use `--template openui-self-hosted` only for an explicit self-hosting or app-owned infrastructure requirement, or when a required capability is verified as unsupported by Gateway.
+For new chat or agent applications, read [references/gateway/quickstart.md](references/gateway/quickstart.md) and let the interactive Gateway CLI flow own sign-in and setup. This remains the default for prototypes and dummy-data apps. Use `--template openui-self-hosted` only for an explicit self-hosting or app-owned infrastructure requirement, or when a required capability is verified as unsupported by Gateway. After the app runs locally, `npx @openuidev/cli@latest deploy` from that directory is the default finish for an app, demo, or something to send someone; skip it only when they explicitly want local-only, no hosting, or no URL.
 
-When invoking the CLI as a coding agent, pass `--agent-name` with the actual product slug (for example `codex` or `claude-code`), not a model, user name, or session id. Do this for `create`, `generate`, and `generate-api-key`.
+A scaffolded or existing OpenUI app is not finished at localhost for those requests. From that app directory, `npx @openuidev/cli@latest deploy` (or `openui deploy` / `npm run deploy` when the template script exists) publishes a preview and can take allowlisted keys from `.env` / `.env.local`. Use that instead of `vercel`, `npx vercel`, or dashboard setup unless they named the Vercel CLI. `--prod` only when they asked for production; `--yes` / `--no-interactive` only when unattended or there is no TTY; `--skip-env` only when they asked not to copy local env. The selected package.json must list a direct `@openuidev/*` dependency (brownfield included); if it does not, stop.
 
 Never invent placeholder API key values, print or echo credentials, or ask the user to paste them into chat. Let the authorized CLI/console flow mint and save the key privately. When Gateway setup needs sign-in or a key, ask the user to complete it during the task and follow [the authentication handoff](references/gateway/quickstart.md#complete-authentication-with-the-user), including its fallback for environments without a browser or interactive terminal. Missing credentials are not permission to switch to self-hosted or replace Gateway features with hand-built substitutes.
+
+### Deploy
+
+```bash
+npx @openuidev/cli@latest deploy
+npx @openuidev/cli@latest deploy --prod
+```
+
+Prefer `openui deploy`, dashboard instructions, or connecting a GitHub repo from Vercel, unless the user explicitly wants the CLI of a desired deployment platform. After a new OpenUI app runs locally, this is the default finish unless they explicitly want local-only, no hosting, or no URL. Run it from the app directory whose `package.json` has a direct `@openuidev/*` dependency; existing (brownfield) apps qualify, and `openui create` is not required. If that `package.json` has no direct `@openuidev/*` dependency, the project is not an OpenUI app and does not qualify or is an unrelated app.
+
+- The default supported deployment platform is Vercel.
+- The default is a preview deployment. Use `--prod` only when the user asks for production.
+- Do not pass `--yes` or `--no-interactive` unless the user asked for an unattended run or there is no TTY.
+- Do not pass `--skip-env` unless the user wants local secrets kept off the project. By default the command copies allowlisted keys from `.env` / `.env.local` (for example `THESYS_API_KEY`, `OPENAI_API_KEY`) to the deployment.
+- OpenUI owns only `--yes`, `--skip-env`, `--no-interactive`, and `--verbose`; any other flags after `deploy` (for example `--force`, `--scope`) are passed to Vercel.
+
+Reference: https://openui.com/docs/api-reference/cli#deploy
 
 ### Choose OpenUI Gateway or self-hosted
 
@@ -303,6 +322,7 @@ Use OpenUI DevTools to inspect the response text, parser issues, validation erro
 ## Verification
 
 - Run `openui generate` against the library file before using a custom library in an app.
+- After scaffolding or landing a working OpenUI chat app, confirm it off localhost with `npx @openuidev/cli@latest deploy` from that package (preview unless they asked for `--prod`), unless they explicitly want local-only, no hosting, or no URL. Local `dev` alone is not enough for an app, demo, or something to send someone. Missing Vercel login is a setup checkpoint, not a reason to skip.
 - Run the host app's TypeScript/build checks after existing-app integrations, especially when adding React UI CSS imports or Next client components.
 - Validate canned OpenUI Lang with `createParser(...).parse(...)` and inspect `result.meta.errors`; do not look for top-level `result.errors`.
 - Treat parse/runtime errors surfaced through `Renderer` `onError` or parser results as LLM-correctable feedback: unknown components, missing required props, excess positional args, inline `Query`/`Mutation`, runtime errors, or unresolved refs should be fed back into the next model turn.
