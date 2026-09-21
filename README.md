@@ -7,7 +7,7 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 - Scaffold new OpenUI Gateway applications by default with `@openuidev/cli`, while preserving an explicit self-hosted path.
 - Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
-- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
+- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, Autofix for app-owned model calls, and runtime correction.
 - Set up and customize Agent Interface, including streaming, storage, message rendering, layout, theming, navigation, and artifacts; preserve an existing assistant-ui, CopilotKit, or custom chat surface when only the OpenUI renderer is needed.
 - Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
 - Add Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.
@@ -34,7 +34,7 @@ Once installed, try prompts such as:
 
 | Resource | Purpose |
 | --- | --- |
-| [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
+| [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, Autofix, OpenUI Lang rules, and verification steps |
 | [`agent-interface.md`](skills/openui/references/agent-interface.md) | Agent Interface setup, backend channels, message rendering, shell customization, navigation, and artifact integration |
 | [`artifacts.md`](skills/openui/references/artifacts.md) | Detailed Agent Interface artifact workflow: tool results, custom renderers, editing, and optional storage |
 | [`gateway/integration.md`](skills/openui/references/gateway/integration.md) | Shared Gateway routing, configuration, security, BYOK, compatibility, reliability, and verification |

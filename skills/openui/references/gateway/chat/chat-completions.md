@@ -85,7 +85,7 @@ Do not attach Responses-only hosted `web_search`, `image_search`, or remote MCP 
 
 For ordinary model traffic, pass the application's trusted system/developer messages directly. Do not call `generateSystemPrompt()` or add Gateway's OpenUI Lang configuration. This path uses Gateway's model routing and provider fallbacks; it does not enable OpenUI Lang correction.
 
-If the application already generates its own UI prompt, retain that prompt and its existing validation behavior. Opt into Gateway generative UI only when requested, using the explicit library configuration above.
+If the application already generates its own UI prompt, retain that prompt and wrap the model output with Autofix so the renderer still receives valid OpenUI Lang. See [Use Autofix](../../SKILL.md#use-autofix). Opt into Gateway generative UI only when requested, using the explicit library configuration above.
 
 ## Adapt the Server Route
 
