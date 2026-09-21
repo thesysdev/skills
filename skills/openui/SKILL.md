@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway, and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, component libraries, tools, artifacts, persistence, theming, observability, and `openui deploy` preview URLs."
+description: "Build, integrate, migrate, debug, or document OpenUI, OpenUI Gateway, and OpenUI Lang apps, including Agent Interface, CLI scaffolds, APIs, Autofix (`@openuidev/server`), component libraries, tools, artifacts, persistence, theming, observability, and `openui deploy` preview URLs."
 ---
 
 # OpenUI
@@ -40,6 +40,7 @@ Do not use this skill for general React UI questions, generic design system advi
 | `@openuidev/devtools` | Development-only Inspect and Debug widget for captured OpenUI streams, parser issues, validation errors, and timing |
 | `@openuidev/observability-cloud` | Production UI-generation monitoring and error inspection in the Thesys Console |
 | `@openuidev/cli` | `openui create` Gateway/self-hosted scaffolding, `openui generate` system prompt, JSON Schema, or serialized library-spec generation, and `openui deploy` for preview/production deployment |
+| `@openuidev/server` | `createAutofix` for app-owned Chat Completions or Vercel AI SDK generations; import from `/openai` or `/vercel`, not the package root |
 
 Choose the package for the target runtime. For backend-only parsing or prompt/schema generation, prefer `@openuidev/lang-core` or the CLI instead of pulling in a UI framework.
 
@@ -64,6 +65,7 @@ Import `useOpenuiCloudStorage(options)` from `@openuidev/react-ui`, or `@openuid
 - For any OpenUI Gateway integration, read [references/gateway/integration.md](references/gateway/integration.md) for the shared configuration, security, compatibility, and verification requirements.
 - If the task requires choosing a Gateway API for conversational generation, read [references/gateway/chat/api-selection.md](references/gateway/chat/api-selection.md). Responses and Chat Completions are the two choices; Conversations is an optional Responses persistence layer.
 - If the task involves persistent Gateway threads, conversation items, frontend tokens, `user_id`/`app_id`, or `useOpenuiCloudStorage()`, read [references/gateway/chat/conversations.md](references/gateway/chat/conversations.md).
+- If the application generates OpenUI Lang with its own model (Chat Completions, Vercel AI SDK, or another provider) instead of Gateway generation, wrap that output with Autofix. See [Use Autofix](#use-autofix).
 - If the user wants to improve generation reliability or diagnose intermittent UI failures, follow [Improve and measure reliability](#improve-and-measure-reliability). For OpenUI Gateway validation, fallbacks, and production monitoring, also read [Reliability and observability](references/gateway/integration.md#reliability-and-observability).
 - If the task involves `ThemeProvider`, light/dark mode, design-token mapping, nested theme scopes, portal theming, or the `AgentInterface.theme` prop, read [references/theme-provider.md](references/theme-provider.md) completely before editing.
 - If the user wants open-ended generation, generated HTML apps, sandboxed iframes, or Raw/Rendered previews, read [references/open-ended-html.md](references/open-ended-html.md).
@@ -76,6 +78,7 @@ OpenUI Gateway has two APIs for conversational generation: Responses and Chat Co
 | Capability | Available through |
 |---|---|
 | OpenUI Lang validation/correction through Gateway | Responses and Chat Completions configured with `generateSystemPrompt({ cloud: true, library })` using the client's serialized library spec; plain-text traffic is not UI-corrected |
+| Repair OpenUI Lang from an app-owned model | `createAutofix` from `@openuidev/server`; do not wrap Gateway generation that already uses `cloud: true` |
 | Model routing and provider fallbacks | Gateway generation endpoints; verify model compatibility and account configuration |
 | Gateway models or BYOK | Gateway generation endpoints; read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials |
 | Built-in or custom component libraries | Responses and Chat Completions; keep the prompt spec and client renderer library synchronized via [build-component-library.md](references/build-component-library.md) |
@@ -143,7 +146,7 @@ Reference: https://openui.com/docs/api-reference/cli#deploy
 
 ### Choose OpenUI Gateway or self-hosted
 
-OpenUI Gateway provides model routing, provider fallbacks, and eligible OpenUI Lang validation/correction. Responses can additionally use hosted tools and persistent Conversations. Agent Interface, component rendering, theming, and application authorization remain separate concerns. OpenUI Observability monitors runtime errors on either Gateway or direct-provider paths; it does not itself repair output.
+OpenUI Gateway provides model routing, provider fallbacks, and eligible OpenUI Lang validation/correction. Responses can additionally use hosted tools and persistent Conversations. Agent Interface, component rendering, theming, and application authorization remain separate concerns. OpenUI Observability monitors runtime errors on either Gateway or direct-provider paths; it does not itself repair output. When the app calls a model itself, wrap that generation with Autofix instead of relying on Observability or a hand-built repair loop.
 
 Use Gateway when the user wants hosted production infrastructure for an Agent Interface app. Use self-hosted OpenUI when the user wants to own the model route, storage, tools, component library, and runtime behavior.
 
@@ -152,6 +155,40 @@ For a new Gateway app, use [references/gateway/quickstart.md](references/gateway
 Version-sensitive: verify exact environment variables, prompt-helper options, adapters, and route helpers against the installed package and current generated template. Gateway prompt configuration uses `generateSystemPrompt({ cloud: true, library })` from `@openuidev/lang-core`, with a serialized spec of the library used by the client.
 
 Keep `THESYS_API_KEY` server-only, preserve the host's authentication and model allowlist, and read [Configure BYOK](references/gateway/integration.md#configure-byok) before assisting with provider credentials. Use [references/build-component-library.md](references/build-component-library.md) to keep the prompt spec and client library synchronized.
+
+### Use Autofix
+
+Use Autofix when the application generates OpenUI Lang with its own model and you want invalid UI repaired before the client renders it. Gateway generation with `generateSystemPrompt({ cloud: true, library })` already corrects eligible output; do not wrap that path again.
+
+Import `createAutofix` from the subpath that matches the SDK:
+
+| Import from | Call |
+| --- | --- |
+| `@openuidev/server/openai` | `autofix.completions.fix` / `autofix.completions.stream` |
+| `@openuidev/server/vercel` | `autofix.ai.fix` / `autofix.ai.stream` |
+
+Configure once with the spec from `openui generate --spec` for the same library the renderer uses, including its `schema`. Keep `THESYS_API_KEY` on the server. Pair each stream with the matching frontend adapter: `openAIAdapter()` or `useChat`. Prefer these helpers over posting to the Autofix HTTP API yourself. `autofix.responses` is not supported yet.
+
+```ts
+import { createAutofix } from "@openuidev/server/openai";
+import library from "./generated/library-spec.json";
+
+const autofix = createAutofix({
+  apiKey: process.env.THESYS_API_KEY!,
+  library,
+});
+
+const result = await autofix.completions.fix({ generation, messages, signal });
+if (result.content === null) {
+  // fix_failed — choose a fallback
+}
+
+return autofix.completions
+  .stream({ stream: source, messages, signal })
+  .toResponse();
+```
+
+For the Vercel AI SDK, import from `@openuidev/server/vercel` and pass `toUIMessageStream({ stream: result.stream })` to `autofix.ai.stream()`, not the raw `result.stream`. Use `fix()` when you already have completed text; use `stream()` when the client is consuming a live response.
 
 ### Wire Agent Interface
 
@@ -313,7 +350,7 @@ Use the measured failure types to choose the intervention:
 1. Simplify the component schema. Prefer distinct component names, clear descriptions, focused props, and unambiguous enum values. Remove overlapping components and use `componentGroups` to group related components.
 2. Refine the generated system prompt. Add narrow rules for recurring errors and valid examples for combinations the model struggles with. Test every rule and example against the baseline; an incorrect example can cause broad regressions.
 3. Evaluate models with the application's actual component library and prompts. Run each prompt repeatedly and compare reliability, latency, and cost instead of trusting a single successful generation or a generic benchmark.
-4. Validate and correct output before users see it. In a self-hosted flow, capture parser and renderer errors and feed precise, actionable errors into a bounded correction attempt. For Gateway, follow [Reliability and observability](references/gateway/integration.md#reliability-and-observability) instead of adding a second repair layer.
+4. Validate and correct output before users see it. When the app owns the model call, wrap it with Autofix ([Use Autofix](#use-autofix)). When generation already goes through Gateway with `generateSystemPrompt({ cloud: true, library })`, follow [Reliability and observability](references/gateway/integration.md#reliability-and-observability) instead of adding a second repair layer.
 
 ### During development
 
@@ -329,6 +366,7 @@ Use OpenUI DevTools to inspect the response text, parser issues, validation erro
 - Run representative prompts multiple times before and after reliability changes. Track partial renders and structural errors, not only fully blank screens, and do not claim a reliability improvement from one successful run.
 - In development, use DevTools Inspect to review settled streams and Debug to replay failing output against the same component library without calling the model again.
 - For Gateway, confirm the server key never appears in client code and the adapter/format pair matches the actual browser stream. Responses with named conversations sends only the latest turn; direct browser storage uses a scoped frontend token. Chat Completions supplies relevant history through the app/framework; preserve its independently selected storage owner.
+- When the app owns the model call, wrap it with Autofix and confirm valid output is returned, `fix_failed` is handled, and the server key never appears in client code.
 - Test invalid request bodies and provider-item injection, missing configuration, upstream failures, abort handling, and stream closure without a real key when possible.
 - Verify logged-out requests cannot use any Gateway proxy or token route. For Gateway Conversations, verify one authenticated user cannot address another user's conversation id; for app-owned storage, preserve and test the host authorization model.
 - With an authorized test key, smoke-test streaming and the selected persistence model. When artifacts are requested, exercise the application tool, custom renderer, and any configured reopening/editing flow.
@@ -398,6 +436,8 @@ Remote first-party OpenUI sources:
 - `https://www.openui.com/docs/openui-lang/developer-tools`
 - `https://www.openui.com/docs/getting-started`
 - `https://www.openui.com/docs/gateway`
+- `https://www.openui.com/docs/gateway/api/autofix`
+- `https://www.openui.com/docs/api-reference/server`
 - `https://www.openui.com/docs/gateway/api/responses`
 - `https://www.openui.com/docs/gateway/api/chat-completions`
 - `https://www.openui.com/docs/gateway/api/responses/hosted-tools`
