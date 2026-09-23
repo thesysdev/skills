@@ -72,7 +72,7 @@ Gateway's HTTP APIs are independent of the client framework. Preserve an existin
 
 Gateway validates and corrects eligible OpenUI Lang errors against the selected component contract when generation uses `generateSystemPrompt({ cloud: true, library })`. This does not validate business data, execute application tools safely, or repair arbitrary JSON/component code. Preserve the selected stream contract; do not wrap that Gateway generation with Autofix. Provider fallback behavior depends on model compatibility and account configuration; verify it for strict model or data-residency requirements.
 
-When the application calls a model itself, wrap the generation with `createAutofix` from `@openuidev/server` so the renderer still receives valid OpenUI Lang. Use the same library spec as the client. See [Use Autofix](../../SKILL.md#use-autofix).
+When the app is not using OpenUI Gateway, wrap the generation with `createAutofix` from `@openuidev/server` so the renderer still receives valid OpenUI Lang. Use the same library spec as the client. See [Use Autofix](../../SKILL.md#use-autofix).
 
 Gateway correction does not make model output deterministic. Run a representative prompt set repeatedly against the application's actual library and compare structural failures, partial renders, latency, and cost. In development, use OpenUI DevTools to inspect settled streams and parser/renderer errors.
 

@@ -7,7 +7,7 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 - Scaffold new OpenUI Gateway applications by default with `@openuidev/cli`, while preserving an explicit self-hosted path.
 - Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
-- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, Autofix for app-owned model calls, and runtime correction.
+- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, Autofix when the app is not using OpenUI Gateway, and runtime correction.
 - Set up and customize Agent Interface, including streaming, storage, message rendering, layout, theming, navigation, and artifacts; preserve an existing assistant-ui, CopilotKit, or custom chat surface when only the OpenUI renderer is needed.
 - Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
 - Add Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.

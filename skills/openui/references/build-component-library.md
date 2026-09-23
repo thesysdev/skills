@@ -122,7 +122,7 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-Wrap that generation with Autofix from `@openuidev/server` so invalid OpenUI Lang is repaired before the client renders it. See [Use Autofix](../SKILL.md#use-autofix). Do not wrap Gateway generation that already uses `cloud: true`.
+When the app is not using OpenUI Gateway, wrap that generation with Autofix from `@openuidev/server` so invalid OpenUI Lang is repaired before the client renders it. See [Use Autofix](../SKILL.md#use-autofix). Do not wrap Gateway generation that already uses `cloud: true`.
 
 For OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
 
