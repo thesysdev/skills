@@ -1,19 +1,17 @@
 # OpenUI Skill
 
-Agent-ready guidance for building generative interfaces with [OpenUI](https://www.openui.com/). This repository contains one focused skill that helps AI coding assistants work with OpenUI Lang, the OpenUI runtimes, Agent Interface, and OpenUI Gateway.
+Agent-ready guidance for building generative interfaces with [OpenUI](https://www.openui.com/). This repository contains one skill that helps AI coding assistants work with OpenUI Lang, the OpenUI runtimes, Agent Interface, and OpenUI Gateway.
 
 ## What the Skill Covers
 
-- Scaffold new OpenUI Gateway applications by default with `@openuidev/cli`, while preserving an explicit self-hosted path.
-- Stream and render OpenUI Lang in React, Vue, Svelte, and browser-based apps.
+- Scaffold new apps on OpenUI Gateway by default with `@openuidev/cli`, and keep a complete self-hosted path for apps that own their provider and storage.
+- Move apps up a level at a time: self-hosted, then Autofix, then Gateway Chat Completions, then Gateway Responses with Conversations.
+- Stream and render OpenUI Lang in React, Vue, Svelte, Angular, and no-build browser apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
-- Measure and improve generation reliability with repeated evaluations, DevTools, production observability, and runtime correction.
-- Set up and customize Agent Interface, including streaming, storage, message rendering, layout, theming, navigation, and artifacts; preserve an existing assistant-ui, CopilotKit, or custom chat surface when only the OpenUI renderer is needed.
-- Choose between Responses and Chat Completions, optionally add Conversations persistence to Responses, and distinguish each framework's browser transport from its provider API.
-- Add Agent Interface artifacts through tool calls and application-provided renderers for HTML, Markdown, presentations, or any other user-requested content.
-- Use built-in or custom component libraries with OpenUI Gateway generation, including Gateway BYOK.
-- Migrate legacy JSON UI or self-hosted OpenUI implementations.
-- Debug prompts, parsers, renderers, adapters, storage, theming, tools, and artifacts.
+- Set up and customize Agent Interface on any backend: streaming adapters, storage, message rendering, layout, theming, navigation, and artifacts.
+- Keep an existing assistant-ui, CopilotKit, or custom chat surface when only the OpenUI renderer is needed.
+- Repair invalid output with Gateway or Autofix, and track it in Reliability Monitoring.
+- Deploy preview and production URLs with `openui deploy`.
 
 ## Installation
 
@@ -23,45 +21,49 @@ npx skills add thesysdev/skills
 
 Once installed, try prompts such as:
 
-- “Create a streaming OpenUI dashboard from this API.”
 - “Create a new OpenUI Gateway agent with LangGraph.”
+- “Create a self-hosted OpenUI chat that uses my OpenAI key.”
 - “Add Agent Interface to my existing Next.js app.”
+- “Add Autofix to my OpenUI route without changing providers.”
+- “Move this self-hosted OpenUI chat to OpenUI Gateway.”
 - “Build a custom OpenUI component library for these domain objects.”
-- “Move this OpenAI Chat Completions app to OpenUI Gateway without changing its history model.”
-- “Migrate this self-hosted OpenUI chat to OpenUI Gateway.”
 
 ## Skill Contents
 
 | Resource | Purpose |
 | --- | --- |
-| [`skills/openui/SKILL.md`](skills/openui/SKILL.md) | Core workflows, package guidance, OpenUI Lang rules, and verification steps |
-| [`agent-interface.md`](skills/openui/references/agent-interface.md) | Agent Interface setup, backend channels, message rendering, shell customization, navigation, and artifact integration |
-| [`artifacts.md`](skills/openui/references/artifacts.md) | Detailed Agent Interface artifact workflow: tool results, custom renderers, editing, and optional storage |
-| [`gateway/integration.md`](skills/openui/references/gateway/integration.md) | Shared Gateway routing, configuration, security, BYOK, compatibility, reliability, and verification |
-| [`gateway/quickstart.md`](skills/openui/references/gateway/quickstart.md) | Gateway-first scaffolding, generated-template workflow, and launch verification |
-| [`gateway/chat/api-selection.md`](skills/openui/references/gateway/chat/api-selection.md) | Selection between Responses and Chat Completions for conversational generation |
-| [`gateway/chat/responses.md`](skills/openui/references/gateway/chat/responses.md) | Responses generation, history modes, streaming, hosted tools, and application function tools |
-| [`gateway/chat/chat-completions.md`](skills/openui/references/gateway/chat/chat-completions.md) | Chat Completions, app-owned history/storage, adapters, and function-tool runbook |
-| [`gateway/chat/conversations.md`](skills/openui/references/gateway/chat/conversations.md) | Optional Responses persistence: threads, items, frontend tokens, identity, authorization, and browser storage |
-| [`gateway/oss-migration.md`](skills/openui/references/gateway/oss-migration.md) | Migration of an existing OpenAI-compatible client by changing its key, base URL, and model id |
-| [`examples.md`](skills/openui/references/examples.md) | Complete first-party example catalog plus current existing-chat and runtime integration guides |
-| [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definition, schema design, prompt/spec handoff, runtime wiring, and verification |
-| [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Guidance for generated HTML, sandboxed apps, and open-ended UI |
-| [`theme-provider.md`](skills/openui/references/theme-provider.md) | Theme ownership, tokens, light/dark mode, nested scopes, and portals |
+| [`SKILL.md`](skills/openui/SKILL.md) | Names, levels, guide router, packages, OpenUI Lang, rendering, and verification |
+| [`self-hosted.md`](skills/openui/references/self-hosted.md) | Self-hosted generation, client wiring, storage, tools, and correction, with what Gateway adds at each step |
+| [`agent-interface.md`](skills/openui/references/agent-interface.md) | Agent Interface on Gateway or self-hosted backends: adapters, storage, rendering, shell, and navigation |
+| [`artifacts.md`](skills/openui/references/artifacts.md) | Tool results shown through custom renderers, with editing and storage |
+| [`build-component-library.md`](skills/openui/references/build-component-library.md) | Component definitions, schema design, spec generation, and backend and renderer wiring |
+| [`theme-provider.md`](skills/openui/references/theme-provider.md) | Theme ownership, tokens, light and dark mode, nested scopes, and portals |
+| [`reliability.md`](skills/openui/references/reliability.md) | Evaluation, DevTools, correction options, and production monitoring |
+| [`open-ended-html.md`](skills/openui/references/open-ended-html.md) | Generated HTML in sandboxed iframes |
+| [`examples.md`](skills/openui/references/examples.md) | First-party examples and existing-chat integration guides |
+| [`deploy.md`](skills/openui/references/deploy.md) | `openui deploy` for preview and production URLs |
+| [`gateway/overview.md`](skills/openui/references/gateway/overview.md) | Gateway capabilities, endpoints, API choice, prompt config, security, and BYOK |
+| [`gateway/quickstart.md`](skills/openui/references/gateway/quickstart.md) | Gateway template scaffolding, authentication with the user, and the generated app |
+| [`gateway/responses.md`](skills/openui/references/gateway/responses.md) | Responses history models, streaming, hosted tools, and app function tools |
+| [`gateway/chat-completions.md`](skills/openui/references/gateway/chat-completions.md) | Chat Completions with app-owned history and function tools |
+| [`gateway/conversations.md`](skills/openui/references/gateway/conversations.md) | Gateway threads and items, Chat Completions history storage, frontend tokens, and authorization |
+| [`gateway/autofix.md`](skills/openui/references/gateway/autofix.md) | Repairing output from any provider with `@openuidev/server` or the Autofix API |
+| [`gateway/migrate.md`](skills/openui/references/gateway/migrate.md) | Moving OpenAI-compatible and self-hosted OpenUI apps to Gateway, and migrating stored data |
 
 ## OpenUI Building Blocks
 
-- **OpenUI Lang** — a language for AI-generated interfaces.
-- **Runtime packages** — render those interfaces in React, Vue, Svelte, or the browser.
-- **Component libraries** — the components the model can use.
-- **Agent Interface** — a ready-made chat application with conversation history, generated UI, and an artifact workspace. See the [dedicated guide](skills/openui/references/agent-interface.md).
-- **OpenUI Gateway** — access models with automatic fallbacks and UI correction.
-- **OpenUI Observability** — monitor and debug generated interfaces in production.
+- **OpenUI Lang**: a language for AI-generated interfaces.
+- **Runtime packages**: render those interfaces in React, Vue, Svelte, Angular, or the browser.
+- **Component libraries**: the components the model can use.
+- **Agent Interface**: an open-source chat app with conversation history, generated UI, and an artifact workspace.
+- **OpenUI Gateway**: hosted model access with correction, fallbacks, managed conversations, hosted tools, and Autofix.
+- **Reliability Monitoring**: find and inspect generation errors in production.
 
 ## Learn More
 
 - [OpenUI documentation](https://www.openui.com/docs)
 - [Gateway documentation](https://www.openui.com/docs/gateway)
-- [Observability installation](https://www.openui.com/docs/observability/installation)
+- [Autofix](https://www.openui.com/docs/autofix)
+- [Reliability Monitoring](https://www.openui.com/docs/reliability)
 - [OpenUI source and examples](https://github.com/thesysdev/openui)
 - [OpenUI Lang specification](https://www.openui.com/docs/openui-lang/specification-v05)

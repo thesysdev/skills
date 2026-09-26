@@ -9,7 +9,7 @@ The canonical implementation is [`examples/miscellaneous/html-artifact`](https:/
 ## Pattern
 
 1. Define one OpenUI component with `title` and `document` string props.
-2. Put it alongside any library (the example uses a minimal one with just a markdown/text component and a plain container root) — the model chooses per reply whether to emit an artifact. Do NOT make the artifact the root: that forces every reply to be an HTML page.
+2. Add it to a library with an ordinary container root, next to a text or Markdown component, so the model chooses per reply whether to emit HTML. Making the HTML component the root would force every reply to be a page.
 3. Generate the system prompt with `openui generate`.
 4. Pass that library to `AgentInterface.componentLibrary`.
 5. Use `useIsStreaming()` to distinguish incoming source from the completed document.
@@ -30,7 +30,7 @@ Tell the model to:
 - omit Markdown fences;
 - escape newlines, quotes, and backslashes for the OpenUI Lang string.
 
-Keep one valid example in `promptOptions.examples`, then regenerate the prompt/spec according to the host's build convention. Current first-party examples generate these files locally and ignore them in Git; do not commit generated output automatically.
+Keep one valid example in `promptOptions.examples`, then regenerate the prompt and spec following the host's build convention. First-party examples generate these files locally and ignore them in Git.
 
 ## Security
 

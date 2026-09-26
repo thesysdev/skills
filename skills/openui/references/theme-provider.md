@@ -18,7 +18,7 @@ Use this runbook for `ThemeProvider`, `AgentInterface.theme`, light/dark mode, b
 
 ## Verify the installed API
 
-Inspect the app's `package.json`, lockfile, and installed `@openuidev/react-ui` exports before editing. Prefer the installed package's `ThemeProvider` source, type declarations, `defaultTheme`, and `utils` over examples from another release. When the task targets current `main` or installed source is unavailable, use the first-party [ThemeProvider source folder](https://github.com/thesysdev/openui/tree/main/packages/react-ui/src/components/ThemeProvider).
+Theme keys and props vary between releases. Read the installed `@openuidev/react-ui` `ThemeProvider` source, type declarations, `defaultTheme`, and `utils` before editing. Without an installed package, use the first-party [ThemeProvider source folder](https://github.com/thesysdev/openui/tree/main/packages/react-ui/src/components/ThemeProvider) for the targeted version.
 
 Import public APIs from the package root:
 
@@ -32,7 +32,7 @@ import {
 } from "@openuidev/react-ui";
 ```
 
-On current `main`, `ThemeProvider` accepts:
+`ThemeProvider` accepts:
 
 | Prop | Meaning |
 | --- | --- |
@@ -136,7 +136,7 @@ export function OpenUIThemeRoot({
 }
 ```
 
-Only pass `"light"` or `"dark"`. `ThemeProvider` does not accept `"system"` and `useTheme()` does not return a setter. Resolve system preference, user choice, and persistence in the app's existing theme manager, then pass the resolved mode. Current templates import `useSystemThemeMode` from the public `@openuidev/react-ui` entrypoint; use it only when exported by the installed version, never by reaching into internal source files.
+Only pass `"light"` or `"dark"`. `ThemeProvider` does not accept `"system"` and `useTheme()` does not return a setter. Resolve system preference, user choice, and persistence in the app's existing theme manager, then pass the resolved mode. Without a theme manager, `useSystemThemeMode()` from `@openuidev/react-ui` returns the OS preference as `"light"` or `"dark"`; the CLI templates pass it as `theme={{ mode }}`. Import it from the package root, never from internal source paths.
 
 In Next.js App Router, place the provider and any browser theme logic behind a client-component boundary. Keep the server and initial client mode consistent enough to avoid a hydration flash; follow the host app's established theme bootstrap instead of adding a second preference store.
 
@@ -229,14 +229,7 @@ Use `useTheme()` when a custom component needs the fully resolved `theme`, activ
 
 ## Keep the CSS integration
 
-Import React UI styles once even when using `ThemeProvider`:
-
-```tsx
-import "@openuidev/react-ui/components.css";
-import "@openuidev/react-ui/styles/index.css";
-```
-
-Use `@openuidev/react-ui/layered/styles/index.css` instead of the unlayered styles when the host app needs cascade-layer overrides. Do not import both variants. The provider supplies variables; it does not replace component CSS.
+The provider supplies CSS variables; it does not replace component CSS. Keep the React UI stylesheet imports from [Set Up React UI](../SKILL.md#set-up-react-ui) after adding it.
 
 Prefer `createTheme()` over hand-writing `--openui-*` variables. If host CSS must consume an OpenUI token, the mapping is `camelCase` to kebab case: `interactiveAccentDefault` becomes `--openui-interactive-accent-default`. Verify the key in the installed version before relying on the variable.
 

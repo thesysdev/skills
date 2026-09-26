@@ -8,9 +8,9 @@ Read this reference completely when defining, extending, migrating, or validatin
 - Add domain-specific components when the built-in set cannot express the application's objects or actions.
 - Build a custom library when the application must use its own design system, needs a focused domain vocabulary, or targets another supported runtime.
 
-Do not create a parallel component system merely to rename existing components. Every additional component increases prompt size and gives the model another choice to distinguish.
+Do not create a parallel component system just to rename existing components. Every added component makes the prompt longer and gives the model another choice to get wrong.
 
-Before editing, inspect the installed `@openuidev/*` versions, the existing library export, generated prompt/spec files, renderer wiring, tool provider, and representative generated programs. Prefer installed declarations and generated output over examples from another version.
+Before editing, inspect the existing library export, generated prompt and spec files, renderer wiring, tool provider, and a few representative generated programs.
 
 ## Define Components
 
@@ -85,32 +85,32 @@ When tools are enabled, provide valid `toolExamples` that use the application's 
 
 ## Generate the Handover Spec
 
-For Gateway generation, export the selected library even when using a built-in React UI library:
+Every backend needs the serialized spec of the library the client renders, including a built-in one. The CLI templates export the built-in library from a small module:
 
 ```ts
-export { openuiChatLibrary as library } from "@openuidev/react-ui";
+export { openuiLibrary as library } from "@openuidev/react-ui/genui-lib";
 ```
 
-Generate the serialized library spec whenever component names, descriptions, prop schemas, root, groups, or prompt options change:
+Generate the spec whenever component names, descriptions, prop schemas, root, groups, or prompt options change:
 
 ```bash
 npx @openuidev/cli@latest generate --spec ./src/lib/app-library.tsx --out ./src/generated/library-spec.json
 ```
 
-The library module must export a library with the current prompt/spec methods. The CLI normally checks `library`, then `default`, then other matching exports; inspect current CLI help when the module uses a different shape.
+The CLI detects the library export automatically. Pass `--export <name>` or `--prompt-options <name>` when the module exports more than one candidate.
 
 `--spec` and `--json-schema` are not interchangeable:
 
-- `--spec` produces the serialized library contract consumed by `generateSystemPrompt()`.
-- `--json-schema` produces a schema for external tooling and does not include the complete prompt contract.
+- `--spec` produces the serialized contract consumed by `generateSystemPrompt()` and by Autofix's `createAutofix`, which also reads its `schema` field.
+- `--json-schema` produces a schema for external tooling and lacks the prompt contract.
 
-Treat generated prompt and spec files as build artifacts when the host repository already regenerates them. Follow its checked-in/ignored-file convention instead of committing derived output automatically.
+When the repository already regenerates prompt and spec files during its build, treat them as build output and follow its convention for committing or ignoring them.
 
 ## Connect the Backend
 
-Use `generateSystemPrompt()` from `@openuidev/lang-core` for current prompt compilation.
+Compile the prompt with `generateSystemPrompt()` from `@openuidev/lang-core`.
 
-For an application-owned/self-hosted generation path:
+Self-hosted generation renders the full prompt locally:
 
 ```ts
 import { generateSystemPrompt, type LibrarySpec } from "@openuidev/lang-core";
@@ -122,21 +122,18 @@ const systemPrompt = generateSystemPrompt({
 });
 ```
 
-For OpenUI Gateway generation, add `cloud: true` and pass the same serialized library:
+Gateway generation sends the same spec as Gateway's prompt config:
 
 ```ts
 const gatewayPrompt = generateSystemPrompt({
   cloud: true,
   library: librarySpec,
   instructions: "Optional trusted application instructions.",
-  promptOptions,
+  promptOptions, // only examples, preamble, and additionalRules apply
 });
 ```
 
-- Responses API: pass the result as `instructions`.
-- Chat Completions: pass the result as the `role: "system"` message content.
-
-Pass `promptOptions` alongside the matching serialized `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
+Put the result in the Responses `instructions` or in the Chat Completions `role: "system"` message ([Gateway prompt](gateway/overview.md#configure-the-prompt)). Keep user content out of `instructions`, `preamble`, rules, and examples.
 
 ## Connect the Renderer
 
@@ -152,7 +149,7 @@ For renderer-only surfaces:
 <Renderer library={appLibrary} response={response} isStreaming={isStreaming} />
 ```
 
-Keep the generated Gateway library spec synchronized with the client library, including when using a built-in React UI library. Unknown components, incorrect positional arguments, and blank or partial renders often indicate a mismatch.
+Regenerate the spec every time the client library changes, including for a built-in library after a package upgrade. Unknown components, wrong positional arguments, and blank or partial renders usually mean the spec and the client library have drifted apart.
 
 ## Verify
 
@@ -170,5 +167,5 @@ Keep the generated Gateway library spec synchronized with the client library, in
 - `https://www.openui.com/docs/openui-lang/system-prompts`
 - `https://www.openui.com/docs/openui-lang/reliability`
 - `https://www.openui.com/docs/gateway/generate-openui-lang`
-- `https://www.openui.com/docs/api-reference/cli#openui-generate`
+- `https://www.openui.com/docs/api-reference/cli#generate`
 - `https://github.com/thesysdev/openui/tree/main/examples/design-systems`

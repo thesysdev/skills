@@ -1,91 +1,78 @@
-# Start a New OpenUI Gateway App
+# Start a New Gateway App
 
-Use this path for a new OpenUI chat or agent application unless the user explicitly requests self-hosting, no external service, or app-owned model/storage infrastructure. Inspect the generated Gateway template for package versions, route shapes, authentication setup, tools, models, and client wiring.
+The Gateway template is the default for every new OpenUI chat or agent app, including prototypes, demos, and apps with sample data. Use the [self-hosted template](../self-hosted.md) only when the user asks to self-host, wants no third-party service, or has a provider or data requirement Gateway does not support.
 
-Use Node.js 20 or later. Coding agents should append `--agent-name` with their own stable product slug to CLI commands; human-run commands can omit it.
+## Scaffold
 
-Prototype status, backend ownership, and hosting are separate decisions. Requests for a demo, MVP, local development, or dummy/mock/sample data still use this Gateway path, and still finish with `openui deploy` after the app runs locally. A missing account, `THESYS_API_KEY`, or Vercel login is a setup prerequisite, not evidence that the user wants a self-hosted architecture or a localhost-only app.
-
-## Scaffold Interactively
+Use Node.js 20 or later.
 
 ```bash
-npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud
-cd genui-chat-app
-npx @openuidev/cli@latest deploy
+npx @openuidev/cli@latest create --name my-app --template openui-cloud
 ```
 
-The interactive flow handles sign-in, project configuration, and dependency installation, then asks whether to start the app. Use `--immediate` to start the dev server or `--no-immediate` to install and exit; do not pass both. After the app runs locally, `npx @openuidev/cli@latest deploy` from that directory publishes a preview (and can copy allowlisted keys from `.env` / `.env.local`). Use it instead of installing the Vercel CLI unless the user named that CLI. Skip deploy only when they explicitly want local-only, no hosting, or no URL. When authentication needs user interaction, follow [Complete Authentication with the User](#complete-authentication-with-the-user) during the task. Do not rerun the scaffold with `openui-self-hosted` merely because Gateway setup requires this checkpoint, and do not stop at localhost or switch to `vercel` merely because Vercel login requires one.
+The interactive flow signs the user in, writes `THESYS_API_KEY` to the app's env file, installs dependencies, and offers to start the dev server. When sign-in needs the user, follow [Complete Authentication with the User](#complete-authentication-with-the-user).
 
-If the user chooses another agent backend, add the matching supported option:
+| Flag | Effect |
+| --- | --- |
+| `--backend-framework <name>` | `default` (a Responses route using the OpenAI SDK), `langgraph`, `vercel-ai-sdk`, or `vercel-eve` |
+| `--example <folder>` | Scaffold an [example](../examples.md) by folder name, such as `shadcn` or `mastra`; cannot be combined with `--template` or `--backend-framework` |
+| `--no-interactive` | Fail instead of prompting; supply every required choice |
+| `--auth skip` | Skip CLI sign-in when credentials are configured separately or sign-in cannot run here |
+| `-i, --immediate` / `--no-immediate` | Start the dev server after install, or install and exit; use one, not both |
+| `--no-install` | Scaffold without installing dependencies |
+| `--skill` / `--no-skill` | Install or skip the OpenUI agent skill; non-interactive runs skip it unless `--skill` is passed |
+| `--agent-name <slug>` | Identify the calling coding agent in CLI telemetry |
 
-```bash
-npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud --backend-framework langgraph
-npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud --backend-framework vercel-ai-sdk
-npx @openuidev/cli@latest create --name genui-chat-app --template openui-cloud --backend-framework vercel-eve
-```
+The CLI also accepts `--api-key`, but a coding agent should never put a key value in a command. Use sign-in or `generate-api-key` instead.
 
-For unattended execution, provide every required choice and pass `--no-interactive`. Use `--auth skip` when credentials are configured separately, the user chooses to defer authentication, or the execution environment cannot support interactive sign-in. This skips only the CLI authentication step; if credentials are missing, follow the handoff below. Use `--no-skill` when the caller should not change its installed skills, and `--no-install` only when the agent must control package installation separately.
-
-Non-interactive mode does not start the development server unless `--immediate` is set. Use the requested backend framework and inspect its tool transport; do not assume every overlay includes the default's hosted tools.
-
-If install or build fails with `ERR_PNPM_IGNORED_BUILDS` for an expected native package such as `sharp` or `unrs-resolver`, run `pnpm approve-builds` or `pnpm approve-builds --all` in an environment where package build scripts are allowed, then retry the install/build.
+If pnpm reports `ERR_PNPM_IGNORED_BUILDS` for a native package such as `sharp` or `unrs-resolver`, run `pnpm approve-builds` and install again.
 
 ## Complete Authentication with the User
 
-Ask the user to complete authentication as soon as it is needed. An unavailable browser or interactive terminal changes the handoff method; it does not prevent asking the user to participate.
+Gateway sign-in is a step the user completes during the task. It is not a reason to switch to the self-hosted template or to hand-build a Gateway feature.
 
-- When supported, start the CLI browser sign-in flow, keep the process running, and wait for the user to finish in their browser.
-- Otherwise, provide the project's key-generation script after checking `package.json`, or the command below to run from the app directory. Alternatively, open or link the [Thesys keys console](https://console.thesys.dev/keys) and ask the user to generate a key and save it privately as `THESYS_API_KEY` in the app's untracked environment file or secret store. Never request the key in chat or include its value in commands or output.
+- **Browser available:** run the CLI sign-in, leave the process running, and wait for the user to finish in their browser.
+- **No browser or TTY here:** ask the user to run the key command from the app directory on a machine where they can sign in, or to create a key in the [Thesys Console](https://console.thesys.dev/keys) and save it as `THESYS_API_KEY` in the app's untracked env file or secret store:
 
 ```bash
-npx @openuidev/cli@latest generate-api-key --file .env
+npx @openuidev/cli@latest generate-api-key --file .env.local
 ```
 
-Match `--file` to the app's environment file. The key must be configured in the environment running the app; signing in on the user's laptop does not configure a remote workspace automatically.
+Match `--file` to the app's env file. The key must exist in the environment that runs the app; signing in on the user's laptop does not configure a remote workspace. Never ask for the key in chat or print it. Keep working on anything that does not need the key while waiting, then reload the environment and run the [checks below](#verify). If the user chooses to defer sign-in, report which checks still need a key.
 
-Ask for confirmation when the user completes setup outside the running CLI flow. Continue independent implementation while waiting, then reload the app's environment and resume [runtime verification](#verify). Defer authentication to the final handoff only if the user chooses to defer it or a verified environment limitation prevents completion through these methods. In that case, report the limitation and which Gateway runtime checks remain unverified.
+## Know the Generated App
 
-## Work from the Generated App
+For the default backend:
 
-After scaffolding:
+| File | Role |
+| --- | --- |
+| `src/app/api/chat/route.ts` | Proxies Responses to `https://api.thesys.dev/v1/embed` with `conversation: threadId` and `store: true`, forwarding only the latest message. Declares hosted tools and runs app function tools through `src/lib/tool-loop.ts`. |
+| `src/app/api/frontend-token/route.ts` | Mints the browser's scoped storage token. It uses `DEMO_USER_ID` as the user; replace that with the authenticated user's id before real users arrive. |
+| `src/components/cloud-chat.tsx` | `AgentInterface` with `openAIResponsesAdapter()`, `openAIConversationMessageFormat`, `useOpenuiCloudStorage`, `openuiLibrary`, and a `ModelSwitcher` |
+| `src/lib/models.tsx` | Server-side model allowlist; the browser sends a model choice that the route validates |
+| `src/generated/spec.json` | Serialized library spec passed to `generateSystemPrompt({ cloud: true, library })` |
 
-1. Inspect the generated README, package manifest, lockfile, `.env` variable names, route files, model allowlist, and component library before editing.
-2. Identify the actual generation transport and storage paths separately. `/api/chat` is not universal; Eve uses session endpoints.
-3. Keep `THESYS_API_KEY` server-only. Treat `DEMO_USER_ID` as local-demo identity and replace it with authenticated server identity before production. Shipping the app is `npx @openuidev/cli@latest deploy` from the app directory.
-4. For the default backend, preserve `conversation: threadId`, `store: true`, and latest-message-only forwarding. For a framework overlay, inspect its provider call and persistence contract.
-5. Keep hosted tools on Gateway. Execute only explicitly declared app-owned function tools in the application loop.
-
-Inspect the generated backend's provider call and persistence separately. A framework may expose its own browser protocol even when it calls Chat Completions or Responses on the server. Follow [Agent Interface stream wiring](../agent-interface.md#match-the-browser-stream) for the adapter and message-format mapping.
-
-A configured storage client alone does not prove that the generation route persists replies. Trace the write path and verify reloads; a framework's storage layer does not add Responses parameters to Chat Completions calls.
-
-Read [the Gateway integration guide](integration.md) for shared requirements, then choose [Responses](chat/responses.md) or [Chat Completions](chat/chat-completions.md) from the actual provider call. Read [Conversations](chat/conversations.md) when Gateway storage is used. Framework-to-browser streams need the framework adapter, independently of that provider choice.
+Framework overlays change the route, and Eve uses session endpoints instead of `/api/chat`. Read the generated README and route before editing, and identify the provider call, browser stream, and persistence path separately. A framework can send its own stream format to the browser even when it calls Responses on the server; choose the client adapter from [Agent Interface stream wiring](../agent-interface.md#match-the-browser-stream).
 
 ## Extend the Starter
 
-Read [Agent Interface](../agent-interface.md) for the chat shell, backend channels, message rendering, layout, and navigation.
-
-- App-owned tools: register the declaration and executor in the generated tool loop; never execute Gateway-owned `thesys_*` calls.
-- Hosted tools: declare supported web search, image search, or MCP entries in the Responses request.
-- Custom components: extend `openuiChatLibrary` or use a custom library, generate a library spec with `openui generate --spec`, pass it to `generateSystemPrompt({ cloud: true, library, ... })` from `@openuidev/lang-core`, and render with the matching client library. Follow [build-component-library.md](../build-component-library.md).
-- Backend framework overlays: edit the generated framework-specific agent or route instead of applying the default Next.js route recipe blindly.
-
-Use the current first-party examples before inventing an integration pattern. Read [examples.md](../examples.md) for every catalogued example's exact path and primary integration seam.
+- **App function tools:** register the declaration and executor in the tool loop ([Responses function tools](responses.md#run-app-function-tools)).
+- **Hosted tools:** declare web search, image search, or MCP in the Responses request ([hosted tools](responses.md#add-hosted-tools)).
+- **Custom components:** extend or replace `openuiLibrary`, regenerate the spec, and render the same library on the client ([build-component-library.md](../build-component-library.md)).
+- **Chat shell, storage, and navigation:** see [agent-interface.md](../agent-interface.md).
+- **Artifacts:** see [artifacts.md](../artifacts.md).
 
 ## Verify
 
-1. Run the generated formatter/lint, typecheck, tests, and production build.
-2. Stream a generative UI response and confirm progressive rendering.
-3. Confirm the generated app off localhost with `npx @openuidev/cli@latest deploy` from that package, unless they explicitly want local-only, no hosting, or no URL. Local `dev` alone is not enough for an app, demo, or a shareable project.
-4. Reload the app and confirm conversation persistence.
-5. Exercise one app-owned function tool and confirm Gateway-owned tool calls are not executed by the app loop.
-6. Before production, protect all generation, token, and framework-session endpoints; verify logged-out requests and cross-user conversation/session access are rejected.
-7. Search the browser bundle and client source for `THESYS_API_KEY`.
+1. Run the generated lint, typecheck, and production build.
+2. Stream a generated-UI response and confirm progressive rendering.
+3. Reload and confirm the thread persists.
+4. Run one app function tool and confirm the app never executes Gateway-owned calls.
+5. Search client source and the built bundle for `THESYS_API_KEY`.
+6. Deploy a preview with [deploy.md](../deploy.md).
 
 ## First-Party References
 
-- `https://www.openui.com/docs/getting-started`
-- `https://www.openui.com/docs/openui-lang/quickstart`
+- `https://www.openui.com/docs/agent/getting-started/quickstart`
 - `https://www.openui.com/docs/api-reference/cli`
 - `https://github.com/thesysdev/openui/tree/main/templates/openui-cloud`
-- `https://github.com/thesysdev/openui/tree/main/examples`

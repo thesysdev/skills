@@ -1,23 +1,21 @@
 # Agent Interface Artifacts
 
-Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one artifact type: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output.
+Use this guide when an agent produces content the user should preview, open, revisit, or edit. An artifact is the result of an application tool, shown in Agent Interface's workspace by a renderer the app supplies. The app chooses the data and the view, so an artifact can be HTML, Markdown, a presentation, a dashboard, or any other output.
 
-For the surrounding chat shell, backend connections, message rendering, and navigation, read [Agent Interface](agent-interface.md). This guide covers its artifact workflow.
-
-Artifacts are independent of Gateway. Preserve the application's model provider, tool loop, stream adapter, and storage choices. With Gateway, use ordinary application function tools through [Responses](gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions](gateway/chat/chat-completions.md#keep-function-tools-in-the-application).
+For the chat shell, backend connections, and navigation, read [Agent Interface](agent-interface.md). Artifacts work the same on any backend: they use the app's tool loop ([self-hosted](self-hosted.md#run-function-tools), [Gateway Responses](gateway/responses.md#run-app-function-tools), or [Gateway Chat Completions](gateway/chat-completions.md#run-function-tools)), its stream adapter, and its storage.
 
 ## Connect a Tool to a Renderer
 
-1. Declare an application tool that creates or updates the requested content. Define and validate its arguments and result; execute it through the application's existing tool loop.
-2. Deliver the tool call and its paired result to Agent Interface through the selected stream adapter. A result supplied only to the next model request is not automatically visible to the UI; verify the transport emits the corresponding tool-result event. Raw Chat Completions deltas contain tool arguments; the application executor must forward results through its UI transport as well. Check the same result delivery when continuing Responses with `function_call_output`.
-3. Use `defineArtifactRenderer` from `@openuidev/react-ui` to parse the tool envelope, show an inline `preview`, and supply the full `actual` view.
-4. Register a stable renderer array with `AgentInterface.artifactRenderers`.
+1. Declare an app tool that creates or updates the content. Validate its arguments and result, and run it through the app's tool loop.
+2. Deliver the tool call and its result to Agent Interface through the stream. A result sent only to the next model request never reaches the UI, so the executor must also emit a tool-result event through the browser stream. This applies to Chat Completions tool results and to Responses `function_call_output` items alike.
+3. Use `defineArtifactRenderer` from `@openuidev/react-ui` to parse the tool result, show an inline `preview`, and supply the full `actual` view.
+4. Pass a stable renderer array to `AgentInterface` as `artifactRenderers`.
 
-The renderer's `toolName` matches incoming tool calls. Its `type` is an application-chosen identifier for stored-artifact lookup; it is not a built-in list of supported content formats. Choose the payload and renderer around the user's content.
+The renderer's `toolName` matches incoming tool calls. Its `type` is an app-chosen identifier used to look up stored artifacts; it does not limit which content formats are supported.
 
 ## Supply Your Own View
 
-This example uses one renderer with an application-defined payload. `create_artifact`, `update_artifact`, `artifact`, and the payload fields are application conventions, not SDK tool names or a required wire schema. The host provides `renderContent`, which can dispatch to its own HTML, Markdown, presentation, or other view.
+This example uses one renderer for every artifact. The tool names (`create_artifact`, `update_artifact`), the `type` value, and the payload fields are examples; choose names and a payload that fit the app. The host's `renderContent` function dispatches to its own HTML, Markdown, presentation, or other view.
 
 ```tsx
 import type { ReactNode } from "react";
@@ -102,7 +100,7 @@ Keep a stable artifact id and increment its version after edits. Return `meta: n
 
 For persistence, implement the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) against the application's backend, or reuse its existing compatible adapter. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
 
-Combine thread storage and the application's artifact adapter in one stable `ChatStorage` object: `{ thread: conversationStorage.thread, artifact: appArtifactStorage }`. When using Gateway for threads, configure the hook with `features: { artifact: false }` as shown in [Agent Interface](agent-interface.md#choose-conversation-storage), then supply the application's artifact adapter. Configure and verify thread and artifact persistence separately. For an edit, load and authorize the stored artifact, apply the requested change, persist the new version, and emit the updated tool result for the same id.
+Combine thread storage and the app's artifact adapter in one stable `ChatStorage` object: `{ thread: threadStorage.thread, artifact: appArtifactStorage }`. With Gateway threads, create the thread storage with `useOpenuiCloudStorage({ token, features: { artifact: false } })`, as the Gateway template does, then add the app's artifact adapter. Configure and verify thread and artifact persistence separately. For an edit, load and authorize the stored artifact, apply the change, persist the new version, and emit the updated tool result with the same id.
 
 ## Verify
 
