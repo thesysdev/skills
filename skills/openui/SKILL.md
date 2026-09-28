@@ -165,7 +165,7 @@ Agent Interface includes an artifact workspace. For application tools that produ
 - Next.js App Router: render `Renderer` or `AgentInterface` from a client component; add `"use client"` at the top of the file that imports or renders them.
 - Next.js with OpenUI Gateway: keep Gateway imports in a separate client module, retain the existing server page/layout for host authentication and product shell concerns, and verify the installed template's dynamic-rendering pattern with a production build.
 - Vite or strict TypeScript: before side-effect CSS imports, ensure the app has `/// <reference types="vite/client" />` or a declaration such as `declare module "*.css";`.
-- Import React UI CSS once, normally `@openuidev/react-ui/components.css` plus `@openuidev/react-ui/styles/index.css`; use `@openuidev/react-ui/layered/styles/index.css` when the app needs cascade-layered overrides.
+- Import React UI CSS once, normally `@openuidev/react-ui/components.css`; use `@openuidev/react-ui/layered/styles/index.css` instead when the app needs cascade-layered overrides. `styles/index.css` and `index.css` contain the same stylesheet as `components.css`, so do not add them alongside it.
 - Examples/docs may import adapters from `@openuidev/react-headless`; React UI apps can also import those adapters from `@openuidev/react-ui` because it re-exports headless APIs.
 
 For Tailwind v4, import React UI's layered stylesheet. See the [React UI API reference](https://www.openui.com/docs/api-reference/react-ui#tailwind-v4) for the complete CSS setup.
@@ -180,7 +180,6 @@ For an existing chat app that already owns message state, render only assistant 
 import { Renderer } from "@openuidev/react-lang";
 import { openuiChatLibrary } from "@openuidev/react-ui";
 import "@openuidev/react-ui/components.css";
-import "@openuidev/react-ui/styles/index.css";
 
 export function AssistantGenUI({
   response,
@@ -355,7 +354,6 @@ For the default React component library, use `@openuidev/react-ui`:
 import { Renderer } from "@openuidev/react-lang";
 import { openuiLibrary, openuiPromptOptions } from "@openuidev/react-ui";
 import "@openuidev/react-ui/components.css";
-import "@openuidev/react-ui/styles/index.css";
 
 const prompt = openuiLibrary.prompt(openuiPromptOptions);
 ```
@@ -369,8 +367,7 @@ Useful React UI exports:
 - `fetchLLM`, `restStorage`, stream adapters, and message formats: Agent Interface backend wiring for Gateway or direct providers; match the actual browser transport and storage owner.
 - `FullScreen`, `Copilot`, `BottomTray`: prebuilt chat surfaces.
 - `ThemeProvider`, `createTheme`, `useTheme`, `ThemeProps`, and `ThemeMode`: theming. Read [references/theme-provider.md](references/theme-provider.md) before integrating them.
-- `@openuidev/react-ui/components.css`: component-level CSS used by React UI components.
-- `@openuidev/react-ui/styles/index.css`: default unlayered styles.
+- `@openuidev/react-ui/components.css`: the full default stylesheet, unlayered. `@openuidev/react-ui/styles/index.css` and `@openuidev/react-ui/index.css` contain the same stylesheet; import only one of these paths.
 - `@openuidev/react-ui/layered/styles/index.css`: cascade-layered styles for easier CSS overrides.
 
 ## Theme React UI

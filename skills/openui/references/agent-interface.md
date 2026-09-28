@@ -85,7 +85,6 @@ Import the styles once in the application's global CSS, as in the maintained [Ve
 
 ```css
 @import "@openuidev/react-ui/components.css";
-@import "@openuidev/react-ui/styles/index.css";
 ```
 
 For Tailwind layers and provider ownership, follow [the theme guide](theme-provider.md). In Next.js, keep the interactive interface in a client module and retain server authentication in the surrounding page/layout. Give the interface a usable height within the host layout; the example's viewport height is appropriate for a full-page app.
