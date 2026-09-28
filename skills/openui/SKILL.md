@@ -165,7 +165,7 @@ Agent Interface includes an artifact workspace. For application tools that produ
 - Next.js App Router: render `Renderer` or `AgentInterface` from a client component; add `"use client"` at the top of the file that imports or renders them.
 - Next.js with OpenUI Gateway: keep Gateway imports in a separate client module, retain the existing server page/layout for host authentication and product shell concerns, and verify the installed template's dynamic-rendering pattern with a production build.
 - Vite or strict TypeScript: before side-effect CSS imports, ensure the app has `/// <reference types="vite/client" />` or a declaration such as `declare module "*.css";`.
-- Import React UI CSS once, normally `@openuidev/react-ui/styles/index.css`; use `@openuidev/react-ui/layered/styles/index.css` instead when the app needs cascade-layered overrides. `components.css` and `index.css` are aliases of `styles/index.css`, so do not add them alongside it.
+- Import React UI CSS once, `@openuidev/react-ui/styles/index.css`;
 - Examples/docs may import adapters from `@openuidev/react-headless`; React UI apps can also import those adapters from `@openuidev/react-ui` because it re-exports headless APIs.
 
 For Tailwind v4, import React UI's layered stylesheet. See the [React UI API reference](https://www.openui.com/docs/api-reference/react-ui#tailwind-v4) for the complete CSS setup.
