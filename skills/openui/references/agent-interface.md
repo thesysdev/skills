@@ -84,7 +84,6 @@ The server must use the matching serialized library spec with `generateSystemPro
 Import the styles once in the application's global CSS, as in the maintained [Vercel AI SDK example](https://github.com/thesysdev/openui/blob/main/examples/agent-frameworks/vercel-ai-sdk/src/app/globals.css):
 
 ```css
-@import "@openuidev/react-ui/components.css";
 @import "@openuidev/react-ui/styles/index.css";
 ```
 

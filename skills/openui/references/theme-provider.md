@@ -232,11 +232,10 @@ Use `useTheme()` when a custom component needs the fully resolved `theme`, activ
 Import React UI styles once even when using `ThemeProvider`:
 
 ```tsx
-import "@openuidev/react-ui/components.css";
 import "@openuidev/react-ui/styles/index.css";
 ```
 
-Use `@openuidev/react-ui/layered/styles/index.css` instead of the unlayered styles when the host app needs cascade-layer overrides. Do not import both variants. The provider supplies variables; it does not replace component CSS.
+Use `@openuidev/react-ui/layered/styles/index.css` instead of `styles/index.css` when the host app needs cascade-layer overrides. Do not import both variants. The provider supplies variables; it does not replace component CSS.
 
 Prefer `createTheme()` over hand-writing `--openui-*` variables. If host CSS must consume an OpenUI token, the mapping is `camelCase` to kebab case: `interactiveAccentDefault` becomes `--openui-interactive-accent-default`. Verify the key in the installed version before relying on the variable.
 
