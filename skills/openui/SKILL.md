@@ -22,18 +22,20 @@ Recommend Gateway for new apps, and keep the self-hosted path complete: everythi
 
 ## Choose a Level
 
-Each level keeps the previous one working and adds hosted capability:
+The levels are alternatives ordered from least to most hosted, not steps that stack. Autofix wraps a route that does not generate through Gateway; a Gateway route already corrects output, so it drops Autofix and any app-owned correction loop.
 
 | Level | Server change | What it adds |
 | --- | --- | --- |
 | Self-hosted | Any provider, with `generateSystemPrompt({ library, promptOptions })` | Complete OpenUI; no Thesys account |
-| Autofix | Wrap the existing stream with `createAutofix` from `@openuidev/server` | Repair of invalid OpenUI Lang before users see it, plus Reliability Monitoring; the provider stays the same |
+| Autofix | Wrap the existing stream with `createAutofix` from `@openuidev/server` | Repair of invalid OpenUI Lang before the stream completes, plus Reliability Monitoring; the provider stays the same |
 | Gateway Chat Completions | `THESYS_API_KEY`, base URL `https://api.thesys.dev/v1/embed`, `{provider}/{model}` ids, `generateSystemPrompt({ cloud: true, library })` | Correction in the stream, model routing, provider fallbacks, BYOK, monitoring |
-| Gateway Responses | A Responses route, optionally with Conversations and a frontend-token route | Hosted web search, image search, and remote MCP; managed threads |
+| Gateway Responses | The same, with a Responses route | Everything in Chat Completions, plus hosted web search, image search, and remote MCP |
+
+Thread storage is a separate choice from the level. Any level can keep app-owned storage. Gateway Conversations can hold threads for either Gateway API: Responses writes turns itself with `conversation` and `store: true`, and Chat Completions writes them with `storeChatCompletionHistory`. A frontend-token route and `useOpenuiCloudStorage` are needed only when the browser reads those threads directly. See [conversations.md](references/gateway/conversations.md).
 
 - **New app:** scaffold the Gateway template with the [Gateway quickstart](references/gateway/quickstart.md). Gateway sign-in is a setup step the user completes during the task through the [authentication handoff](references/gateway/quickstart.md#complete-authentication-with-the-user).
 - **Self-hosted app:** follow the [self-hosted guide](references/self-hosted.md) when the user asks to self-host, wants no third-party service, or has a provider or data requirement Gateway does not support.
-- **Existing app:** keep its level and add the lowest level that delivers the request. When a higher level solves a problem the user raised (invalid UI, provider outages, thread storage, search), state in one line what it adds and let the user decide.
+- **Existing app:** keep its level and storage unless the request needs a change, then choose the lowest level that delivers it. When another level solves a problem the user raised (invalid UI, provider outages, search), state in one line what it adds and let the user decide.
 
 ## Work from the Project
 

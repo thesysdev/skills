@@ -7,7 +7,7 @@ Conversations stores threads and their items in Gateway. It is a storage and ide
 | Responses with `conversation` and `store: true` | Gateway reads earlier items and writes the new turn automatically |
 | Chat Completions | The route writes each completed turn with [`storeChatCompletionHistory`](#store-chat-completions-turns) |
 
-Responses with full `input` or `previous_response_id` does not use Conversations, frontend tokens, or ownership checks; see [responses.md](responses.md#choose-the-history-model).
+Responses with full `input` or `previous_response_id` does not use Conversations, frontend tokens, or conversation ownership checks; the app still authorizes its own stored history or response ids. See [responses.md](responses.md#choose-the-history-model).
 
 ## Create and Read Conversations
 

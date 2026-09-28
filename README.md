@@ -5,7 +5,7 @@ Agent-ready guidance for building generative interfaces with [OpenUI](https://ww
 ## What the Skill Covers
 
 - Scaffold new apps on OpenUI Gateway by default with `@openuidev/cli`, and keep a complete self-hosted path for apps that own their provider and storage.
-- Move apps up a level at a time: self-hosted, then Autofix, then Gateway Chat Completions, then Gateway Responses with Conversations.
+- Choose the right level for each app (self-hosted, Autofix, Gateway Chat Completions, or Gateway Responses), with thread storage as a separate choice.
 - Stream and render OpenUI Lang in React, Vue, Svelte, Angular, and no-build browser apps.
 - Build custom component libraries with typed schemas, state, actions, queries, and mutations.
 - Set up and customize Agent Interface on any backend: streaming adapters, storage, message rendering, layout, theming, navigation, and artifacts.

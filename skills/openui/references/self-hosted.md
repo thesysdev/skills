@@ -1,6 +1,6 @@
 # Self-Hosted OpenUI
 
-Use this guide when the application owns its model provider, generation route, and storage. Everything here works without a Thesys account. Each section ends with what Gateway adds, so the app can move up a level later without a rewrite.
+Use this guide when the application owns its model provider, generation route, and storage. Everything here works without a Thesys account. Each section ends with what Gateway adds, so the app can move to Autofix or Gateway later without a rewrite.
 
 ## Scaffold
 

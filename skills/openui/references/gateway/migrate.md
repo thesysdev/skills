@@ -6,7 +6,11 @@ Read [overview.md](overview.md) first. Pick the lowest [level](../../SKILL.md#ch
 | --- | --- |
 | Fix invalid generated UI, keeping the provider | Add [Autofix](autofix.md); no generation change |
 | Model routing, fallbacks, BYOK, or in-stream correction | Point the existing protocol at Gateway (below) |
-| Hosted tools or Gateway-managed threads | Also adopt [Responses](responses.md) and [Conversations](conversations.md) |
+| Hosted web search, image search, or remote MCP | Use [Responses](responses.md) with any history model; storage stays as it is |
+| Threads stored in Gateway | [Conversations](conversations.md): `conversation` plus `store: true` on Responses, or `storeChatCompletionHistory` on Chat Completions |
+| Browser reads Gateway threads directly | Add a frontend-token route and `useOpenuiCloudStorage` ([conversations.md](conversations.md#mint-frontend-tokens)) |
+
+Each row is a separate change; make only the ones the request needs.
 
 Code migration and data migration are separate tasks. Decide whether Gateway replaces the old backend or runs beside it during rollout; ask only when the request leaves this open and the choice matters. Keep a working backend in place until the new path is verified.
 
@@ -43,7 +47,7 @@ A self-hosted OpenUI app (for example, one created from `--template openui-self-
 
 1. **Keep Chat Completions first.** Change only the table's rows. The route's `.asResponse()` stream and the client's `openAIAdapter()` stay the same.
 2. **Keep storage.** In-memory, `restStorage`, or a custom `ChatStorage` all keep working. To move threads into Gateway while staying on Chat Completions, call `storeChatCompletionHistory` after each turn ([conversations.md](conversations.md#store-chat-completions-turns)).
-3. **Move to Responses only when needed.** Hosted tools or Gateway-injected history need a Responses route, `openAIResponsesAdapter()` with `openAIConversationMessageFormat` on the client, a frontend-token route, and `useOpenuiCloudStorage`. The [Gateway template](quickstart.md#know-the-generated-app) is the reference implementation.
+3. **Move to Responses only for hosted tools or Gateway-injected history.** A Responses route streams Responses events, so the client switches to `openAIResponsesAdapter()`. Hosted tools work with any Responses history model and need no storage change. For history injected by Gateway, send `conversation` with `store: true` and use `openAIConversationMessageFormat` on the client. Add the frontend-token route and `useOpenuiCloudStorage` only when the browser lists threads from Gateway. The [Gateway template](quickstart.md#know-the-generated-app) combines all of these.
 
 ## Migrate Stored Data
 
