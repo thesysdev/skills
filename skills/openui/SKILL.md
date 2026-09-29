@@ -423,4 +423,4 @@ When you hit an OpenUI bug or something unintuitive (a confusing API, misleading
 
    `--category` is one of `bug`, `feature`, `docs`, or `other`.
 
-Feedback is anonymous: the CLI sends the text directly to PostHog with a new random ID and no user, account, device, or IP information.
+Feedback is anonymous: it isn't linked to the user's account, device, or IP address.
