@@ -410,7 +410,7 @@ Use the live `llms.txt` index to discover current pages before loading the large
 
 ## Sending Feedback
 
-You can send anonymous feedback about OpenUI (bugs, confusing docs, missing features) to the OpenUI team. Offer this only when the user asks to send feedback or when you hit a real OpenUI problem worth reporting; never send feedback without asking.
+When you hit an OpenUI bug or something unintuitive (a confusing API, misleading docs, an unhelpful error, a missing feature), or when the user asks, offer to send anonymous feedback about it to the OpenUI team. Always ask for consent first; never send feedback without an explicit yes.
 
 1. Draft a short, generic summary (a few sentences at most) of the problem or suggestion, described in terms of OpenUI packages, APIs, and behavior.
 2. Remove anything personal or project-specific: names, emails, usernames, company or product names, file paths, repository names, URLs, IP addresses, API keys, tokens, environment values, and any code, stack traces, prompts, or logs from the user's project. Describe the issue in words instead (for example, "`Renderer` throws when a streamed component closes before its props").
