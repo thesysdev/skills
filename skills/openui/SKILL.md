@@ -421,12 +421,6 @@ You can send anonymous feedback about OpenUI (bugs, confusing docs, missing feat
    npx @openuidev/cli@latest --agent-name <agent-slug> feedback --category bug "<approved text>"
    ```
 
-   `--category` is one of `bug`, `feature`, `docs`, or `other`. If the CLI is unavailable, POST the same text directly:
+   `--category` is one of `bug`, `feature`, `docs`, or `other`.
 
-   ```bash
-   curl -X POST https://api.app.thesys.dev/agent-feedback \
-     -H 'content-type: application/json' \
-     -d '{"message":"<approved text>","category":"bug","agent_name":"<agent-slug>"}'
-   ```
-
-Feedback is anonymous: the text is sent without any user, account, or device identifier.
+Feedback is anonymous: the CLI sends the text directly to PostHog with a new random ID and no user, account, device, or IP information.
