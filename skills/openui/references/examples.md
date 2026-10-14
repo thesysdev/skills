@@ -1,10 +1,10 @@
-# Choose a First-Party OpenUI Example
+# Choose a first-party OpenUI example
 
 Read this reference when an existing example could provide the integration seam, component-library pattern, or verification contract for the task. Examples are standalone reference implementations, not CLI starter templates. Inspect the selected example's README, manifest, lockfile, and current source before copying it because examples and published package versions can move independently.
 
 The authoritative catalog lives at `https://github.com/thesysdev/openui/blob/main/examples/README.md`. If that catalog differs from this reference, use the current repository.
 
-## Agent Frameworks
+## Agent frameworks
 
 | Example | Path | Use it for |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ The authoritative catalog lives at `https://github.com/thesysdev/openui/blob/mai
 | Vercel AI SDK | `examples/agent-frameworks/vercel-ai-sdk` | `AgentInterface` over a Vercel AI SDK `streamText` backend |
 | Vercel Eve | `examples/agent-frameworks/vercel-eve` | Eve agents rendered through Agent Interface |
 
-## App Frameworks
+## App frameworks
 
 | Example | Path | Use it for |
 | --- | --- | --- |
@@ -23,21 +23,21 @@ The authoritative catalog lives at `https://github.com/thesysdev/openui/blob/mai
 | Svelte | `examples/app-frameworks/svelte` | OpenUI Lang parsing and rendering in SvelteKit |
 | Vue | `examples/app-frameworks/vue` | OpenUI Lang parsing and rendering in Nuxt and Vue |
 
-## Design Systems
+## Design systems
 
 | Example | Path | Use it for |
 | --- | --- | --- |
 | Material UI | `examples/design-systems/material-ui` | Mapping a broad Material UI design system into an OpenUI component library |
 | shadcn/ui | `examples/design-systems/shadcn` | Mapping shadcn/ui components into an OpenUI component library |
 
-## Coding Harnesses
+## Coding harnesses
 
 | Example | Path | Use it for |
 | --- | --- | --- |
 | Grok Build | `examples/harnesses/grok-build` | Presenting Grok Build sessions and tool activity in Agent Interface |
 | Pi | `examples/harnesses/pi` | Streaming a Pi coding-agent session into Agent Interface |
 
-## Specialized Examples
+## Specialized examples
 
 | Example | Path | Use it for |
 | --- | --- | --- |
@@ -46,7 +46,7 @@ The authoritative catalog lives at `https://github.com/thesysdev/openui/blob/mai
 | React Email | `examples/miscellaneous/react-email` | Generating and previewing emails with the OpenUI React Email library |
 | Supabase | `examples/miscellaneous/supabase` | Application-owned persisted OpenUI conversations and threads with Supabase |
 
-## Existing Chat UI Integration Guides
+## Existing chat UI integration guides
 
 These are documentation entry points, not additional repository examples. Preserve the host's shell and runtime rather than replacing them with Agent Interface:
 
@@ -58,9 +58,9 @@ These are documentation entry points, not additional repository examples. Preser
 | CopilotKit | [CopilotKit](https://www.openui.com/docs/build-agents/copilotkit) | Use the assistant message's `markdownRenderer` slot; match the installed CopilotKit API |
 | Custom message list | [Custom Chat UI](https://www.openui.com/docs/build-agents/custom-chat-ui) | Render accumulated OpenUI Lang inside the existing assistant-message surface |
 
-Agent runtime docs now live under `docs/agent/agent-runtimes/`: [LangGraph Platform](https://www.openui.com/docs/agent/agent-runtimes/langgraph-platform), [Vercel AI SDK](https://www.openui.com/docs/agent/agent-runtimes/vercel-ai-sdk), [Vercel Eve](https://www.openui.com/docs/agent/agent-runtimes/vercel-eve), and [Pi](https://www.openui.com/docs/agent/agent-runtimes/pi). A runtime example and a CLI overlay may use different transports/storage; inspect the implementation being copied.
+Agent runtime guides: [LangGraph Platform](https://www.openui.com/docs/agent/agent-runtimes/langgraph-platform), [Vercel AI SDK](https://www.openui.com/docs/agent/agent-runtimes/vercel-ai-sdk), [Vercel Eve](https://www.openui.com/docs/agent/agent-runtimes/vercel-eve), and [Pi](https://www.openui.com/docs/agent/agent-runtimes/pi). A runtime example and a CLI overlay may use different transports/storage; inspect the implementation being copied.
 
-## Use an Example Safely
+## Use an example safely
 
 1. Choose the example for its primary integration seam, not because it happens to share one secondary dependency.
 2. Read its README and key files before editing the user's application.

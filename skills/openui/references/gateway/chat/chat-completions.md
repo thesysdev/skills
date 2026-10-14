@@ -4,18 +4,18 @@ Read [the shared Gateway integration guide](../integration.md) first. Use this r
 
 The central invariant is protocol preservation: moving model access or UI generation to OpenUI Gateway does not require moving the application to Responses or Gateway Conversations.
 
-## Supported Shapes
+## Supported shapes
 
 Choose whether Gateway should compile and correct OpenUI Lang or forward the application's existing prompt:
 
 | Mode | System prompt | Output owner |
 | --- | --- | --- |
 | Gateway generative UI | `generateSystemPrompt({ cloud: true, library })` | Gateway uses the supplied library spec and validates/repairs OpenUI Lang |
-| Existing prompt / plain text | Preserve the application's system/developer messages | Gateway provides model routing and provider fallbacks without OpenUI Lang correction |
+| Existing prompt / plain text | Preserve the application's system/developer messages; do not call `generateSystemPrompt()` | Gateway provides model routing and provider fallbacks without OpenUI Lang correction |
 
-Do not infer the mode from the endpoint alone. Preserve the existing output mode unless the user asks to change it.
+Do not infer the mode from the endpoint alone. Preserve the existing output mode unless the user asks to change it. If the application already generates its own UI prompt, retain that prompt and its validation behavior; opt into Gateway generative UI only when requested.
 
-## Preserve Application-Owned History
+## Preserve application-owned history
 
 Chat Completions is message-based. Keep the application's existing persistence and resend the relevant `system`, `developer` when supported by the selected model, `user`, `assistant`, and `tool` messages on every turn.
 
@@ -26,7 +26,7 @@ Chat Completions is message-based. Keep the application's existing persistence a
 
 If the product wants server-side history injection via `conversation`, choose Responses and treat that as a separate protocol/storage migration. A framework can also manage Gateway storage independently of its Chat Completions model call; preserve an already-configured path and verify its writes and reloads. Verify the storage integration separately from the model call.
 
-## Configure Gateway Generative UI
+## Configure Gateway generative UI
 
 Use the stock OpenAI SDK and keep the key on the server:
 
@@ -62,13 +62,13 @@ Move existing trusted system behavior into the helper's `instructions` or anothe
 
 Generate `librarySpec` from the same library the client renders. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps.
 
-## Relay the Stream
+## Relay the stream
 
 Preserve the response format expected by the existing client: raw Chat Completions `data:` SSE and the OpenAI SDK's `.toReadableStream()` serialization are different formats. When a framework wraps the model call, preserve its browser transport.
 
 For client adapter configuration, follow [Agent Interface stream wiring](../../agent-interface.md#match-the-browser-stream).
 
-## Keep Function Tools in the Application
+## Keep function tools in the application
 
 Chat Completions accepts function tools but does not execute them. Preserve or implement the standard application loop:
 
@@ -81,13 +81,7 @@ Chat Completions accepts function tools but does not execute them. Preserve or i
 
 Do not attach Responses-only hosted `web_search`, `image_search`, or remote MCP declarations to this endpoint. If the application needs those inside an agent turn, migrate intentionally to Responses.
 
-## Keep the Existing Prompt
-
-For ordinary model traffic, pass the application's trusted system/developer messages directly. Do not call `generateSystemPrompt()` or add Gateway's OpenUI Lang configuration. This path uses Gateway's model routing and provider fallbacks; it does not enable OpenUI Lang correction.
-
-If the application already generates its own UI prompt, retain that prompt and its existing validation behavior. Opt into Gateway generative UI only when requested, using the explicit library configuration above.
-
-## Adapt the Server Route
+## Adapt the server route
 
 Preserve the host's framework and existing route contract. The route should:
 
@@ -110,8 +104,8 @@ Preserve the host's framework and existing route contract. The route should:
 7. Confirm Responses-only hosted tool declarations are absent.
 8. For generative UI, run representative prompts repeatedly and inspect both stream rendering and settled parser errors.
 
-## First-Party References
+## First-party references
 
-- `https://www.openui.com/docs/gateway/api/chat-completions`
-- `https://www.openui.com/docs/gateway`
-- `https://www.openui.com/docs/gateway/generate-openui-lang`
+- [Chat Completions API](https://www.openui.com/docs/gateway/api/chat-completions)
+- [Gateway overview](https://www.openui.com/docs/gateway)
+- [Generate OpenUI Lang](https://www.openui.com/docs/gateway/generate-openui-lang)

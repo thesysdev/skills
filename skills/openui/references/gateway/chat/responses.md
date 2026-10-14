@@ -6,18 +6,18 @@ Conversations is optional. Read [conversations.md](conversations.md) only when t
 
 ## Contents
 
-1. [Preserve the Responses Contract](#preserve-the-responses-contract)
-2. [Choose the History Model](#choose-the-history-model)
-3. [Configure the Generation Client](#configure-the-generation-client)
-4. [Choose the Model-Facing Prompt](#choose-the-model-facing-prompt)
-5. [Relay the Stream](#relay-the-stream)
-6. [Adapt the Generation Route](#adapt-the-generation-route)
-7. [Add Hosted Tools](#add-hosted-tools)
-8. [Run Application Function Tools](#app-owned-function-tools)
-9. [Reliability and Observability](#reliability-and-observability)
+1. [Preserve the Responses contract](#preserve-the-responses-contract)
+2. [Choose the history model](#choose-the-history-model)
+3. [Configure the generation client](#configure-the-generation-client)
+4. [Choose the model-facing prompt](#choose-the-model-facing-prompt)
+5. [Relay the stream](#relay-the-stream)
+6. [Adapt the generation route](#adapt-the-generation-route)
+7. [Add hosted tools](#add-hosted-tools)
+8. [App-owned function tools](#app-owned-function-tools)
+9. [Reliability and observability](#reliability-and-observability)
 10. [Verify](#verify)
 
-## Preserve the Responses Contract
+## Preserve the Responses contract
 
 The Responses endpoint is:
 
@@ -33,7 +33,7 @@ Do not conflate these choices:
 - Full `input`, `previous_response_id`, and `conversation` are alternative history models.
 - Conversations is a named-thread storage API used by only one of those models.
 
-## Choose the History Model
+## Choose the history model
 
 Use exactly one Responses history pattern:
 
@@ -47,7 +47,7 @@ Do not combine full history with `conversation`, or combine `previous_response_i
 
 When adapting an existing Responses application, preserve its current pattern unless the user explicitly requests a storage migration.
 
-## Configure the Generation Client
+## Configure the generation client
 
 Keep the key on the application server and use the stock OpenAI SDK:
 
@@ -64,7 +64,7 @@ Use a current `{provider}/{model}` id selected through trusted server configurat
 
 Use `openai` for the server client and `@openuidev/lang-core` when configuring OpenUI Lang generation through Gateway.
 
-## Choose the Model-Facing Prompt
+## Choose the model-facing prompt
 
 Configure the Gateway prompt with `@openuidev/lang-core`:
 
@@ -83,13 +83,13 @@ Pass the result as the Responses `instructions` value. Keep user-authored conten
 
 Generate `librarySpec` from the same library the client renders. Follow [build-component-library.md](../../build-component-library.md) for the export and generation steps. Regenerate it when the library changes.
 
-## Relay the Stream
+## Relay the stream
 
 A direct proxy should preserve the raw Responses SSE events, including errors and completion. If a framework owns the agent loop, retain its existing browser transport and request contract.
 
 Keep request validation consistent with the selected history model and the actual client payload. For browser adapters and UI setup, follow [Agent Interface](../../agent-interface.md#match-the-browser-stream).
 
-## Adapt the Generation Route
+## Adapt the generation route
 
 All history patterns share these route requirements:
 
@@ -140,7 +140,7 @@ const persistent = await embedClient.responses.create(
 
 These snippets show the state distinction, not a drop-in route. The host must supply `authorizedInputHistory`, `authorizedPreviousResponseId`, or `authorizedConversationId` from its actual authentication and persistence boundaries. For named conversations, implement the separate ownership and storage-access contract in [conversations.md](conversations.md#authorize-the-generation-route-separately).
 
-## Add Hosted Tools
+## Add hosted tools
 
 OpenUI Gateway executes hosted tools server-side inside the Responses request. Application function tools still execute on the application server.
 
@@ -183,7 +183,7 @@ This example uses the named-conversation state model. Apply the identity and aut
 
 Remote MCP servers must be declared on each relevant request. Load authenticated MCP headers only from approved server-side secret storage and send them only to an explicitly approved origin. Inspect `mcp_list_tools.error` before concluding the model chose not to use a server.
 
-## App-Owned Function Tools
+## App-owned function tools
 
 The model emits a `function_call`; the application executes the authorized function and continues with a `function_call_output` until the model returns a final response.
 
@@ -195,13 +195,9 @@ Use the current Gateway template's `src/lib/tool-loop.ts` as the reference imple
 
 Do not reuse a Chat Completions assistant/tool-message loop; Responses uses `function_call` and `function_call_output` items.
 
-## Reliability and Observability
+## Reliability and observability
 
-Gateway UI generation validates and repairs output against the selected component contract. Preserve the Gateway stream and matching adapter; do not insert a second blind stream-rewriting layer.
-
-Run representative prompts repeatedly against the actual component library and model choices. Compare parser/renderer failures, partial renders, latency, and cost rather than trusting one successful generation. Use OpenUI DevTools during development.
-
-When production monitoring is required, follow [the shared Gateway integration guide](../integration.md#reliability-and-observability) for the current `@openuidev/observability-cloud` boundary.
+Gateway validates and repairs OpenUI Lang output against the selected component contract; do not insert a second stream-rewriting layer. For measurement, DevTools, and production monitoring, follow [Reliability and observability](../integration.md#reliability-and-observability).
 
 ## Verify
 
@@ -216,11 +212,11 @@ When production monitoring is required, follow [the shared Gateway integration g
 9. Run representative UI prompts repeatedly and inspect settled parser/renderer errors.
 10. Run the host formatter, typecheck, tests, and production build.
 
-## First-Party References
+## First-party references
 
-- `https://www.openui.com/docs/gateway/api/responses`
-- `https://www.openui.com/docs/gateway`
-- `https://www.openui.com/docs/gateway/api/conversations`
-- `https://www.openui.com/docs/gateway/api/responses/hosted-tools`
-- `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/chat/route.ts`
-- `https://www.openui.com/docs/gateway/generate-openui-lang`
+- [Responses API](https://www.openui.com/docs/gateway/api/responses)
+- [Gateway overview](https://www.openui.com/docs/gateway)
+- [Conversations API](https://www.openui.com/docs/gateway/api/conversations)
+- [Hosted tools](https://www.openui.com/docs/gateway/api/responses/hosted-tools)
+- [Template chat route](https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/chat/route.ts)
+- [Generate OpenUI Lang](https://www.openui.com/docs/gateway/generate-openui-lang)

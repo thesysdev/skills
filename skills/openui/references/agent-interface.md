@@ -16,7 +16,7 @@ For a new app, start with the [Gateway quickstart](gateway/quickstart.md), then 
 - [Add artifacts](#add-artifacts)
 - [Verify](#verify)
 
-## Choose the UI Surface
+## Choose the UI surface
 
 | Application need | Integration |
 | --- | --- |
@@ -26,7 +26,7 @@ For a new app, start with the [Gateway quickstart](gateway/quickstart.md), then 
 
 Agent Interface measures its container and uses the mobile layout below 768px. A narrow container still has chat-shell navigation and controls. For a compact assistant rail, choose the surface based on which parts of the UI the host already owns; when using Agent Interface, customize its slots and test the actual container width.
 
-## Connect the Interface
+## Connect the interface
 
 Configure generation and persistence independently:
 
@@ -89,7 +89,7 @@ Import the styles once in the application's global CSS, as in the maintained [Ve
 
 For Tailwind layers and provider ownership, follow [the theme guide](theme-provider.md). In Next.js, keep the interactive interface in a client module and retain server authentication in the surrounding page/layout. Give the interface a usable height within the host layout; the example's viewport height is appropriate for a full-page app.
 
-## Match the Browser Stream
+## Match the browser stream
 
 Select the adapter from the bytes returned to the browser. A framework may call a provider's Responses or Chat Completions API internally while sending its own event format to the client.
 
@@ -133,7 +133,7 @@ const llm: ChatLLM = {
 
 Call adapter factories with `()`. Verify text deltas, tool calls, tool results, errors, and completion events through the selected adapter. The application's backend or agent runtime executes its tools; configuring the UI does not implement a tool loop.
 
-## Choose Conversation Storage
+## Choose conversation storage
 
 | Persistence owner | `storage` configuration |
 | --- | --- |
@@ -152,7 +152,7 @@ Agent Interface captures storage when its provider mounts. Remount the interface
 
 Use the Gateway hook for thread storage with `features: { artifact: false }`, as shown above. Artifact persistence belongs to the application: supply its own `ChatStorage.artifact` adapter when users must browse or reopen saved content. `restStorage` also supplies thread storage only. Follow [the artifact storage workflow](artifacts.md#handle-streaming-and-storage) for combining the two channels.
 
-## Render Messages and Generated UI
+## Render messages and generated UI
 
 - Use `openuiChatLibrary` for OpenUI's chat components, or pass the application's custom library through `componentLibrary`.
 - Keep the renderer's component definitions synchronized with the server's prompt/spec. Regenerate the serialized spec when definitions change; see [build-component-library.md](build-component-library.md).
@@ -161,7 +161,7 @@ Use the Gateway hook for thread storage with `features: { artifact: false }`, as
 
 Inline generated UI and artifacts are separate configuration choices: `componentLibrary` renders assistant OpenUI Lang, while `artifactRenderers` renders application tool content. They can be used together.
 
-## Customize the Shell
+## Customize the shell
 
 Start with props for branding and configuration, then replace the specific slots needed by the product:
 
@@ -179,7 +179,7 @@ Place slot elements directly under `AgentInterface` so its slot extraction recog
 
 Use [the theme guide](theme-provider.md) for tokens, provider ownership, and CSS layers. Scope CSS overrides to a host wrapper around `.openui-agent-*`, and inspect both the desktop and mobile layouts. Avoid relying on viewport width alone when the interface is embedded in a smaller container.
 
-## Connect Navigation
+## Connect navigation
 
 Use `AgentInterface.Route` for application pages inside the shell. `undefined` selects the thread view. Without `onNavigate`, navigation is internal and `defaultPath` can set the initial page.
 
@@ -187,7 +187,7 @@ For host-controlled navigation, provide both `path` and `onNavigate`, and update
 
 Descendants can use `useNav()` from `@openuidev/react-ui` to read the current path and call `navigate(next)`, including `navigate(undefined)` to return to chat. Preserve the reserved `artifacts/` paths, which are matched before application routes. When synchronizing with a URL router, round-trip artifact paths as well as custom pages.
 
-## Add Artifacts
+## Add artifacts
 
 Agent Interface has one artifact type. An application tool supplies the content, and an application-provided renderer can show HTML, Markdown, a presentation, or any other requested output.
 
@@ -205,7 +205,7 @@ Follow [Agent Interface Artifacts](artifacts.md) for tool-result delivery, parsi
 6. When artifacts are requested, run [artifact verification](artifacts.md#verify). When theming is changed, run [theme verification](theme-provider.md#verify-the-result).
 7. Run the host typecheck and production build, including the framework's client boundary and CSS setup.
 
-## First-Party References
+## First-party references
 
 - [Agent Interface props](https://www.openui.com/docs/agent/reference/agentinterface-props)
 - [Components and slots](https://www.openui.com/docs/agent/reference/components)

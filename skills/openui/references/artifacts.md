@@ -1,4 +1,4 @@
-# Agent Interface Artifacts
+# Agent Interface artifacts
 
 Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one artifact type: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output.
 
@@ -6,7 +6,7 @@ For the surrounding chat shell, backend connections, message rendering, and navi
 
 Artifacts are independent of Gateway. Preserve the application's model provider, tool loop, stream adapter, and storage choices. With Gateway, use ordinary application function tools through [Responses](gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions](gateway/chat/chat-completions.md#keep-function-tools-in-the-application).
 
-## Connect a Tool to a Renderer
+## Connect a tool to a renderer
 
 1. Declare an application tool that creates or updates the requested content. Define and validate its arguments and result; execute it through the application's existing tool loop.
 2. Deliver the tool call and its paired result to Agent Interface through the selected stream adapter. A result supplied only to the next model request is not automatically visible to the UI; verify the transport emits the corresponding tool-result event. Raw Chat Completions deltas contain tool arguments; the application executor must forward results through its UI transport as well. Check the same result delivery when continuing Responses with `function_call_output`.
@@ -15,7 +15,7 @@ Artifacts are independent of Gateway. Preserve the application's model provider,
 
 The renderer's `toolName` matches incoming tool calls. Its `type` is an application-chosen identifier for stored-artifact lookup; it is not a built-in list of supported content formats. Choose the payload and renderer around the user's content.
 
-## Supply Your Own View
+## Supply your own view
 
 This example uses one renderer with an application-defined payload. `create_artifact`, `update_artifact`, `artifact`, and the payload fields are application conventions, not SDK tool names or a required wire schema. The host provides `renderContent`, which can dispatch to its own HTML, Markdown, presentation, or other view.
 
@@ -88,7 +88,7 @@ const artifactRenderers = [createAppArtifactRenderer(renderArtifactContent)];
 
 Here `renderArtifactContent` is the host's React rendering function. Validate each content shape before using it. For generated HTML, use a sandboxed iframe and the restrictions in [open-ended-html.md](open-ended-html.md); for Markdown or presentations, use the application's chosen renderer. No OpenUI Lang root is required for arbitrary tool-result content. If the content itself is OpenUI Lang, use `Renderer` with its matching library.
 
-## Handle Streaming and Storage
+## Handle streaming and storage
 
 The parser is called during streaming and when a stored artifact opens:
 
@@ -112,7 +112,7 @@ Combine thread storage and the application's artifact adapter in one stable `Cha
 - Exercise an edit and confirm the stable id, new version, and saved content agree; reject cross-user reads and edits.
 - Run the host typecheck/build and inspect the rendered output in its real container.
 
-## First-Party References
+## First-party references
 
 - [Artifacts](https://www.openui.com/docs/agent/core-concepts/artifacts)
 - [Custom artifacts](https://www.openui.com/docs/agent/guides/custom-artifacts)

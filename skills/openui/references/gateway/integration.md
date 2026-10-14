@@ -12,13 +12,13 @@ Read this reference first for shared OpenUI Gateway integration requirements. Th
 
 Responses and Chat Completions are alternative conversational generation protocols. Conversations supplies named-thread persistence for Responses; it is not a third generation protocol. An explicitly configured framework can separately manage storage without changing its model protocol.
 
-## Preserve Existing Architecture
+## Preserve existing architecture
 
 In an existing application, do not migrate from Chat Completions to Responses merely because Responses is the default starter backend. Preserve the host protocol unless the user requests migration or needs Responses-specific conversation appends, hosted web/image search, or remote MCP.
 
 Treat generation protocol, message persistence, client rendering, component library, and tools as separate choices. Do not silently replace one because another changes.
 
-## Audit the Host
+## Audit the host
 
 Before editing, inspect:
 
@@ -31,12 +31,12 @@ Before editing, inspect:
 
 Use the installed application and current first-party template as the source of truth. Do not paste a generic Next.js route over a different framework or orchestration layer.
 
-## Shared Configuration
+## Shared configuration
 
 All Gateway generation calls need a trusted server boundary:
 
 - Store `THESYS_API_KEY` in the deployment secret manager or an untracked server environment file. Never expose it to browser code, logs, generated output, or chat.
-- If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward. Do not infer a self-hosted architecture or rebuild a Gateway feature to bypass credentials.
+- If the key or Gateway account is not configured, follow [the authentication handoff](quickstart.md#complete-authentication-with-the-user) to involve the user during the task and resume verification afterward.
 - Configure the generation client with `https://api.thesys.dev/v1/embed` for `/chat/completions` or `/responses`. Configure the Conversations client with `https://api.thesys.dev/v1` for `/conversations`.
 - Use a current `{provider}/{model}` identifier. Preserve an existing server-side allowlist; reject arbitrary browser-supplied model ids.
 - Authenticate and rate-limit application routes independently. Page or layout authentication does not automatically protect API routes.
@@ -50,7 +50,7 @@ Install the server SDK required by the selected runbook. OpenUI Lang generation 
 
 BYOK is available on every plan, including the free tier. Add provider credentials from the [BYOK page in the Thesys console](https://console.thesys.dev/byok), not to the generated application or client code.
 
-Use the credential form currently shown for the chosen provider. The current BYOK guide lists OpenAI, Anthropic, and Google but does not specify Google's required credential fields. Do not prescribe a Google AI Studio key, GCP service-account JSON, region, or IAM roles from older instructions without checking the current console or first-party provider setup guidance.
+Use the credential form the console shows for the chosen provider. Do not prescribe credential fields (for example a Google AI Studio key, GCP service-account JSON, region, or IAM roles) without checking the console or first-party provider setup guidance.
 
 Use this human checkpoint:
 
@@ -60,15 +60,15 @@ Use this human checkpoint:
 
 Only organization admins can add or update provider credentials. BYOK is provider-specific: requests to other providers use Gateway credits and can fail when the organization has none. The application still authenticates to OpenUI Gateway with its server-side `THESYS_API_KEY`.
 
-Model availability changes independently of this skill. The [Models guide](https://www.openui.com/docs/gateway/models) now points to a broader model catalog. Verify the full model id, modalities, tool support, account availability, and installed template before changing a production allowlist; a catalog listing is not proof that every provider option is supported by Gateway.
+Model availability changes independently of this skill; check the [Models guide](https://www.openui.com/docs/gateway/models). Verify the full model id, modalities, tool support, account availability, and installed template before changing a production allowlist; a catalog listing is not proof that every provider option is supported by Gateway.
 
-## Component Libraries
+## Component libraries
 
 The model-facing prompt and browser renderer must use the same component contract. Use `openuiLibrary`, `openuiChatLibrary`, or the application's custom library; pass its generated spec to `generateSystemPrompt({ cloud: true, library })` and the matching runtime library to the renderer. Read [build-component-library.md](../build-component-library.md) before building, extending, or migrating a library.
 
 Gateway's HTTP APIs are independent of the client framework. Preserve an existing renderer when it supports the selected library.
 
-## Reliability and Observability
+## Reliability and observability
 
 Gateway validates and corrects eligible OpenUI Lang errors against the selected component contract. This does not validate business data, execute application tools safely, or repair arbitrary JSON/component code. Preserve the selected stream contract; do not add a second blind stream-rewriting layer. Provider fallback behavior depends on model compatibility and account configuration; verify it for strict model or data-residency requirements.
 
@@ -78,7 +78,7 @@ OpenUI Observability is independent of Gateway and also works with direct-provid
 
 For prompt-cost or latency work, consult [Prompt Caching](https://www.openui.com/docs/gateway/prompt-caching). Keep reusable prompt/spec prefixes stable, check the selected provider's caching behavior, and do not invent support for per-breakpoint TTLs.
 
-## Shared Verification
+## Shared verification
 
 1. Run the host formatter, typecheck, tests, and production build.
 2. Confirm the server key is absent from client source and the built browser bundle.
@@ -87,16 +87,18 @@ For prompt-cost or latency work, consult [Prompt Caching](https://www.openui.com
 5. Confirm the selected history owner receives exactly the intended history—neither duplicated nor silently discarded.
 6. Confirm the model and renderer use the same component library contract.
 7. Exercise each declared tool through its real execution owner and ensure undeclared tools cannot run.
-8. Test user isolation for whichever persistence layer the application retains.
+8. Test user isolation for whichever persistence layer the application retains. Verify logged-out requests cannot use any Gateway proxy or token route; with Gateway Conversations, verify one authenticated user cannot address another user's conversation id.
+9. Without a real key where possible, test invalid request bodies, provider-item injection, missing configuration, upstream failures, abort handling, and stream closure.
+10. With an authorized test key, smoke-test streaming and the selected persistence model. When artifacts are requested, exercise the application tool, custom renderer, and any configured reopening or editing flow.
 
-## First-Party References
+## First-party references
 
-- `https://www.openui.com/docs/gateway`
-- `https://www.openui.com/docs/gateway/api/responses`
-- `https://www.openui.com/docs/gateway/api/chat-completions`
-- `https://www.openui.com/docs/gateway/api/conversations`
-- `https://www.openui.com/docs/gateway/authentication`
-- `https://www.openui.com/docs/gateway/models`
-- `https://www.openui.com/docs/gateway/byok`
-- `https://www.openui.com/docs/gateway/reliability`
-- `https://www.openui.com/docs/gateway/generate-openui-lang`
+- [Gateway overview](https://www.openui.com/docs/gateway)
+- [Responses API](https://www.openui.com/docs/gateway/api/responses)
+- [Chat Completions API](https://www.openui.com/docs/gateway/api/chat-completions)
+- [Conversations API](https://www.openui.com/docs/gateway/api/conversations)
+- [Authentication](https://www.openui.com/docs/gateway/authentication)
+- [Models](https://www.openui.com/docs/gateway/models)
+- [BYOK](https://www.openui.com/docs/gateway/byok)
+- [Gateway reliability](https://www.openui.com/docs/gateway/reliability)
+- [Generate OpenUI Lang](https://www.openui.com/docs/gateway/generate-openui-lang)

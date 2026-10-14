@@ -1,8 +1,8 @@
-# Build an OpenUI Component Library
+# Build an OpenUI component library
 
 Read this reference completely when defining, extending, migrating, or validating an OpenUI component library. The model-facing library specification and the client-side renderer library are one contract: component names, prop order, descriptions, root, groups, tools, and interaction features must stay synchronized.
 
-## Choose the Smallest Library Change
+## Choose the smallest library change
 
 - Use `openuiLibrary` or `openuiChatLibrary` from `@openuidev/react-ui` for the built-in open-source React libraries.
 - Add domain-specific components when the built-in set cannot express the application's objects or actions.
@@ -12,7 +12,7 @@ Do not create a parallel component system merely to rename existing components. 
 
 Before editing, inspect the installed `@openuidev/*` versions, the existing library export, generated prompt/spec files, renderer wiring, tool provider, and representative generated programs. Prefer installed declarations and generated output over examples from another version.
 
-## Define Components
+## Define components
 
 Use the framework package that owns the renderer:
 
@@ -59,7 +59,7 @@ export const appLibrary = createLibrary({
 
 The `root` must name a component in the library. Give the library a stable optional `id` when the application needs to identify revisions across generated specs or deployments.
 
-## Design for Model Reliability
+## Design for model reliability
 
 - Use descriptive, distinct component names and descriptions that explain when to choose each component.
 - Keep schemas flat. Prefer several composable components over deeply nested objects.
@@ -72,7 +72,7 @@ The `root` must name a component in the library. Give the library a stable optio
 
 Inspect the generated prompt after schema changes. A TypeScript-valid library can still produce ambiguous or unnecessarily large model instructions.
 
-## Add State, Actions, and Tools Deliberately
+## Add state, actions, and tools deliberately
 
 Enable only interaction features the application can execute:
 
@@ -83,7 +83,7 @@ Enable only interaction features the application can execute:
 
 When tools are enabled, provide valid `toolExamples` that use the application's actual tool names and result shapes. Keep authorization, input validation, and side-effect policy outside the model.
 
-## Generate the Handover Spec
+## Generate the handover spec
 
 For Gateway generation, export the selected library even when using a built-in React UI library:
 
@@ -106,7 +106,7 @@ The library module must export a library with the current prompt/spec methods. T
 
 Treat generated prompt and spec files as build artifacts when the host repository already regenerates them. Follow its checked-in/ignored-file convention instead of committing derived output automatically.
 
-## Connect the Backend
+## Connect the backend
 
 Use `generateSystemPrompt()` from `@openuidev/lang-core` for current prompt compilation.
 
@@ -138,7 +138,7 @@ const gatewayPrompt = generateSystemPrompt({
 
 Pass `promptOptions` alongside the matching serialized `library`. Keep untrusted user content out of `instructions`, `preamble`, rules, and examples.
 
-## Connect the Renderer
+## Connect the renderer
 
 Pass the runtime library that produced the spec to the client:
 
@@ -164,11 +164,11 @@ Keep the generated Gateway library spec synchronized with the client library, in
 6. Run representative user prompts repeatedly across the intended model choices; compare structural failures, latency, and prompt size rather than trusting one success.
 7. Run the host application's formatter, typecheck, tests, and production build.
 
-## First-Party References
+## First-party references
 
-- `https://www.openui.com/docs/openui-lang/defining-components`
-- `https://www.openui.com/docs/openui-lang/system-prompts`
-- `https://www.openui.com/docs/openui-lang/reliability`
-- `https://www.openui.com/docs/gateway/generate-openui-lang`
-- `https://www.openui.com/docs/api-reference/cli#openui-generate`
-- `https://github.com/thesysdev/openui/tree/main/examples/design-systems`
+- [Defining components](https://www.openui.com/docs/openui-lang/defining-components)
+- [System prompts](https://www.openui.com/docs/openui-lang/system-prompts)
+- [OpenUI Lang reliability](https://www.openui.com/docs/openui-lang/reliability)
+- [Generate OpenUI Lang](https://www.openui.com/docs/gateway/generate-openui-lang)
+- [`openui generate`](https://www.openui.com/docs/api-reference/cli#openui-generate)
+- [Design-system examples](https://github.com/thesysdev/openui/tree/main/examples/design-systems)

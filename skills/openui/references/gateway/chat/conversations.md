@@ -4,9 +4,9 @@ Read [the shared Gateway integration guide](../integration.md) first. Use this r
 
 Conversations is a storage and identity plane, not a generation protocol. Responses can read/append its history automatically. Chat Completions still requires application/framework-supplied `messages`; do not add Responses state parameters to it. A framework may independently use Gateway storage, but that requires a verified write/reload integration, not just a model endpoint change.
 
-## Choose the State Model First
+## Choose the state model first
 
-For automatic history injection and turn persistence, use the named-thread Responses pattern:
+Conversations backs only one of the three Responses history models ([compare them](responses.md#choose-the-history-model)). For automatic history injection and turn persistence, use the named-thread pattern:
 
 ```ts
 const response = await embedClient.responses.create({
@@ -19,11 +19,9 @@ const response = await embedClient.responses.create({
 });
 ```
 
-The application sends only the new turn because Gateway supplies the earlier items from the named conversation. Do not also resend full history.
+The application sends only the new turn because Gateway supplies the earlier items from the named conversation. Do not also resend full history. The other two history models do not need a Conversations client, frontend-token route, or conversation ownership checks.
 
-Responses can instead use application-owned full `input` history or a `previous_response_id` chain. Those modes do not require a Conversations client, frontend-token route, or conversation ownership checks. Read [responses.md](responses.md) for all three generation patterns.
-
-## Choose the Access Plane
+## Choose the access plane
 
 Use the access plane that matches the caller:
 
@@ -34,7 +32,7 @@ Use the access plane that matches the caller:
 
 The generation proxy remains an application server route using the server key. A browser frontend token does not authorize that proxy automatically.
 
-## Work with Conversations and Items
+## Work with Conversations and items
 
 Configure a dedicated SDK client for the Conversations base URL:
 
@@ -79,11 +77,11 @@ Current operations are:
 
 Prefer the installed OpenAI SDK methods for these operations. Verify current pagination, update fields, item unions, and delete behavior before implementing custom raw HTTP helpers.
 
-## Connect a Browser Client
+## Connect a browser client
 
 Use a scoped frontend token for direct browser access to conversation records and items. Agent Interface's storage-hook configuration belongs in [the Agent Interface guide](../../agent-interface.md#choose-conversation-storage); the token route and authorization contract are described below.
 
-## Mint Frontend Tokens
+## Mint frontend tokens
 
 The application server mints a short-lived token with `POST https://api.thesys.dev/v1/frontend-tokens`. Derive `user_id` from authenticated server state and optionally include one stable `app_id`. Never accept the authoritative identity from the request body.
 
@@ -141,7 +139,7 @@ export async function POST(req: Request) {
 
 For direct browser Conversations calls, follow the [authentication guide](https://www.openui.com/docs/gateway/authentication), which documents `Authorization: Bearer <frontend-token>`. Use the scoped token, never the server API key. Client-helper authentication is covered in [Agent Interface storage](../../agent-interface.md#choose-conversation-storage).
 
-## Scope Users and Apps
+## Scope users and apps
 
 - Use a stable authenticated subject as `user_id`; never use display names, emails that can change, or browser-provided ids when the host has an immutable account id.
 - Use one stable `app_id` per product surface when the same organization key serves multiple applications. Do not derive it from the API key because key rotation must not change storage identity.
@@ -151,7 +149,7 @@ For direct browser Conversations calls, follow the [authentication guide](https:
 
 The scoped frontend token limits browser conversation access to its user and optional app. The server key remains organization-level authority.
 
-## Authorize the Generation Route Separately
+## Authorize the generation route separately
 
 The browser token protects direct storage calls, but the application `/api/chat` route calls Responses with the server key. Possession of a `threadId` is not proof that the authenticated user owns that conversation.
 
@@ -172,7 +170,7 @@ The conversation-specific generation route must also:
 
 Read [responses.md](responses.md) for request construction, tools, and streaming behavior.
 
-## Migrate Storage Deliberately
+## Migrate storage deliberately
 
 Adding a Gateway generation endpoint does not authorize replacing the host database. When moving an existing application to Conversations:
 
@@ -193,10 +191,10 @@ Adding a Gateway generation endpoint does not authorize replacing the host datab
 8. Test token expiry/refresh, missing configuration, Gateway failures, and logged-out calls.
 9. Run the host formatter, typecheck, tests, and production build.
 
-## First-Party References
+## First-party references
 
-- `https://www.openui.com/docs/gateway/api/conversations`
-- `https://www.openui.com/docs/gateway/api/responses`
-- `https://www.openui.com/docs/gateway`
-- `https://www.openui.com/docs/gateway/authentication`
-- `https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/frontend-token/route.ts`
+- [Conversations API](https://www.openui.com/docs/gateway/api/conversations)
+- [Responses API](https://www.openui.com/docs/gateway/api/responses)
+- [Gateway overview](https://www.openui.com/docs/gateway)
+- [Authentication](https://www.openui.com/docs/gateway/authentication)
+- [Template frontend-token route](https://github.com/thesysdev/openui/blob/main/templates/openui-cloud/src/app/api/frontend-token/route.ts)

@@ -32,7 +32,7 @@ import {
 } from "@openuidev/react-ui";
 ```
 
-On current `main`, `ThemeProvider` accepts:
+`ThemeProvider` accepts:
 
 | Prop | Meaning |
 | --- | --- |
