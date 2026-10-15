@@ -22,6 +22,8 @@ Read the example catalog at https://github.com/thesysdev/openui/blob/main/exampl
 
 `--example` and `--backend-framework` cannot be combined. An existing `--name` directory is an error.
 
+If the user explicitly asks for self-hosting, no external service, or owning the model infrastructure, or the app needs something Gateway can't do, follow [direct-provider.md](direct-provider.md) instead of steps 3 and 4.
+
 ## 2. Run `create`
 
 When a coding agent runs `create`, it never prompts. It takes the defaults for anything not passed, installs dependencies without starting the dev server, skips sign-in, and prints the next commands. Other options:
@@ -69,6 +71,7 @@ An `--example` scaffold has its own layout. Read its README before editing.
 ## 5. Customize
 
 - **Tools:** add them to the agent the way the framework defines tools (`src/agent.ts` for LangGraph, `src/lib/tools.ts` for the Vercel AI SDK). The application executes them.
+- **Instructions:** put the app's own instructions in prompt options (`preamble`, `additionalRules`, `examples`), and pass them in `src/agent.ts`: `generateSystemPrompt({ cloud: true, library, promptOptions })`. The scaffold passes none. See [component-library.md](component-library.md#4-prompt-options).
 - **Components:** the scaffold renders `openuiLibrary`. To change what the model can draw, follow [component-library.md](component-library.md), then regenerate `src/generated/spec.json` from the new library.
 - **Chat UI:** layout, welcome screen, starters, and slots are in [agent-interface.md](agent-interface.md). Colors and dark mode are in [theming.md](theming.md).
 - **Models:** edit `src/lib/models.tsx`. Ids use `{provider}/{model}`. See https://www.openui.com/cloud/gateway/models.

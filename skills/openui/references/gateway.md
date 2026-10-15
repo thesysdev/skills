@@ -87,7 +87,37 @@ Return the stream in the shape the chat UI already reads. Do not rewrite the eve
   ```
 
   Or return `new Response(completion.toReadableStream())` and read it with `openAIReadableStreamAdapter()`. The adapter must match; see [agent-interface.md](agent-interface.md#match-the-stream-adapter).
-- **A hand-built chat that reads plain text:** stream the text deltas (`chunk.choices[0]?.delta?.content`).
+- **A hand-built chat that reads plain text:** stream only the text deltas, and read them in the browser:
+
+  ```ts
+  // server
+  const body = new ReadableStream({
+    async start(controller) {
+      for await (const chunk of completion) {
+        const text = chunk.choices[0]?.delta?.content;
+        if (text) controller.enqueue(encoder.encode(text));
+      }
+      controller.close();
+    },
+  });
+  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8" } });
+  ```
+
+  ```ts
+  // browser
+  const res = await fetch("/api/chat", { method: "POST", body: JSON.stringify({ messages }), signal });
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let content = "";
+  setStreaming(true);
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    content += decoder.decode(value, { stream: true });
+    setContent(content); // <Renderer response={content} isStreaming={streaming} … />
+  }
+  setStreaming(false);
+  ```
 - **An agent framework:** keep the framework's own stream (LangGraph events, the AI SDK's UI message stream).
 - Pass the request's abort signal to the model call, so a cancelled request stops generation.
 
@@ -108,11 +138,9 @@ Three parts:
 2. **Frontend-token route:** the browser never holds `THESYS_API_KEY`. A server route mints a short-lived token scoped to one user:
 
    ```ts
-   export async function POST(request: Request) {
-     const userId = await getAuthenticatedUserId(request); // from the server session, never the request body
-     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-     const upstream = await fetch("https://api.thesys.dev/v1/frontend-tokens", {
+   // lib/frontend-token.ts
+   export async function mintFrontendToken(userId: string): Promise<{ token: string; expires_at: number }> {
+     const res = await fetch("https://api.thesys.dev/v1/frontend-tokens", {
        method: "POST",
        headers: {
          Authorization: `Bearer ${process.env.THESYS_API_KEY}`,
@@ -121,30 +149,72 @@ Three parts:
        body: JSON.stringify({ user_id: userId, ...(process.env.APP_ID ? { app_id: process.env.APP_ID } : {}) }),
        cache: "no-store",
      });
-     if (!upstream.ok) return Response.json({ error: "Token mint failed" }, { status: 502 });
+     if (!res.ok) throw new Error(`Frontend token mint failed: ${res.status}`);
+     return res.json();
+   }
+   ```
 
-     const { token, expires_at } = await upstream.json();
-     return Response.json({ token, expires_at }, { headers: { "Cache-Control": "private, no-store" } });
+   ```ts
+   // app/api/frontend-token/route.ts
+   export async function POST(request: Request) {
+     const userId = await getAuthenticatedUserId(request); // from the server session, never the request body
+     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+     try {
+       const { token, expires_at } = await mintFrontendToken(userId);
+       return Response.json({ token, expires_at }, { headers: { "Cache-Control": "private, no-store" } });
+     } catch {
+       return Response.json({ error: "Token mint failed" }, { status: 502 });
+     }
    }
    ```
 
    - `user_id` must be a stable account id, never a display name or an email that can change.
    - `app_id` is optional. Give each product its own fixed value when one organization serves several. Never derive it from the API key: rotating the key would change it.
    - Conversation `metadata` is for app data, never for deciding who owns a thread.
-3. **Chat route:** the browser storage does not write messages. After a turn completes, the chat route saves the **new turn only** (never the replayed history) with `@openuidev/server`. Do not save a cancelled or failed turn.
+3. **Chat route:** the browser storage does not write messages. After a turn completes, the chat route saves the **new turn only** (never the replayed history) with `@openuidev/server`. Do not save a cancelled or failed turn. A route that relays Chat Completions SSE collects the text as it streams and saves after the last chunk:
 
    ```ts
    import { storeChatCompletionHistory } from "@openuidev/server/openai";
 
-   await storeChatCompletionHistory({
-     apiKey: process.env.THESYS_API_KEY!,
-     conversationId: threadId,
-     messages: [
-       { role: "user", content: lastUserText },
-       { role: "assistant", content: assistantText },
-     ],
-   });
+   export async function POST(request: Request) {
+     const userId = await getAuthenticatedUserId(request);
+     if (!userId) return Response.json({ error: "Unauthorized" }, { status: 401 });
+     const { threadId, messages } = await readChatBody(request); // validated; see "Secure the route"
+     await assertThreadOwner(userId, threadId);                  // see "Check who owns a thread"
+
+     const completion = await gateway.chat.completions.create(
+       { model, messages: [systemMessage, ...messages], stream: true },
+       { signal: request.signal },
+     );
+
+     const encoder = new TextEncoder();
+     let assistantText = "";
+     const body = new ReadableStream({
+       async start(controller) {
+         try {
+           for await (const chunk of completion) {                // throws if the request is cancelled
+             assistantText += chunk.choices[0]?.delta?.content ?? "";
+             controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+           }
+           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+           controller.close();
+         } catch (error) {
+           controller.error(error);
+           return;                                                // cancelled or failed: save nothing
+         }
+         await storeChatCompletionHistory({
+           apiKey: process.env.THESYS_API_KEY!,
+           conversationId: threadId,
+           messages: [messages.at(-1), { role: "assistant", content: assistantText }],
+         }).catch(() => console.error("[chat] failed to save turn")); // never log message contents
+       },
+     });
+     return new Response(body, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
+   }
    ```
+
+   - Pass the user message as the browser sent it (`openAIMessageFormat` already produces a Chat Completions message); content parts are fine.
+   - If the app runs a tool loop, save the assistant tool-call message and every `role: "tool"` result of the turn too, in order.
 
    For a LangGraph agent, `storeLangGraphHistory` from `@openuidev/server/langgraph` takes the turn's `BaseMessage[]` and saves the user message, assistant messages, tool calls, and tool results in one call. The default scaffold calls it from an `afterAgent` middleware with `state.messages.slice(state.turnStart)`. System and developer messages are skipped. `chatCompletionMessagesToItems` converts messages to conversation items without saving them.
 
@@ -158,6 +228,27 @@ The chat route holds the organization key, so a `threadId` from the browser is n
 - On later turns, reject the request (404) if the record names a different user.
 - Store the record wherever the app keeps user data. An in-memory map is enough for a local demo only.
 - Never record ownership because the browser claims it. If ownership cannot be established, keep the route disabled for production and tell the user.
+
+```ts
+import { mintFrontendToken } from "@/lib/frontend-token";
+
+export async function assertThreadOwner(userId: string, threadId: string) {
+  const owner = await db.threadOwners.get(threadId);
+  if (owner) {
+    if (owner !== userId) throw new HttpError(404, "Thread not found");
+    return;
+  }
+  const { token } = await mintFrontendToken(userId);
+  const res = await fetch(`https://api.thesys.dev/v1/conversations/${encodeURIComponent(threadId)}`, {
+    headers: { "x-thesys-frontend-token": token },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new HttpError(404, "Thread not found");
+  await db.threadOwners.set(threadId, userId);
+}
+```
+
+`db.threadOwners` and `HttpError` stand for the app's own store and error handling.
 
 ### Apps without sign-in
 

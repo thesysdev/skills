@@ -59,7 +59,7 @@ For prices, link https://www.openui.com/docs/gateway/pricing-credits. Do not quo
 npx @openuidev/cli@latest <command>
 ```
 
-Use `pnpm dlx`, `bunx`, or `yarn dlx` in place of `npx` when the project uses that package manager. Use `npx` when there is no project yet. When the project has a script that wraps the command (such as `deploy` or `generate:apiKey` in scaffolded apps), run that script instead; it uses the project's pinned CLI version.
+Use `pnpm dlx`, `bunx`, or `yarn dlx` in place of `npx` when the project uses that package manager. Use `npx` when there is no project yet.
 
 ### Never handle API keys
 
@@ -68,6 +68,8 @@ Only the user creates API keys. Ask them to run `npx @openuidev/cli@latest gener
 ### Keep what an existing app already has
 
 In an existing app, keep its framework, chat UI, transport, storage, and authentication. Change only what the task needs.
+
+Add packages with the project's package manager (`pnpm add`, `npm install`, …) so the lockfile pins real versions. Never hand-write version strings such as `"latest"` into `package.json`. If you cannot install, give the user the install command.
 
 ### Port to Python from the JavaScript packages
 

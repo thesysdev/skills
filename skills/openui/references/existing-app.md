@@ -10,7 +10,7 @@ Before editing, find:
 - the chat UI, if any: assistant-ui, CopilotKit, a hand-built message list, or none;
 - the backend route that calls the model, and the client it uses (OpenAI SDK, Anthropic SDK, LangChain, Vercel AI SDK, or none);
 - how messages are stored, and how users are authenticated;
-- whether the app already generates UI (its own prompt and renderer, or a self-hosted OpenUI setup).
+- whether the app already generates UI (its own prompt and renderer, or an OpenUI setup that calls its provider directly).
 
 Then settle what the user wants:
 - **Replace or run beside.** Decide whether Gateway replaces the current model path or runs beside it. Ask only when the request leaves this open and it matters. Never silently delete a working backend.
@@ -86,12 +86,12 @@ const completion = await gateway.chat.completions.create({
 - If the app already has a system prompt, pass it as `instructions` (`appPrompt` above). Remove lines that ask for Markdown or plain-prose answers; they conflict with OpenUI Lang.
 - Keep the existing message history, streaming, and tool loop. If the route did not stream, make it stream, so the UI builds up as it arrives.
 - If the route wraps the stream with Autofix (`createAutofix`), remove the wrapper: Gateway corrects the output while it streams. `toResponse()` returned Chat Completions SSE; return the same format yourself (see [gateway.md](gateway.md#stream-to-the-browser)), so the browser's adapter keeps working.
-- If the app is a self-hosted OpenUI app, replace its full prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`) with the `cloud: true` prompt, and remove any home-grown parse-and-retry correction loop. Send exactly one OpenUI prompt per request.
+- If the app is an OpenUI app that calls its provider directly, replace its full prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`) with the `cloud: true` prompt, and remove any home-grown parse-and-retry correction loop. Send exactly one OpenUI prompt per request.
 - Once the Gateway path passes its checks, remove `OPENAI_API_KEY` and other provider keys the app no longer uses from `.env.example`.
 
 The user adds `THESYS_API_KEY` to the app's environment; see "Never handle API keys" in [SKILL.md](../SKILL.md#never-handle-api-keys). [gateway.md](gateway.md) covers models, BYOK, history, tools, and security.
 
-If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step.
+If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step. If they explicitly ask for self-hosting, no external service, or owning the model infrastructure, or the app needs something Gateway can't do, follow [direct-provider.md](direct-provider.md).
 
 ## 4. Render in the chat UI
 
@@ -154,6 +154,8 @@ export function AssistantMessage() {
 }
 ```
 
+`@openuidev/assistant-ui` is a different integration: the model emits OpenUI programs as **tool calls**, rendered as assistant-ui tool UIs, next to normal Markdown replies. Use it only when the user wants UI as an optional tool. Rendering the text part, as above, is the default; it is what Gateway corrects.
+
 CopilotKit: render the same way in a `markdownRenderer` component that receives `{ content }`. In `onAction`, call `agent.addMessage({ id: crypto.randomUUID(), role: "user", content: toModelMessage(event) })` from `useAgent()`, then `copilotkit.runAgent({ agent })` from `useCopilotKit()`. Both hooks come from `@copilotkit/react-core/v2`.
 
 A hand-built chat: render `<Renderer response={content} library={library} isStreaming={isStreaming} onAction={onAction} />` in the assistant message. In `onAction`, call the chat's existing send function. Show `event.humanFriendlyMessage` in the message list, and send `toModelMessage(event)` to the backend.
@@ -162,10 +164,53 @@ A hand-built chat: render `<Renderer response={content} library={library} isStre
 
 The steps above use React. For other frameworks:
 
+- **Skip the React parts:** the `src/lib/openui.tsx` and `prompt-options.ts` files from step 2, the `@openuidev/react-*` packages, the React UI stylesheet, and the React snippets in step 4. Steps 1, 3, and 5 apply unchanged.
 - **The built-in libraries are React-only.** Define a small custom library with `@openuidev/vue-lang`, `@openuidev/svelte-lang`, or `@openuidev/angular-lang` (see [component-library.md](component-library.md)).
 - **Matching examples:** start from `examples/app-frameworks/vue`, `svelte`, or `angular` in the OpenUI repo. They show the renderer, action handling, and how the server builds the prompt from the same library.
-- **The spec:** `openui generate` loads React library files. For other frameworks, follow the example: keep the component schemas in a shared file, build the library on the server with `createLibrary` from `@openuidev/lang-core`, and pass `library.toSpec()` to `generateSystemPrompt`.
+- **The spec:** `npx @openuidev/cli@latest generate` loads React library files. For other frameworks, follow the example:
+  - Keep the component schemas and prompt options in a shared file with no framework code.
+  - In the browser, build the library with the framework package's `createLibrary`.
+  - On the server, build the same library with `createLibrary` and `defineComponent` from `@openuidev/lang-core`, passing `component: null` for each component.
+  - Pass `library.toSpec()` and the prompt options to `generateSystemPrompt({ cloud: true, library, promptOptions })`.
+
+  ```ts
+  // shared/openui-schema.ts: no framework code; imported by browser and server
+  import { z } from "zod";
+
+  export const definitions = {
+    Paragraph: { description: "A paragraph of text.", props: z.object({ text: z.string() }) },
+    Callout: {
+      description: "A highlighted note.",
+      props: z.object({ title: z.string(), body: z.string(), tone: z.enum(["info", "warning"]).optional() }),
+    },
+  };
+  export const promptOptions = { additionalRules: ["Start every answer with a Paragraph."] };
+  ```
+
+  ```ts
+  // server/openui.ts
+  import { createLibrary, defineComponent, generateSystemPrompt } from "@openuidev/lang-core";
+  import { z } from "zod";
+  import { definitions, promptOptions } from "../shared/openui-schema";
+
+  const blocks = Object.entries(definitions).map(([name, d]) => defineComponent({ name, ...d, component: null }));
+  const root = defineComponent({
+    name: "Response",
+    description: "Root container for every answer.",
+    props: z.object({ children: z.array(z.union(blocks.map((b) => b.ref))) }),
+    component: null,
+  });
+  const library = createLibrary({ root: "Response", components: [root, ...blocks] });
+
+  export const systemPrompt = generateSystemPrompt({ cloud: true, library: library.toSpec(), promptOptions });
+  ```
+
+  The browser builds the same `Response` root and blocks with the framework package's `defineComponent`, using real components. Names, descriptions, and prop schemas must match exactly.
 - **No built-in stylesheet:** style the components with the app's own CSS.
+- **Angular names:**
+  - `<openui-renderer [response] [library] [isStreaming] (action)>` is the renderer; `(error)`, `(parseResult)`, and `(stateUpdate)` are its other outputs.
+  - Inside a component, `injectOpenUiContext().triggerAction(...)` fires an action.
+- **Vue and Svelte:** see each package's README for the renderer's props and events.
 - **Version match:** use the `@openuidev/lang-core` version that the renderer package depends on (check its `package.json`). `@openuidev/angular-lang` 0.4 depends on `lang-core` ^0.4, not 1.0. A mismatched `lang-core` on the server produces a prompt the renderer cannot parse.
 - **Actions:** the renderer emits the same action events as React. Handle `continue_conversation` and `open_url` the same way.
 

@@ -61,7 +61,7 @@ Call adapter factories with `()`. For a custom transport, implement `ChatLLM` di
 | --- | --- |
 | Memory only | omit it |
 | Gateway conversations | `useOpenuiCloudStorage({ token: "/api/frontend-token" })` |
-| The app's REST API | `restStorage({ baseUrl: "/api/chat/storage" })`; the app implements the endpoints it calls |
+| The app's REST API | `restStorage({ baseUrl: "/api/threads", messageFormat })`; the app implements the endpoints below |
 | Anything else | an object implementing `ChatStorage` |
 
 `useOpenuiCloudStorage` options:
@@ -72,10 +72,54 @@ Call adapter factories with `()`. For a custom transport, implement `ChatLLM` di
 
 The hook memoizes the storage and refreshes the token before it expires. It reads and manages threads but does not save messages. The chat route saves each turn; see [gateway.md](gateway.md#store-threads-in-gateway-conversations).
 
-`ChatStorage` is `{ thread, artifact? }`:
+### `restStorage` endpoints
 
-- `thread` implements `listThreads`, `createThread`, `getMessages`, `updateThread`, and `deleteThread`.
-- `artifact` is covered in [artifacts.md](artifacts.md).
+`restStorage` calls these routes under `baseUrl`. A `Thread` is `{ id, title, createdAt }`.
+
+| Call | Request | Response |
+| --- | --- | --- |
+| List threads | `GET {baseUrl}/get`, or `GET {baseUrl}/get?cursor=…` | `{ threads: Thread[], nextCursor?: string }` |
+| Create a thread | `POST {baseUrl}/create` with `{ messages }` (the first user message) | `Thread` |
+| Get messages | `GET {baseUrl}/get/{threadId}` | the thread's messages, in `messageFormat`'s wire shape |
+| Rename | `PATCH {baseUrl}/update/{threadId}` with the `Thread` | `Thread` |
+| Delete | `DELETE {baseUrl}/delete/{threadId}` | any 2xx |
+
+- `messageFormat` (default: the canonical message shape) converts messages in both directions. Use the same one as `fetchLLM`, for example `openAIMessageFormat`.
+- Every route must check that the signed-in user owns the thread.
+- `restStorage` stores threads only; it has no artifact storage.
+- `create` receives only the first user message. The id it returns is the `threadId` that `fetchLLM` sends to the chat route, and the chat route saves each completed turn to the same store (example in [direct-provider.md](direct-provider.md#save-turns-with-app-owned-storage)).
+
+### A custom `ChatStorage`
+
+For any other backend, implement the interface directly. `ChatStorage` is `{ thread, artifact? }`; `artifact` is covered in [artifacts.md](artifacts.md).
+
+```ts
+import { openAIMessageFormat, type ChatStorage } from "@openuidev/react-ui";
+
+export const storage: ChatStorage = {
+  thread: {
+    async listThreads(cursor) {
+      const { threads, nextCursor } = await api.listThreads({ cursor });
+      return { threads: threads.map((t) => ({ id: t.id, title: t.title, createdAt: t.createdAt })), nextCursor };
+    },
+    async createThread(firstMessage) {
+      const t = await api.createThread({ messages: openAIMessageFormat.toApi([firstMessage]) });
+      return { id: t.id, title: t.title, createdAt: t.createdAt };
+    },
+    async getMessages(threadId) {
+      return openAIMessageFormat.fromApi(await api.getMessages(threadId));
+    },
+    async updateThread(thread) {
+      return api.renameThread(thread.id, thread.title);
+    },
+    async deleteThread(id) {
+      await api.deleteThread(id);
+    },
+  },
+};
+```
+
+`api` stands for the app's own client. Create the storage object once (module scope or `useMemo`).
 
 Storage is captured when the interface mounts. Remount it (for example with a `key`) when the signed-in user changes.
 
