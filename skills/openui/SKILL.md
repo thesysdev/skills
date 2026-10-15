@@ -69,6 +69,8 @@ Only the user creates API keys. Ask them to run `npx @openuidev/cli@latest gener
 
 In an existing app, keep its framework, chat UI, transport, storage, and authentication. Change only what the task needs.
 
+Add packages with the project's package manager (`pnpm add`, `npm install`, …) so the lockfile pins real versions. Never hand-write version strings such as `"latest"` into `package.json`. If you cannot install, give the user the install command.
+
 ### Port to Python from the JavaScript packages
 
 OpenUI ships JavaScript packages. For a Python backend, read the matching JavaScript source in `packages/lang-core` and `packages/server` and implement the same behavior. `examples/app-frameworks/fastapi` builds the Gateway system prompt in Python.

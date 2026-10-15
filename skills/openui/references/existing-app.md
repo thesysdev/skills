@@ -154,6 +154,8 @@ export function AssistantMessage() {
 }
 ```
 
+`@openuidev/assistant-ui` is a different integration: the model emits OpenUI programs as **tool calls**, rendered as assistant-ui tool UIs, next to normal Markdown replies. Use it only when the user wants UI as an optional tool. Rendering the text part, as above, is the default; it is what Gateway corrects.
+
 CopilotKit: render the same way in a `markdownRenderer` component that receives `{ content }`. In `onAction`, call `agent.addMessage({ id: crypto.randomUUID(), role: "user", content: toModelMessage(event) })` from `useAgent()`, then `copilotkit.runAgent({ agent })` from `useCopilotKit()`. Both hooks come from `@copilotkit/react-core/v2`.
 
 A hand-built chat: render `<Renderer response={content} library={library} isStreaming={isStreaming} onAction={onAction} />` in the assistant message. In `onAction`, call the chat's existing send function. Show `event.humanFriendlyMessage` in the message list, and send `toModelMessage(event)` to the backend.
@@ -162,10 +164,19 @@ A hand-built chat: render `<Renderer response={content} library={library} isStre
 
 The steps above use React. For other frameworks:
 
+- **Skip the React parts:** the `src/lib/openui.tsx` and `prompt-options.ts` files from step 2, the `@openuidev/react-*` packages, the React UI stylesheet, and the React snippets in step 4. Steps 1, 3, and 5 apply unchanged.
 - **The built-in libraries are React-only.** Define a small custom library with `@openuidev/vue-lang`, `@openuidev/svelte-lang`, or `@openuidev/angular-lang` (see [component-library.md](component-library.md)).
 - **Matching examples:** start from `examples/app-frameworks/vue`, `svelte`, or `angular` in the OpenUI repo. They show the renderer, action handling, and how the server builds the prompt from the same library.
-- **The spec:** `openui generate` loads React library files. For other frameworks, follow the example: keep the component schemas in a shared file, build the library on the server with `createLibrary` from `@openuidev/lang-core`, and pass `library.toSpec()` to `generateSystemPrompt`.
+- **The spec:** `openui generate` loads React library files. For other frameworks, follow the example:
+  - Keep the component schemas and prompt options in a shared file with no framework code.
+  - In the browser, build the library with the framework package's `createLibrary`.
+  - On the server, build the same library with `createLibrary` and `defineComponent` from `@openuidev/lang-core`, passing `component: null` for each component.
+  - Pass `library.toSpec()` and the prompt options to `generateSystemPrompt({ cloud: true, library, promptOptions })`.
 - **No built-in stylesheet:** style the components with the app's own CSS.
+- **Angular names:**
+  - `<openui-renderer [response] [library] [isStreaming] (action)>` is the renderer; `(error)`, `(parseResult)`, and `(stateUpdate)` are its other outputs.
+  - Inside a component, `injectOpenUiContext().triggerAction(...)` fires an action.
+- **Vue and Svelte:** see each package's README for the renderer's props and events.
 - **Version match:** use the `@openuidev/lang-core` version that the renderer package depends on (check its `package.json`). `@openuidev/angular-lang` 0.4 depends on `lang-core` ^0.4, not 1.0. A mismatched `lang-core` on the server produces a prompt the renderer cannot parse.
 - **Actions:** the renderer emits the same action events as React. Handle `continue_conversation` and `open_url` the same way.
 

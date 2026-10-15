@@ -71,9 +71,63 @@ export const library = createLibrary({
 - **Child components** are typed with `Child.ref`. Use `z.union([A.ref, B.ref])` when a slot accepts several types.
 - **`root`** names the component a page starts from. It must be in `components`.
 - **Actions:** a prop typed with `action()` from `@openuidev/react-lang` takes an action. The component fires it with `useTriggerAction()`.
-- **Custom functions:** `defineFunction({ name, description, params, returns, fn })` adds a pure, synchronous `@Name(...)` call. It runs in the browser.
-- **Custom actions:** `defineAction({ name, description, params })` adds an `@Name(...)` action. The host receives it in `onAction`.
+- **Custom functions and actions:** see [Custom functions and actions](#custom-functions-and-actions).
 - Names must not collide with built-ins (`Query`, `Mutation`, `Action`, `@Count`, …). The full list is in [openui-lang.md](openui-lang.md#reserved-names).
+
+### Custom functions and actions
+
+A **custom function** is a pure, synchronous `@Name(...)` call the model can use in any expression. It runs in the browser.
+
+```tsx
+import { createLibrary, defineFunction } from "@openuidev/react-lang";
+import { z } from "zod";
+
+const percent = defineFunction({
+  name: "Percent",
+  description: "Format part / total as a whole percentage, e.g. \"42%\".",
+  params: z.object({ part: z.number(), total: z.number() }),
+  returns: z.string(),
+  fn: ({ part, total }) => (total === 0 ? "0%" : `${Math.round((part / total) * 100)}%`),
+});
+
+export const library = createLibrary({ root: "Panel", components: [Panel, Metric], functions: [percent] });
+```
+
+The model writes `share = TextContent(@Percent(done, total))`.
+
+- **Arguments are positional,** in the key order of `params`. `fn` receives one object keyed by those names.
+- **Names start with an uppercase letter** and must not reuse a built-in (`@Count`, `@Sum`, …), an action, `Query`, `Mutation`, or a component name.
+- **No side effects:** `fn` must not touch state, the network, or the clock; the runtime may cache results and call it any number of times.
+- **Bad input:** an invalid argument or a throw makes the call evaluate to null and report `runtime-error`. An unknown `@Name` reports `unknown-function`.
+- The prompt lists custom functions automatically. Only the signature and description are sent; `fn` stays in the browser.
+
+A **custom action** is an `@Name(...)` step in an action prop. The client does not run it; the host receives it in `onAction`.
+
+```tsx
+import { createLibrary, defineAction } from "@openuidev/react-lang";
+import { z } from "zod";
+
+const copyToClipboard = defineAction({
+  name: "CopyToClipboard",
+  description: "Copy text to the user's clipboard.",
+  params: z.object({ text: z.string() }),
+});
+
+export const library = createLibrary({ root: "Panel", components: [Panel, Button], actions: [copyToClipboard] });
+
+// The model writes: copyBtn = Button("Copy", @CopyToClipboard(summary))
+<Renderer
+  response={text}
+  library={library}
+  onAction={(event) => {
+    if (event.type === "CopyToClipboard") void navigator.clipboard.writeText(String(event.params?.text));
+  }}
+/>;
+```
+
+- An invalid argument, or a required argument that is null, makes the action do nothing.
+- In Agent Interface, handle custom actions with its `onAction` prop.
+- To add either to an existing library, use `extend({ functions: { add: [...] }, actions: { add: [...] } })`.
 
 ## 3. Design for reliable generation
 
