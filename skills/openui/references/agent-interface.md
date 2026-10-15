@@ -87,6 +87,7 @@ The hook memoizes the storage and refreshes the token before it expires. It read
 - `messageFormat` (default: the canonical message shape) converts messages in both directions. Use the same one as `fetchLLM`, for example `openAIMessageFormat`.
 - Every route must check that the signed-in user owns the thread.
 - `restStorage` stores threads only; it has no artifact storage.
+- `create` receives only the first user message. The id it returns is the `threadId` that `fetchLLM` sends to the chat route, and the chat route saves each completed turn to the same store (example in [direct-provider.md](direct-provider.md#save-turns-with-app-owned-storage)).
 
 ### A custom `ChatStorage`
 

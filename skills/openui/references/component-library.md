@@ -161,7 +161,7 @@ Prompt options shape what the model is taught. Keep them in a file with no compo
 
 ### Live data with `Query` and `Mutation`
 
-Teaching `Query`, `Mutation`, `$variables`, and `@Run` uses the `tools`, `toolCalls`, and `bindings` options, which only the **self-hosted prompt** sends. `cloud: true` does not send them. Use `generateSystemPrompt({ library, promptOptions })` without `cloud` for apps that need live data in generated UI.
+Teaching `Query`, `Mutation`, `$variables`, and `@Run` uses the `tools`, `toolCalls`, and `bindings` options, which only the **full prompt** (`generateSystemPrompt` without `cloud`) sends. `cloud: true` does not send them. Use `generateSystemPrompt({ library, promptOptions })` without `cloud` for apps that need live data in generated UI.
 
 1. **Describe each tool in the prompt options:**
 
@@ -228,7 +228,7 @@ npx @openuidev/cli@latest generate src/lib/openui.tsx --spec --out src/lib/openu
 
 Regenerate the spec whenever the library changes, for example from a `prebuild` script. The scaffold keeps it at `src/generated/spec.json`. Follow the project's convention for generated files: some commit them, the examples ignore them in git. Do not commit generated output the project ignores.
 
-After a schema change, read the generated prompt (`openui generate <file> --out prompt.txt`). A library that typechecks can still produce an ambiguous or oversized prompt.
+After a schema change, read the generated prompt (`npx @openuidev/cli@latest generate <file> --out prompt.txt`). A library that typechecks can still produce an ambiguous or oversized prompt.
 
 ## 7. Connect the server and the browser
 
@@ -255,7 +255,7 @@ Blank or partial renders and `unknown-component` errors usually mean the spec an
 
 ## Verify
 
-1. `openui generate --spec` succeeds on the library file.
+1. `npx @openuidev/cli@latest generate <file> --spec` succeeds on the library file.
 2. Stream a response and confirm the root renders before its children arrive.
 3. Read the generated signatures: names, prop order, required props, root.
 4. Parse a few hand-written programs and check `result.meta.errors` (see [openui-lang.md](openui-lang.md#validate-a-program)).

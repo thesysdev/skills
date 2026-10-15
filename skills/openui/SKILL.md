@@ -59,7 +59,7 @@ For prices, link https://www.openui.com/docs/gateway/pricing-credits. Do not quo
 npx @openuidev/cli@latest <command>
 ```
 
-Use `pnpm dlx`, `bunx`, or `yarn dlx` in place of `npx` when the project uses that package manager. Use `npx` when there is no project yet. When the project has a script that wraps the command (such as `deploy` or `generate:apiKey` in scaffolded apps), run that script instead; it uses the project's pinned CLI version.
+Use `pnpm dlx`, `bunx`, or `yarn dlx` in place of `npx` when the project uses that package manager. Use `npx` when there is no project yet.
 
 ### Never handle API keys
 

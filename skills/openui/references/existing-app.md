@@ -10,7 +10,7 @@ Before editing, find:
 - the chat UI, if any: assistant-ui, CopilotKit, a hand-built message list, or none;
 - the backend route that calls the model, and the client it uses (OpenAI SDK, Anthropic SDK, LangChain, Vercel AI SDK, or none);
 - how messages are stored, and how users are authenticated;
-- whether the app already generates UI (its own prompt and renderer, or a self-hosted OpenUI setup).
+- whether the app already generates UI (its own prompt and renderer, or an OpenUI setup that calls its provider directly).
 
 Then settle what the user wants:
 - **Replace or run beside.** Decide whether Gateway replaces the current model path or runs beside it. Ask only when the request leaves this open and it matters. Never silently delete a working backend.
@@ -86,12 +86,12 @@ const completion = await gateway.chat.completions.create({
 - If the app already has a system prompt, pass it as `instructions` (`appPrompt` above). Remove lines that ask for Markdown or plain-prose answers; they conflict with OpenUI Lang.
 - Keep the existing message history, streaming, and tool loop. If the route did not stream, make it stream, so the UI builds up as it arrives.
 - If the route wraps the stream with Autofix (`createAutofix`), remove the wrapper: Gateway corrects the output while it streams. `toResponse()` returned Chat Completions SSE; return the same format yourself (see [gateway.md](gateway.md#stream-to-the-browser)), so the browser's adapter keeps working.
-- If the app is a self-hosted OpenUI app, replace its full prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`) with the `cloud: true` prompt, and remove any home-grown parse-and-retry correction loop. Send exactly one OpenUI prompt per request.
+- If the app is an OpenUI app that calls its provider directly, replace its full prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`) with the `cloud: true` prompt, and remove any home-grown parse-and-retry correction loop. Send exactly one OpenUI prompt per request.
 - Once the Gateway path passes its checks, remove `OPENAI_API_KEY` and other provider keys the app no longer uses from `.env.example`.
 
 The user adds `THESYS_API_KEY` to the app's environment; see "Never handle API keys" in [SKILL.md](../SKILL.md#never-handle-api-keys). [gateway.md](gateway.md) covers models, BYOK, history, tools, and security.
 
-If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step.
+If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step. If they also refuse any Thesys account in the request path, follow [direct-provider.md](direct-provider.md).
 
 ## 4. Render in the chat UI
 
@@ -167,7 +167,7 @@ The steps above use React. For other frameworks:
 - **Skip the React parts:** the `src/lib/openui.tsx` and `prompt-options.ts` files from step 2, the `@openuidev/react-*` packages, the React UI stylesheet, and the React snippets in step 4. Steps 1, 3, and 5 apply unchanged.
 - **The built-in libraries are React-only.** Define a small custom library with `@openuidev/vue-lang`, `@openuidev/svelte-lang`, or `@openuidev/angular-lang` (see [component-library.md](component-library.md)).
 - **Matching examples:** start from `examples/app-frameworks/vue`, `svelte`, or `angular` in the OpenUI repo. They show the renderer, action handling, and how the server builds the prompt from the same library.
-- **The spec:** `openui generate` loads React library files. For other frameworks, follow the example:
+- **The spec:** `npx @openuidev/cli@latest generate` loads React library files. For other frameworks, follow the example:
   - Keep the component schemas and prompt options in a shared file with no framework code.
   - In the browser, build the library with the framework package's `createLibrary`.
   - On the server, build the same library with `createLibrary` and `defineComponent` from `@openuidev/lang-core`, passing `component: null` for each component.

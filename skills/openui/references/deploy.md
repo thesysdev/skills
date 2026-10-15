@@ -1,6 +1,6 @@
 # Deploy
 
-Use this to put an OpenUI app on a URL. `openui deploy` deploys to Vercel. It is the last step of a new app, unless the user asked to keep it local.
+Use this to put an OpenUI app on a URL. `npx @openuidev/cli@latest deploy` deploys to Vercel. It is the last step of a new app, unless the user asked to keep it local.
 
 ## Before deploying
 
@@ -15,12 +15,11 @@ From the app directory:
 npx @openuidev/cli@latest deploy
 ```
 
-- If `package.json` has a `deploy` script that runs `openui deploy`, as scaffolded apps do, run that script instead (`npm run deploy`, `pnpm run deploy`); it uses the project's pinned CLI. Pass extra flags after `--`: `npm run deploy -- --prod`.
 - To deploy another directory: `npx @openuidev/cli@latest deploy ./my-app`.
 
 - **Preview by default.** Add `--prod` only when the user asks for production.
-- **Vercel CLI:** use `openui deploy` instead of `vercel` or the Vercel dashboard, unless the user asks for those.
-- **The directory** must be an OpenUI app: its `package.json` lists an `@openuidev/*` dependency. Existing apps qualify; they need not come from `openui create`.
+- **Vercel CLI:** use `npx @openuidev/cli@latest deploy` instead of `vercel` or the Vercel dashboard, unless the user asks for those.
+- **The directory** must be an OpenUI app: its `package.json` lists an `@openuidev/*` dependency. Existing apps qualify; they need not come from `create`.
 
 ## Options
 
