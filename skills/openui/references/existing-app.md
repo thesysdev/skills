@@ -172,6 +172,40 @@ The steps above use React. For other frameworks:
   - In the browser, build the library with the framework package's `createLibrary`.
   - On the server, build the same library with `createLibrary` and `defineComponent` from `@openuidev/lang-core`, passing `component: null` for each component.
   - Pass `library.toSpec()` and the prompt options to `generateSystemPrompt({ cloud: true, library, promptOptions })`.
+
+  ```ts
+  // shared/openui-schema.ts: no framework code; imported by browser and server
+  import { z } from "zod";
+
+  export const definitions = {
+    Paragraph: { description: "A paragraph of text.", props: z.object({ text: z.string() }) },
+    Callout: {
+      description: "A highlighted note.",
+      props: z.object({ title: z.string(), body: z.string(), tone: z.enum(["info", "warning"]).optional() }),
+    },
+  };
+  export const promptOptions = { additionalRules: ["Start every answer with a Paragraph."] };
+  ```
+
+  ```ts
+  // server/openui.ts
+  import { createLibrary, defineComponent, generateSystemPrompt } from "@openuidev/lang-core";
+  import { z } from "zod";
+  import { definitions, promptOptions } from "../shared/openui-schema";
+
+  const blocks = Object.entries(definitions).map(([name, d]) => defineComponent({ name, ...d, component: null }));
+  const root = defineComponent({
+    name: "Response",
+    description: "Root container for every answer.",
+    props: z.object({ children: z.array(z.union(blocks.map((b) => b.ref))) }),
+    component: null,
+  });
+  const library = createLibrary({ root: "Response", components: [root, ...blocks] });
+
+  export const systemPrompt = generateSystemPrompt({ cloud: true, library: library.toSpec(), promptOptions });
+  ```
+
+  The browser builds the same `Response` root and blocks with the framework package's `defineComponent`, using real components. Names, descriptions, and prop schemas must match exactly.
 - **No built-in stylesheet:** style the components with the app's own CSS.
 - **Angular names:**
   - `<openui-renderer [response] [library] [isStreaming] (action)>` is the renderer; `(error)`, `(parseResult)`, and `(stateUpdate)` are its other outputs.

@@ -109,7 +109,13 @@ Inputs take validation rules as an object: `Input("email", "you@company.com", "e
 
 In edit mode (`editMode` prompt option), the model answers with only the changed statements.
 
-- The host merges them into the current program with `mergeStatements`, after the patch finishes streaming.
+- The host merges them into the current program with `mergeStatements`, after the patch finishes streaming:
+
+  ```ts
+  import { mergeStatements } from "@openuidev/react-lang"; // also exported by @openuidev/lang-core
+
+  const next = mergeStatements(currentProgram, patchText); // patchText may be fenced
+  ```
 - Merging replaces statements by name, appends new ones, and removes statements `root` no longer reaches.
 - `name = null` deletes a statement.
 

@@ -41,8 +41,41 @@ With `conversation`, Gateway reads and appends the thread's items itself, so the
 - **The thread id** comes from the request body: Agent Interface's `fetchLLM` sends `threadId`.
 - **Send `store: true` on every request**, and only the new user input with `previous_response_id`. Send `instructions` on every request too; they are not carried over from the previous response.
 - **Fall back to full history in `input`** when there is no stored id, or it no longer matches what the user sees: the first turn, after a regenerate or edit, after a cancelled turn, after a server restart. Then start a new chain from that response.
-- **Agent Interface still sends the full `messages`.** The route sends only the trailing user items while chaining.
+- **Agent Interface still sends the full `messages`.** The route sends only the new user message while chaining.
 - No frontend tokens or Conversations API calls are involved.
+
+To detect a match, store the number of messages the response covered (the request's messages plus the reply). Chain only when the browser's history has grown by exactly one user message since then. A regenerate, an edit, or a cancelled turn changes the count, so the route falls back by itself:
+
+```ts
+const key = `${userId}:${threadId}`;
+const chain = await db.responseChains.get(key);
+await db.responseChains.delete(key); // a cancelled or failed turn leaves no chain behind
+
+const last = messages.at(-1);
+const canChain = chain !== undefined && messages.length === chain.messageCount + 1 && last?.role === "user";
+
+const stream = await gateway.responses.create(
+  {
+    model,
+    instructions, // every request
+    store: true,
+    stream: true,
+    ...(canChain
+      ? { previous_response_id: chain.responseId, input: [last] }
+      : { input: messages }),
+  },
+  { signal: request.signal },
+);
+
+for await (const event of stream) {
+  if (event.type === "response.completed") {
+    await db.responseChains.set(key, { responseId: event.response.id, messageCount: messages.length + 1 });
+  }
+  // relay the event to the browser unchanged
+}
+```
+
+`db.responseChains` stands for the app's own store, keyed by signed-in user and thread. An in-memory map loses chains on restart, which only costs one full-history request.
 
 ## Hosted tools
 

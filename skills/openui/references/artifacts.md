@@ -5,9 +5,54 @@ Use this when an agent produces something the user should preview, open, revisit
 ## How it fits together
 
 1. The app declares a tool (for example `create_artifact`) and runs it in its tool loop. The tool name and payload shape are the app's choice.
-2. The tool call and its result reach the browser through the stream. Check that the route's stream carries tool results, not just tool calls; a result fed only to the next model request never reaches the UI. Raw Chat Completions deltas carry only the call's arguments, so the app's tool executor must also send the result to the browser. The same applies to a Responses `function_call_output`.
+2. The tool call and its result reach the browser through the stream. The renderer needs the result; a result fed only to the next model request never reaches the UI. Check the stream format (see the table below).
 3. A renderer from `defineArtifactRenderer` turns the tool payload into an inline `preview` and a full `actual` view.
 4. The renderers go to `<AgentInterface artifactRenderers={...} />`.
+
+### Use a stream that carries tool results
+
+| Browser stream (`streamAdapter`) | Tool results reach the UI |
+| --- | --- |
+| Vercel AI SDK UI message stream (`vercelAIAdapter()`) | Yes |
+| LangGraph events (`langGraphAdapter()`) | Yes |
+| Responses SSE (`openAIResponsesAdapter()`) | Yes |
+| Eve session stream (`eveAdapter()`) | Yes |
+| AG-UI events (`agUIAdapter()`) | Yes, when the relay emits `TOOL_CALL_RESULT` events |
+| Chat Completions SSE (`openAIAdapter()`, `openAIReadableStreamAdapter()`) | **No.** Chat Completions chunks carry tool calls but never their results. |
+
+With a plain Chat Completions route, artifacts do not work. Run the tool loop in an agent framework (the Vercel AI SDK or LangGraph scaffolds do), or use a stream that carries results.
+
+With the Vercel AI SDK, the tool's return value is the result the renderer receives:
+
+```ts
+import { createOpenAI } from "@ai-sdk/openai";
+import { streamText, tool, toUIMessageStream, createUIMessageStreamResponse } from "ai";
+import { z } from "zod";
+
+const gateway = createOpenAI({ apiKey: process.env.THESYS_API_KEY, baseURL: "https://api.thesys.dev/v1/embed" });
+
+const result = streamText({
+  model: gateway.chat("openai/gpt-5"),
+  system: systemPrompt,
+  messages,
+  tools: {
+    create_artifact: tool({
+      description: "Create a document the user can open, revisit, and edit.",
+      inputSchema: z.object({ title: z.string(), content: z.string() }),
+      execute: async ({ title, content }) => {
+        const artifact = { id: crypto.randomUUID(), title, version: 1, content };
+        await saveArtifact(artifact, threadId); // when artifacts are stored; see "Store artifacts"
+        return artifact;
+      },
+    }),
+  },
+  abortSignal: request.signal,
+});
+
+return createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream }) });
+```
+
+The browser reads it with `vercelAIAdapter()` and `vercelAIMessageFormat`, and the renderer below matches `toolName: "create_artifact"`.
 
 ## Write the renderer
 

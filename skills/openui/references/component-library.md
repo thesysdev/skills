@@ -159,6 +159,55 @@ Prompt options shape what the model is taught. Keep them in a file with no compo
   - Keep authorization and input validation outside the model.
 - **Never put user-written text** in the preamble, rules, or examples.
 
+### Live data with `Query` and `Mutation`
+
+Teaching `Query`, `Mutation`, `$variables`, and `@Run` uses the `tools`, `toolCalls`, and `bindings` options, which only the **self-hosted prompt** sends. `cloud: true` does not send them. Use `generateSystemPrompt({ library, promptOptions })` without `cloud` for apps that need live data in generated UI.
+
+1. **Describe each tool in the prompt options:**
+
+   ```ts
+   // src/lib/prompt-options.ts
+   import type { PromptOptions } from "@openuidev/lang-core";
+
+   export const promptOptions: PromptOptions = {
+     tools: [
+       {
+         name: "list_tickets",
+         description: "Open support tickets, newest first.",
+         inputSchema: { type: "object", properties: { status: { type: "string", enum: ["open", "closed"] } } },
+         outputSchema: {
+           type: "object",
+           properties: { rows: { type: "array", items: { type: "object", properties: { id: { type: "string" }, title: { type: "string" } } } } },
+         },
+       },
+     ],
+     toolExamples: [
+       `root = Stack([tbl])
+   $status = "open"
+   tickets = Query("list_tickets", { status: $status }, { rows: [] })
+   tbl = Table([Col("Title", tickets.rows.title)])`,
+     ],
+   };
+   ```
+
+2. **Run each tool on the server,** behind the app's authentication, and give the renderer a `toolProvider` that calls it. The keys must match the tool names exactly.
+
+   ```tsx
+   const callTool = (name: string) => async (args: Record<string, unknown>) => {
+     const res = await fetch(`/api/tools/${name}`, { method: "POST", body: JSON.stringify(args) });
+     if (!res.ok) throw new Error(`${name} failed`);
+     return res.json();
+   };
+
+   <Renderer response={text} library={library} isStreaming={isStreaming} toolProvider={{ list_tickets: callTool("list_tickets") }} />;
+   ```
+
+   An MCP client (any object with `callTool({ name, arguments })`) also works as the `toolProvider`.
+
+- Queries run when the stream ends, and again when a `$variable` in their arguments changes. Mutations run only through `@Run`.
+- A tool name the provider lacks fails with `tool-not-found`.
+- Query results stay in the browser; they never enter the conversation. Give the model an agent-side tool if it needs the same data.
+
 ## 5. Keep stored responses rendering
 
 Stored responses have no prop names; position is the meaning. When changing a component that is already in use:
