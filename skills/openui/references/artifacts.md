@@ -1,74 +1,51 @@
-# Agent Interface Artifacts
+# Show tool output as artifacts
 
-Use this guide when an agent produces content the user should preview, open, revisit, or edit. Agent Interface has one artifact type: the application chooses the data and supplies its renderer. It can represent HTML, Markdown, a presentation, a dashboard, or any other user-requested output.
+Use this when an agent produces something the user should preview, open, revisit, or edit in Agent Interface: a document, an HTML app, a presentation, a dashboard. An artifact is a tool result plus a renderer the app supplies. Agent Interface provides the inline preview slot, the side panel, and, with storage, an artifact browser. Agent Interface itself is covered in [agent-interface.md](agent-interface.md).
 
-For the surrounding chat shell, backend connections, message rendering, and navigation, read [Agent Interface](agent-interface.md). This guide covers its artifact workflow.
+## How it fits together
 
-Artifacts are independent of Gateway. Preserve the application's model provider, tool loop, stream adapter, and storage choices. With Gateway, use ordinary application function tools through [Responses](gateway/chat/responses.md#app-owned-function-tools) or [Chat Completions](gateway/chat/chat-completions.md#keep-function-tools-in-the-application).
+1. The app declares a tool (for example `create_artifact`) and runs it in its tool loop. The tool name and payload shape are the app's choice.
+2. The tool call and its result reach the browser through the stream. Check that the route's stream carries tool results, not just tool calls; a result fed only to the next model request never reaches the UI.
+3. A renderer from `defineArtifactRenderer` turns the tool payload into an inline `preview` and a full `actual` view.
+4. The renderers go to `<AgentInterface artifactRenderers={...} />`.
 
-## Connect a Tool to a Renderer
-
-1. Declare an application tool that creates or updates the requested content. Define and validate its arguments and result; execute it through the application's existing tool loop.
-2. Deliver the tool call and its paired result to Agent Interface through the selected stream adapter. A result supplied only to the next model request is not automatically visible to the UI; verify the transport emits the corresponding tool-result event. Raw Chat Completions deltas contain tool arguments; the application executor must forward results through its UI transport as well. Check the same result delivery when continuing Responses with `function_call_output`.
-3. Use `defineArtifactRenderer` from `@openuidev/react-ui` to parse the tool envelope, show an inline `preview`, and supply the full `actual` view.
-4. Register a stable renderer array with `AgentInterface.artifactRenderers`.
-
-The renderer's `toolName` matches incoming tool calls. Its `type` is an application-chosen identifier for stored-artifact lookup; it is not a built-in list of supported content formats. Choose the payload and renderer around the user's content.
-
-## Supply Your Own View
-
-This example uses one renderer with an application-defined payload. `create_artifact`, `update_artifact`, `artifact`, and the payload fields are application conventions, not SDK tool names or a required wire schema. The host provides `renderContent`, which can dispatch to its own HTML, Markdown, presentation, or other view.
+## Write the renderer
 
 ```tsx
 import type { ReactNode } from "react";
 import { defineArtifactRenderer } from "@openuidev/react-ui";
 
-export type ArtifactData = {
-  id: string;
-  title: string;
-  version: number;
-  mediaType: string;
-  content: unknown;
-};
+export type ArtifactData = { id: string; title: string; version: number; content: unknown };
 
 function parseArtifact(raw: unknown): ArtifactData | null {
   try {
-    const value: unknown = typeof raw === "string" ? JSON.parse(raw) : raw;
+    const value = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!value || typeof value !== "object") return null;
     const data = value as Record<string, unknown>;
-    if (
-      typeof data.id !== "string" ||
-      typeof data.title !== "string" ||
-      typeof data.version !== "number" ||
-      !Number.isInteger(data.version) || data.version < 1 ||
-      typeof data.mediaType !== "string" ||
-      !("content" in data)
-    ) return null;
+    if (typeof data.id !== "string" || typeof data.title !== "string") return null;
+    if (typeof data.version !== "number" || !("content" in data)) return null;
     return data as ArtifactData;
   } catch {
-    return null;
+    return null; // partial JSON while the tool call streams
   }
 }
 
-export function createAppArtifactRenderer(
-  renderContent: (artifact: ArtifactData) => ReactNode,
-) {
+export function createArtifactRenderer(renderContent: (artifact: ArtifactData) => ReactNode) {
   return defineArtifactRenderer({
-    type: "artifact",
+    type: "document",
     toolName: ["create_artifact", "update_artifact"],
     parser: ({ args, response }, { isStreaming }) => {
       const data = parseArtifact(response ?? (isStreaming ? args : null));
       if (!data) return null;
       return {
         props: data,
-        meta: isStreaming
-          ? null
-          : { id: data.id, version: data.version, heading: data.title },
+        meta: isStreaming ? null : { id: data.id, version: data.version, heading: data.title },
       };
     },
     preview: (data, { open, isStreaming }) => (
       <button type="button" onClick={open}>
-        {data.title}{isStreaming ? " · building…" : ""}
+        {data.title}
+        {isStreaming ? " · building…" : ""}
       </button>
     ),
     actual: (data) => renderContent(data),
@@ -76,45 +53,64 @@ export function createAppArtifactRenderer(
 }
 ```
 
-Create the renderer and array outside the React render cycle, then pass them to the interface:
+Create the renderer array once, outside React render:
 
 ```tsx
-import { AgentInterface } from "@openuidev/react-ui";
-
-const artifactRenderers = [createAppArtifactRenderer(renderArtifactContent)];
+const artifactRenderers = [createArtifactRenderer(renderDocument)];
 
 <AgentInterface llm={llm} artifactRenderers={artifactRenderers} />;
 ```
 
-Here `renderArtifactContent` is the host's React rendering function. Validate each content shape before using it. For generated HTML, use a sandboxed iframe and the restrictions in [open-ended-html.md](open-ended-html.md); for Markdown or presentations, use the application's chosen renderer. No OpenUI Lang root is required for arbitrary tool-result content. If the content itself is OpenUI Lang, use `Renderer` with its matching library.
+- `toolName` matches tool calls. `type` is the app's own label, used for stored artifacts and categories.
+- Renderers are captured when the interface mounts; changing the array later has no effect.
+- `artifactCategories` groups artifacts in the sidebar and browser.
 
-## Handle Streaming and Storage
+## Handle every parser input
 
-The parser is called during streaming and when a stored artifact opens:
+The parser runs on every stream update and when a stored artifact opens:
 
-| Path | Inputs | Parser behavior |
+| When | Input | The parser should |
 | --- | --- | --- |
-| Tool call | `args` may be partial JSON; `response` may be absent | Tolerate incomplete input and return `null` until the view has enough data |
-| Completed tool result | `response` contains the result | Validate it and use it as the authoritative content |
-| Stored artifact | `args` is `undefined`; `response` is `artifact.content` | Parse the same result shape without relying on tool arguments |
+| The tool call is streaming | `args` may be partial JSON; `response` is `null` | Return `null` until there is enough to show |
+| The tool result arrived | `response` holds the result | Validate it and treat it as the real content |
+| A stored artifact opens | `args` is `undefined`; `response` is the stored `content` | Parse the same shape, without tool arguments |
 
-Keep a stable artifact id and increment its version after edits. Return `meta: null` for an early preview and `{ id, version, heading }` when registering a completed artifact in the thread. Registry metadata alone does not make the artifact durable.
+Return `meta: null` while streaming. Return `{ id, version, heading }` once complete, to register the artifact in the thread. Keep `id` stable across edits and increase `version`.
 
-For persistence, implement the optional `ChatStorage.artifact` interface (`list`, `get`, `update`) against the application's backend, or reuse its existing compatible adapter. The creation tool owns the initial durable write; the storage interface has no `create` method. Store the complete tool result as `artifact.content`, with the same application-chosen `type` as the renderer and the owning `threadId`. Keep tool results in persisted message history when they must reappear inline after a thread reload.
+## Store artifacts
 
-Combine thread storage and the application's artifact adapter in one stable `ChatStorage` object: `{ thread: conversationStorage.thread, artifact: appArtifactStorage }`. When using Gateway for threads, configure the hook with `features: { artifact: false }` as shown in [Agent Interface](agent-interface.md#choose-conversation-storage), then supply the application's artifact adapter. Configure and verify thread and artifact persistence separately. For an edit, load and authorize the stored artifact, apply the requested change, persist the new version, and emit the updated tool result for the same id.
+`ChatStorage.artifact` has three methods:
+
+- `list(params)`
+- `get(id)`
+- `update({ id, content })`, which renderers call through `useArtifactStorage()` to save edits.
+
+There is no `create`: the tool that makes the artifact writes it. Store the complete tool result as `content`, with the renderer's `type` and the owning thread id.
+
+- With Gateway conversations, `useOpenuiCloudStorage` includes artifact storage by default (`features.artifact`); the scaffold turns it off with `features: { artifact: false }`.
+- For artifacts that the app's own tools create, implement `ChatStorage.artifact` against the app's backend, and combine it with the thread storage:
+
+```ts
+const storage = useMemo(
+  () => ({ thread: cloudStorage.thread, artifact: appArtifactStorage }),
+  [cloudStorage],
+);
+```
+
+## Generated HTML
+
+Render generated HTML in a sandboxed `<iframe srcDoc>` with the narrowest `sandbox` permissions, a Content Security Policy, and no network access. Treat it as untrusted. The [html-artifact example](https://github.com/thesysdev/openui/tree/main/examples/miscellaneous/html-artifact) shows the pattern.
 
 ## Verify
 
-- Exercise creation through the actual tool loop and confirm both the inline preview and full custom view render.
-- Test partial arguments, a missing result, malformed data, cancellation, and a failed tool without parser exceptions or false completion.
-- If persistence is configured, reopen the artifact from storage with no tool arguments and confirm the same content renders.
-- Exercise an edit and confirm the stable id, new version, and saved content agree; reject cross-user reads and edits.
-- Run the host typecheck/build and inspect the rendered output in its real container.
+1. Run the tool through the real loop; the preview and the full view both render.
+2. Partial arguments, a malformed result, a cancelled stream, and a failed tool all render without errors.
+3. With storage: reopen the artifact from the browser and get the same content; an edit keeps the id and bumps the version; another user cannot read or edit it.
+4. Run the project's typecheck and build.
 
-## First-Party References
+## Sources
 
 - [Artifacts](https://www.openui.com/docs/agent/core-concepts/artifacts)
 - [Custom artifacts](https://www.openui.com/docs/agent/guides/custom-artifacts)
-- [defineArtifactRenderer](https://www.openui.com/docs/agent/reference/define-artifact-renderer)
-- [Storage and stream adapters](https://www.openui.com/docs/agent/reference/adapters-and-formats)
+- [`defineArtifactRenderer`](https://www.openui.com/docs/agent/reference/define-artifact-renderer)
+- [Renderer types](https://github.com/thesysdev/openui/blob/main/packages/react-headless/src/store/artifactRendererTypes.ts)
