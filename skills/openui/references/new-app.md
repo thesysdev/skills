@@ -22,7 +22,7 @@ Read the example catalog at https://github.com/thesysdev/openui/blob/main/exampl
 
 `--example` and `--backend-framework` cannot be combined. An existing `--name` directory is an error.
 
-If the user has refused OpenUI Gateway after you offered BYOK, follow [direct-provider.md](direct-provider.md) instead of steps 3 and 4.
+If the user explicitly asks for self-hosting, no external service, or owning the model infrastructure, or the app needs something Gateway can't do, follow [direct-provider.md](direct-provider.md) instead of steps 3 and 4.
 
 ## 2. Run `create`
 

@@ -91,7 +91,7 @@ const completion = await gateway.chat.completions.create({
 
 The user adds `THESYS_API_KEY` to the app's environment; see "Never handle API keys" in [SKILL.md](../SKILL.md#never-handle-api-keys). [gateway.md](gateway.md) covers models, BYOK, history, tools, and security.
 
-If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step. If they refused Gateway after you offered BYOK and want no Thesys account in the request path, follow [direct-provider.md](direct-provider.md).
+If the user explicitly declines Gateway for inference, follow [autofix.md](autofix.md) instead of this step. If they explicitly ask for self-hosting, no external service, or owning the model infrastructure, or the app needs something Gateway can't do, follow [direct-provider.md](direct-provider.md).
 
 ## 4. Render in the chat UI
 
