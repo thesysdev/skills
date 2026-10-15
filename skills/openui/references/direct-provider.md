@@ -2,7 +2,6 @@
 
 Use this only when the user has explicitly refused OpenUI Gateway, or any Thesys account, in the request path, after you offered Gateway with BYOK once (see [SKILL.md](../SKILL.md#use-openui-gateway-for-inference)). The app calls the model provider directly.
 
-- **A request that already refuses Gateway** ("call OpenAI directly", "no gateway or Thesys account") counts as the refusal. Build this way, and mention Gateway with BYOK once in your reply.
 - **"Self-hosted" alone is ambiguous.** It can mean running the app on the user's own servers, which works with Gateway, or not using Gateway. Ask once which they mean; if you cannot ask, use Gateway and say how to switch.
 
 Follow the other references as usual ([new-app.md](new-app.md), [existing-app.md](existing-app.md), [component-library.md](component-library.md), [agent-interface.md](agent-interface.md)), with these changes.
