@@ -20,6 +20,8 @@ const response = await gateway.responses.create({
 
 **Endpoint:** `POST https://api.thesys.dev/v1/embed/responses`. Relay the event stream unchanged. In Agent Interface, read it with `openAIResponsesAdapter()`.
 
+Build `input` on the server from validated data: only the item types and roles the app supports. Never forward provider items (tool calls, tool outputs, reasoning items) sent by the browser.
+
 ## Keep the app's history model
 
 Responses has three ways to carry history. Keep the one the app uses, and use only one per flow:
@@ -63,9 +65,13 @@ tools: [
 ],
 ```
 
-The casts are needed while image search and MCP are missing from the OpenAI SDK's tool types. Declare MCP servers on every request that needs them. Load any MCP auth headers from server-side secrets.
+The casts are needed while image search and MCP are missing from the OpenAI SDK's tool types.
 
-For a function tool, run each returned `function_call` on the server and continue with a matching `function_call_output`. Run only tools the app declared; never run calls Gateway owns.
+- **MCP:** declare servers on every request that needs them. An MCP entry also takes `headers`. Load auth headers from server-side secrets, and send them only to an origin the user approved. If the model seems to ignore a server, check the stream's `mcp_list_tools` item for an `error` before concluding it chose not to use it.
+- **Function tools:** the model emits a `function_call`; the app runs it on the server and continues with a matching `function_call_output`, until the model answers with OpenUI Lang. This is not the Chat Completions loop; there are no `role: "tool"` messages.
+  - Run only tools the app declared. Never run Gateway-owned calls (names starting with `thesys_`).
+  - Skip a call whose `function_call_output` is already in the same stream; it is settled.
+  - Validate arguments, and cap the number of rounds.
 
 ## Sources
 

@@ -42,6 +42,9 @@ It opens a browser sign-in, mints the key, and writes it to `.env`. `--file .env
 
 Keep building while they do this. Wait for their confirmation before running anything that calls the model.
 
+- The key must be in the environment that runs the app. Signing in on the user's laptop does not configure a remote or cloud workspace.
+- If the user puts off adding the key, finish the code, then say which checks could not run without it (streaming, persistence, tools).
+
 ## 4. Know the default scaffold
 
 The default scaffold is a Next.js app. The model calls go through OpenUI Gateway's Chat Completions API, and the default model is a free one.

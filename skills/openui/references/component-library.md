@@ -83,14 +83,36 @@ export const library = createLibrary({
 - Use `componentGroups: [{ name, components, notes? }]` when grouping helps the model choose.
 - Add one or two valid `examples` in the prompt options for unusual shapes. Test every rule and example: a wrong example causes regressions.
 
-## 4. Keep stored responses rendering
+## 4. Prompt options
+
+Prompt options shape what the model is taught. Keep them in a file with no components, so server code can import it, for example `src/lib/prompt-options.ts`. For the built-in libraries, import `openuiPromptOptions` or `openuiChatPromptOptions` from `@openuidev/react-ui/genui-lib/prompt-options`, which is safe to import on the server.
+
+| Option | Effect |
+| --- | --- |
+| `preamble`, `additionalRules`, `examples` | Extra text, rules, and example programs |
+| `tools` | Tool descriptors (name, or `{ name, description, inputSchema, outputSchema }`) the model may call with `Query` / `Mutation` |
+| `toolExamples` | Example programs that use the tools; shown instead of `examples` when tools are present |
+| `toolCalls` | Teaches `Query`, `Mutation`, and `@Run`. On by default when `tools` is set. |
+| `bindings` | Teaches `$variables`, `@Set`, and `@Reset`. On by default with `toolCalls`. |
+| `builtinFunctions` | Lists `@Count`, `@Sum`, and the rest even without tools |
+| `editMode` | Teaches answering with only the changed statements |
+| `inlineMode` | Teaches prose with fenced OpenUI Lang |
+
+- **With Gateway (`cloud: true`),** only `examples`, `preamble`, and `additionalRules` are sent. Pass them as `promptOptions`, because the spec file does not carry them.
+- **Enable only what the app can run:**
+  - `Query` / `Mutation` need a `toolProvider` on the renderer.
+  - Every tool descriptor must match a real tool the app executes and authorizes. Never advertise a tool only in the prompt.
+  - Keep authorization and input validation outside the model.
+- **Never put user-written text** in the preamble, rules, or examples.
+
+## 5. Keep stored responses rendering
 
 Stored responses have no prop names; position is the meaning. When changing a component that is already in use:
 
 1. Add props only at the end. Never reorder or remove a prop; leave an unused one in place.
 2. Give every new required prop a default.
 
-## 5. Generate the spec for the server
+## 6. Generate the spec for the server
 
 ```bash
 npx @openuidev/cli@latest generate src/lib/openui.tsx --spec --out src/lib/openui.spec.json
@@ -101,9 +123,11 @@ npx @openuidev/cli@latest generate src/lib/openui.tsx --spec --out src/lib/openu
 - **Without `--spec`,** `--out prompt.txt` writes the full system prompt and puts the spec next to it as `prompt.spec.json`.
 - **`--json-schema`** writes only the JSON Schema, for other tooling.
 
-Regenerate the spec whenever the library changes, for example from a `prebuild` script. The scaffold keeps it at `src/generated/spec.json`.
+Regenerate the spec whenever the library changes, for example from a `prebuild` script. The scaffold keeps it at `src/generated/spec.json`. Follow the project's convention for generated files: some commit them, the examples ignore them in git. Do not commit generated output the project ignores.
 
-## 6. Connect the server and the browser
+After a schema change, read the generated prompt (`openui generate <file> --out prompt.txt`). A library that typechecks can still produce an ambiguous or oversized prompt.
+
+## 7. Connect the server and the browser
 
 Server, through Gateway:
 
@@ -111,7 +135,9 @@ Server, through Gateway:
 import { generateSystemPrompt, type LibrarySpec } from "@openuidev/lang-core";
 import library from "@/lib/openui.spec.json";
 
-const systemPrompt = generateSystemPrompt({ cloud: true, library: library as LibrarySpec });
+import { promptOptions } from "@/lib/prompt-options";
+
+const systemPrompt = generateSystemPrompt({ cloud: true, library: library as LibrarySpec, promptOptions });
 ```
 
 Browser, with the same library:
@@ -127,10 +153,11 @@ Blank or partial renders and `unknown-component` errors usually mean the spec an
 ## Verify
 
 1. `openui generate --spec` succeeds on the library file.
-2. Read the generated signatures: names, prop order, required props, root.
-3. Parse a few hand-written programs and check `result.meta.errors` (see [openui-lang.md](openui-lang.md#validate-a-program)).
-4. Run representative prompts several times and watch DevTools for errors (see [reliability.md](reliability.md)).
-5. Run the project's typecheck and build.
+2. Stream a response and confirm the root renders before its children arrive.
+3. Read the generated signatures: names, prop order, required props, root.
+4. Parse a few hand-written programs and check `result.meta.errors` (see [openui-lang.md](openui-lang.md#validate-a-program)).
+5. Run representative prompts several times and watch DevTools for errors (see [reliability.md](reliability.md)).
+6. Run the project's typecheck and build.
 
 ## Sources
 

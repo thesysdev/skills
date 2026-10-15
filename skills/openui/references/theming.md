@@ -29,6 +29,10 @@ import { ThemeProvider, createTheme, useTheme, type ThemeMode, type ThemeProps }
 
 A nested provider starts from the built-in defaults plus its own overrides, not from the parent's custom tokens. Pass the brand overrides again in nested providers.
 
+- A top-level provider writes its CSS variables to `body`, so they apply page-wide even though its React context covers only its children.
+- An explicit `cssSelector` turns off automatic nested scoping. The selector must match an existing ancestor of the OpenUI content; the provider does not add that element.
+- With `disableThemeProvider`, do not also pass `AgentInterface.theme`.
+
 `AgentInterface.theme` takes the provider's props (`{ mode, lightTheme, darkTheme }`), not a token object. `theme={brandTheme}` is wrong.
 
 ## Build theme objects once
@@ -72,6 +76,7 @@ export function Chat() {
 - `useSystemThemeMode()` returns only the OS scheme.
 - `AgentInterface.ThemeModeToggle` is a ready-made toggle for the sidebar.
 - If the app already manages its theme, pass its resolved mode instead of adding a second preference store.
+- In Next.js, keep the provider and theme logic in a client component, and follow the app's existing theme bootstrap so the server and first client render agree (no flash of the wrong mode).
 
 ## Portals
 

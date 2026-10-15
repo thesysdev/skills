@@ -19,14 +19,17 @@ export const gateway = new OpenAI({
 - **Model ids** are `{provider}/{model}`, for example `openai/gpt-5` or `anthropic/claude-sonnet-5`. Free models end in `-free`. The full list is at https://www.openui.com/cloud/gateway/models.
 - **Allowlist:** if the browser chooses the model, check the id against a server-side list before calling Gateway.
 - **The key:** `THESYS_API_KEY` stays on the server. The user creates it (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
+- **Fallbacks** depend on which models are compatible and how the account is configured. If the user needs one exact model or data residency, check the fallback behavior before relying on it.
+- **A model in the catalog** may still lack tools or a modality the app needs. Check before adding it to an allowlist.
 
 ## Use the user's provider account (BYOK)
 
 To use an OpenAI, Anthropic, or Google subscription through Gateway, an organization admin adds the provider key on the [BYOK page of the Thesys Console](https://console.thesys.dev/byok). Tell the user where to add it; never ask for the key.
 
 - BYOK is on every plan, including the free tier.
-- A provider key applies only to its provider: an OpenAI key covers `openai/*` models. Other providers use Gateway credits.
+- A provider key applies only to its provider: an OpenAI key covers `openai/*` models. Other providers use Gateway credits, and fail when the organization has none.
 - The app keeps authenticating with `THESYS_API_KEY`. No code changes.
+- Only organization admins can add keys. Explain which credential the console asks for without prescribing fields (for example Google's), let the user enter it, and continue after they confirm.
 
 ## Generate OpenUI Lang
 
@@ -35,11 +38,15 @@ Send the system prompt built from the library spec as the first message:
 ```ts
 import { generateSystemPrompt, type LibrarySpec } from "@openuidev/lang-core";
 import library from "@/lib/openui.spec.json";
+import { promptOptions } from "@/lib/prompt-options";
 
 const completion = await gateway.chat.completions.create({
   model: "openai/gpt-5",
   messages: [
-    { role: "system", content: generateSystemPrompt({ cloud: true, library: library as LibrarySpec }) },
+    {
+      role: "system",
+      content: generateSystemPrompt({ cloud: true, library: library as LibrarySpec, promptOptions }),
+    },
     ...messages,
   ],
   stream: true,
@@ -47,8 +54,17 @@ const completion = await gateway.chat.completions.create({
 ```
 
 - `cloud: true` produces a config block carrying the library. Gateway reads it and validates and corrects the output against that library while it streams. The spec must come from the same library the browser renders; see [component-library.md](component-library.md).
-- `generateSystemPrompt({ cloud: true, library, instructions })` adds the app's own trusted instructions. Never put user-written text there.
+- **Pass `promptOptions`.** The spec file does not carry the library's prompt options. In cloud mode, only `examples`, `preamble`, and `additionalRules` are sent; see [component-library.md](component-library.md#4-prompt-options).
+- `instructions` adds the app's own trusted instructions after the config block. Never put user-written text in `instructions`, `preamble`, rules, or examples.
+- **One OpenUI prompt per request.** When migrating an app that already sends a full OpenUI prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`), replace it; do not send both. Do not copy earlier system messages from history into later turns.
 - Requests without the OpenUI system prompt are plain model calls: Gateway routes them but does not correct them.
+
+What correction does not do:
+- make output deterministic: measure across repeated runs (see [reliability.md](reliability.md));
+- validate business data, or make tool execution safe;
+- repair arbitrary JSON or component code.
+
+To cut prompt cost and latency, keep the system prompt and spec prefix stable across requests; see [Prompt caching](https://www.openui.com/docs/gateway/prompt-caching).
 
 ## Stream to the browser
 
@@ -108,11 +124,13 @@ Three parts:
      if (!upstream.ok) return Response.json({ error: "Token mint failed" }, { status: 502 });
 
      const { token, expires_at } = await upstream.json();
-     return Response.json({ token, expires_at });
+     return Response.json({ token, expires_at }, { headers: { "Cache-Control": "private, no-store" } });
    }
    ```
 
-   `app_id` is optional; give each product its own when one organization serves several.
+   - `user_id` must be a stable account id, never a display name or an email that can change.
+   - `app_id` is optional. Give each product its own fixed value when one organization serves several. Never derive it from the API key: rotating the key would change it.
+   - Conversation `metadata` is for app data, never for deciding who owns a thread.
 3. **Chat route:** the browser storage does not write messages. After a turn completes, the chat route saves the **new turn only** (never the replayed history) with `@openuidev/server`. Do not save a cancelled or failed turn.
 
    ```ts
@@ -136,9 +154,10 @@ The chat route still sends the full history to Chat Completions on every turn.
 
 The chat route holds the organization key, so a `threadId` from the browser is not proof of ownership. Keep a server-side record of `conversationId → userId`:
 
-- When a thread id first reaches the chat route, confirm it belongs to the signed-in user: mint a frontend token for that user and `GET /v1/conversations/{id}` with it. A frontend token reaches only its own user's conversations. Then record it.
+- When a thread id first reaches the chat route, confirm it belongs to the signed-in user: mint a frontend token for that user and `GET https://api.thesys.dev/v1/conversations/{id}` with the header `x-thesys-frontend-token: <token>` (not `Authorization`, which always means the organization key). A frontend token reaches only its own user's conversations. Then record the owner.
 - On later turns, reject the request (404) if the record names a different user.
 - Store the record wherever the app keeps user data. An in-memory map is enough for a local demo only.
+- Never record ownership because the browser claims it. If ownership cannot be established, keep the route disabled for production and tell the user.
 
 ### Apps without sign-in
 
@@ -160,7 +179,11 @@ The browser hook and the history helpers call this API. Call it directly for any
 | `GET` / `POST` | `/v1/conversations/{conversation_id}/items` | List or add items |
 | `GET` / `DELETE` | `/v1/conversations/{conversation_id}/items/{item_id}` | Retrieve or delete one item |
 
-Server calls use `THESYS_API_KEY`. Browser calls use a frontend token (`Authorization: Bearer <token>`) and reach only that user's conversations.
+- **Server calls** authenticate with `Authorization: Bearer $THESYS_API_KEY`.
+- **Frontend-token calls** send the token in the `x-thesys-frontend-token` header and reach only that user's conversations. `useOpenuiCloudStorage` does this itself.
+- Prefer the OpenAI SDK's `conversations` methods over raw HTTP. `items.list(id, { order: "asc", limit: 100 })` pages through a thread.
+
+Moving existing threads into Gateway conversations is a separate data migration. Keep old threads readable where they are, keep a mapping from old thread ids, and never claim history was imported unless a verified import ran.
 
 ## Run function tools
 
@@ -175,10 +198,14 @@ Chat Completions returns tool calls; the application runs them:
 
 Agent frameworks (LangGraph, the Vercel AI SDK) already run this loop; add tools the framework's way.
 
+Hosted tools (`web_search`, `image_search`, remote MCP) work only with the Responses API. Never declare them on Chat Completions; see [gateway-responses.md](gateway-responses.md#hosted-tools).
+
 ## Secure the route
 
 - Authenticate and rate-limit the chat route and the frontend-token route. Page authentication does not protect API routes.
-- Validate the request body: size, message roles, and shapes. Do not forward arbitrary browser input to the model.
+- Require JSON, enforce a byte limit before parsing, then validate the body: message roles, shapes, and content parts. Do not forward arbitrary browser input to the model.
+- When the app stores history, load it on the server instead of trusting the history the browser sends. Accept only complete assistant tool-call / tool-result pairs.
+- Keep attachments and other content parts only after checking that the model supports them, with size limits.
 - Keep the model allowlist, tool list, and system prompt on the server.
 - Return upstream errors without logging keys or message contents.
 
@@ -187,9 +214,10 @@ Agent frameworks (LangGraph, the Vercel AI SDK) already run this loop; add tools
 1. Requests reach `https://api.thesys.dev/v1/embed` with a `{provider}/{model}` id.
 2. The response streams to the browser and renders progressively; cancelling stops it.
 3. A tool call runs once, and its result stays in history.
-4. With Gateway conversations: reload restores the thread, and a second user cannot see or write the first user's threads.
-5. A signed-out request to the chat or token route is rejected.
-6. `THESYS_API_KEY` appears in no client file or browser bundle.
+4. With Gateway conversations: reload restores the thread with its tool calls and results in order, and a second user cannot see or write the first user's threads. An expired frontend token is refreshed.
+5. Each request carries exactly one OpenUI prompt.
+6. A signed-out request to the chat or token route is rejected, and an oversized or malformed body is rejected before reaching Gateway.
+7. `THESYS_API_KEY` appears in no client file or browser bundle.
 
 ## Sources
 

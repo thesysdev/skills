@@ -1,6 +1,6 @@
 # OpenUI Lang 1.0
 
-Use this when reading, writing, validating, or debugging OpenUI Lang by hand: prompt examples, test fixtures, stored responses, parser errors. Models learn the language from the generated system prompt, so app code rarely needs it. Component names below are examples; each library defines its own, and the prompt option names in [component-library.md](component-library.md) decide which features the model is taught.
+Use this when reading, writing, validating, or debugging OpenUI Lang by hand: prompt examples, test fixtures, stored responses, parser errors. Models learn the language from the generated system prompt, so app code rarely needs it. Component names below are examples; each library defines its own, and the [prompt options](component-library.md#4-prompt-options) decide which features the model is taught.
 
 ## Programs
 

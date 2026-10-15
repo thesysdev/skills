@@ -19,7 +19,8 @@ Without Gateway, the app sends the full OpenUI prompt itself:
 
 ```ts
 import { generateSystemPrompt } from "@openuidev/lang-core";
-import { library, promptOptions } from "@/lib/openui";
+import { library } from "@/lib/openui";
+import { promptOptions } from "@/lib/prompt-options";
 
 const systemPrompt = generateSystemPrompt({ library: library.toSpec(), promptOptions });
 ```

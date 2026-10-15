@@ -36,6 +36,8 @@ export function Chat() {
 - `storage` (optional): where threads live. Without it, threads are in memory and vanish on reload.
 - `componentLibrary`: the library used to render assistant messages. It must match the server's spec. Without it, messages render as Markdown.
 - Give the interface a height; it fills its container. Import `@openuidev/react-ui/styles/index.css` once.
+- In Next.js, keep `AgentInterface` and its imports in a client module, and keep server-side authentication in the surrounding page or layout. Check the result with a production build.
+- Create `llm`, adapters, and renderer arrays outside render (or memoize them), so they stay stable.
 
 ## Match the stream adapter
 
@@ -49,7 +51,7 @@ The adapter reads what the app's route sends back, which can differ from the API
 | Vercel AI SDK UI message stream | `vercelAIAdapter()` | `vercelAIMessageFormat` |
 | LangGraph `streamMode: "messages"` SSE | `langGraphAdapter()` | `langGraphMessageFormat` |
 | AG-UI events | `agUIAdapter()` | the relay's own format |
-| Eve session stream | `eveAdapter()` | see the `vercel-eve` scaffold |
+| Eve session stream | `eveAdapter()` | see the `vercel-eve` scaffold; Eve uses session endpoints, not `/api/chat`, so keep its session ids, continuation tokens, and stream cursors |
 
 Call adapter factories with `()`. For a custom transport, implement `ChatLLM` directly: `{ streamProtocol: openAIAdapter(), send: ({ threadId, messages, signal }) => fetch(...) }`. Pass `signal` so cancelling works.
 
@@ -77,6 +79,8 @@ The hook memoizes the storage and refreshes the token before it expires. It read
 
 Storage is captured when the interface mounts. Remount it (for example with a `key`) when the signed-in user changes.
 
+Adding `storage` does not make the backend save replies. Trace which code writes completed user, assistant, and tool messages: `getMessages` can only return what was written. Keep message ids and each tool call paired with its result, so threads, tool activity, and artifacts come back intact after a reload.
+
 ## Customize the shell
 
 | Need | Use |
@@ -88,27 +92,29 @@ Storage is captured when the interface mounts. Remount it (for example with a `k
 | Header and composer | `AgentInterface.ThreadHeader`, `AgentInterface.MobileHeader`, `AgentInterface.Composer` |
 | A model picker | `<ModelSwitcher models value onValueChange />` inside `ThreadHeader` |
 | Artifact panel | `AgentInterface.Workspace` |
-| Message rendering | `components={{ AssistantMessage, UserMessage, ToolCallTimeline }}`; an override replaces what `componentLibrary` would render |
+| Message rendering | `components={{ AssistantMessage, UserMessage, ToolCallTimeline }}`; an override replaces what `componentLibrary` would render, so it must keep streaming state, tool activity, artifact previews, and action handling |
 | Custom actions from the library | `onAction` |
 | Scrolling | `scrollVariant` (`"user-message-anchor"` or `"always"`), `scrollOnLoad` |
 | Colors and dark mode | `theme`; see [theming.md](theming.md) |
 
 - Place slot components directly under `<AgentInterface>`; unspecified slots keep their defaults.
-- When supplying `Sidebar`, put every control the sidebar needs inside it.
+- When supplying `Sidebar`, put every control the sidebar needs inside it. A top-level `SidebarHeader` is ignored when `Sidebar` is given.
+- Scope CSS overrides under a wrapper element around the interface, targeting its `.openui-agent-*` classes.
 - The layout switches to mobile below 768px of container width. Test the real container, not only the window.
+- **Narrow side rails** (around 390px): add `additionalRules` steering the model toward one-column `Card`/`Stack` layouts, short lists, and narrow tables, and away from grids, wide tables, and dense charts.
 
 ## Add pages
 
 - `<AgentInterface.Route path="settings">…</AgentInterface.Route>` adds a page inside the shell. `useNav()` returns the current path and `navigate(next)`; `navigate(undefined)` returns to the chat.
 - Without `onNavigate`, navigation is internal, and `defaultPath` sets the first page.
-- With `onNavigate`, the host controls navigation and must pass the new value back through `path`.
-- Paths under `artifacts/` are reserved for the artifact browser.
+- With `onNavigate`, the host controls navigation and must pass the new value back through `path`. Passing `onNavigate` selects this mode even while `path` is `undefined`.
+- Paths under `artifacts/` are reserved for the artifact browser and match before app routes. When syncing with a URL router, round-trip those paths too, and test browser back and forward.
 
 ## Verify
 
 1. Send a message; it streams, can be cancelled, and shows errors.
-2. With storage: create, rename, delete, and reload a thread. A second user sees none of the first user's threads.
-3. A starter, a button in the generated UI, and a tool call each work.
+2. With storage: create, rename, delete, and reload a thread; the reloaded thread has its full history with tool calls and results. A second user sees none of the first user's threads.
+3. A starter, a button in the generated UI, and a tool call each work, including with any custom message renderer.
 4. Check desktop and narrow widths.
 5. Run the project's typecheck and build.
 

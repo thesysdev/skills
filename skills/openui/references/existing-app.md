@@ -9,18 +9,29 @@ Before editing, find:
 - the framework, router, and package manager;
 - the chat UI, if any: assistant-ui, CopilotKit, a hand-built message list, or none;
 - the backend route that calls the model, and the client it uses (OpenAI SDK, Anthropic SDK, LangChain, Vercel AI SDK, or none);
-- how messages are stored, and how users are authenticated.
+- how messages are stored, and how users are authenticated;
+- whether the app already generates UI (its own prompt and renderer, or a self-hosted OpenUI setup).
+
+Then settle what the user wants:
+- **Replace or run beside.** Decide whether Gateway replaces the current model path or runs beside it. Ask only when the request leaves this open and it matters. Never silently delete a working backend.
+- **UI generation.** An app that already generates its own UI keeps its prompt and validation unless the user asks to switch to OpenUI.
+- **Stored history.** Moving code to Gateway does not move stored history. Treat any data migration as a separate task; see [gateway.md](gateway.md#conversations-api).
 
 ## 2. Define the component library
 
-Create `src/lib/openui.tsx`. Start with the built-in library:
+Create `src/lib/openui.tsx` for the browser and `src/lib/prompt-options.ts` for the server. Start with the built-in library:
 
 ```tsx
-export {
-  openuiLibrary as library,
-  openuiPromptOptions as promptOptions,
-} from "@openuidev/react-ui";
+// src/lib/openui.tsx
+export { openuiLibrary as library } from "@openuidev/react-ui";
 ```
+
+```ts
+// src/lib/prompt-options.ts — safe to import on the server
+export { openuiPromptOptions as promptOptions } from "@openuidev/react-ui/genui-lib/prompt-options";
+```
+
+If the app already has OpenUI files at other paths, keep those paths.
 
 Use a custom library when the app has its own design system or domain components; see [component-library.md](component-library.md).
 
@@ -46,6 +57,7 @@ Regenerate the spec whenever the library changes, for example from a `prebuild` 
 import OpenAI from "openai";
 import { generateSystemPrompt, type LibrarySpec } from "@openuidev/lang-core";
 import library from "@/lib/openui.spec.json";
+import { promptOptions } from "@/lib/prompt-options";
 
 const gateway = new OpenAI({
   apiKey: process.env.THESYS_API_KEY,
@@ -57,7 +69,12 @@ const completion = await gateway.chat.completions.create({
   messages: [
     {
       role: "system",
-      content: generateSystemPrompt({ cloud: true, library: library as LibrarySpec, instructions: appPrompt }),
+      content: generateSystemPrompt({
+        cloud: true,
+        library: library as LibrarySpec,
+        promptOptions,
+        instructions: appPrompt,
+      }),
     },
     ...messages,
   ],
@@ -69,7 +86,8 @@ const completion = await gateway.chat.completions.create({
 - If the app already has a system prompt, pass it as `instructions` (`appPrompt` above). Remove lines that ask for Markdown or plain-prose answers; they conflict with OpenUI Lang.
 - Keep the existing message history, streaming, and tool loop. If the route did not stream, make it stream, so the UI builds up as it arrives.
 - If the route wraps the stream with Autofix (`createAutofix`), remove the wrapper: Gateway corrects the output while it streams. `toResponse()` returned Chat Completions SSE; return the same format yourself (see [gateway.md](gateway.md#stream-to-the-browser)), so the browser's adapter keeps working.
-- Remove `OPENAI_API_KEY` and other provider keys the app no longer uses from `.env.example`.
+- If the app is a self-hosted OpenUI app, replace its full prompt (`library.prompt()`, or `generateSystemPrompt` without `cloud`) with the `cloud: true` prompt, and remove any home-grown parse-and-retry correction loop. Send exactly one OpenUI prompt per request.
+- Once the Gateway path passes its checks, remove `OPENAI_API_KEY` and other provider keys the app no longer uses from `.env.example`.
 
 The user adds `THESYS_API_KEY` to the app's environment; see "Never handle API keys" in [SKILL.md](../SKILL.md#never-handle-api-keys). [gateway.md](gateway.md) covers models, BYOK, history, tools, and security.
 

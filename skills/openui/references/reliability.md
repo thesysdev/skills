@@ -10,7 +10,7 @@ OpenUI DevTools lists each stream's parse and render errors, with the statement,
 - **Inspect** shows each settled stream. **Debug** replays a failing response against the same library, without calling the model again.
 - To configure it, install `@openuidev/devtools` as a dev dependency and mount one `<OpenUIDevtools />`; it replaces the automatic one. Props: `position`, `theme`, `errorsOnly`, `maxEvents`, `autoOpenOnError`, `enabled`.
 - It loads from `cdn.jsdelivr.net`. A strict CSP must allow that origin, or the widget does not appear.
-- It renders nothing in production unless `enabled` is set.
+- It renders nothing in production unless `enabled` is set. Do not turn it on in production to collect telemetry; use Reliability Monitoring.
 
 In code, `<Renderer onError={(errors) => …} />` receives the same errors, and `onParseResult` receives each parse result. The error codes are in [openui-lang.md](openui-lang.md#errors).
 
