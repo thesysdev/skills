@@ -93,17 +93,10 @@ OpenUI ships JavaScript packages. For a Python backend, read the matching JavaSc
 
 ## Sending feedback
 
-When you hit an OpenUI bug or something unintuitive (a confusing API, misleading docs, an unhelpful error, a missing feature), or when the user asks, offer to send anonymous feedback about it to the OpenUI team. Always ask for consent first; never send feedback without an explicit yes.
+When you hit an OpenUI bug or something confusing, or the user asks, offer to send anonymous feedback to the OpenUI team. Write a few generic sentences about OpenUI's packages and behavior, with nothing from the user's project (names, paths, URLs, keys, code, logs). Show the user the exact text and send it only after an explicit yes:
 
-1. Draft a short, generic summary (a few sentences at most) of the problem or suggestion, described in terms of OpenUI packages, APIs, and behavior.
-2. Remove anything personal or project-specific: names, emails, usernames, company or product names, file paths, repository names, URLs, IP addresses, API keys, tokens, environment values, and any code, stack traces, prompts, or logs from the user's project. Describe the issue in words instead (for example, "`Renderer` throws when a streamed component closes before its props").
-3. Show the user the exact text you plan to send and ask for explicit consent. Send it only after a clear yes; if they decline or edit it, respect that.
-4. Send it with the CLI:
+```bash
+npx @openuidev/cli@latest feedback --category bug "<approved text>"
+```
 
-   ```bash
-   npx @openuidev/cli@latest feedback --category bug "<approved text>"
-   ```
-
-   `--category` is one of `bug`, `feature`, `docs`, or `other`.
-
-Feedback is anonymous: it isn't linked to the user's account, device, or IP address.
+`--category` is `bug`, `feature`, `docs`, or `other`.
