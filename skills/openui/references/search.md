@@ -1,6 +1,8 @@
-# Search the web or images without a model (Search API)
+# Web and image search tools (Search API)
 
-Use this when the app needs search results in its own code: a search box, a research step in a pipeline, or results to cache or pass to any model. If the model should decide when to search during a conversation, use the hosted `web_search` and `image_search` tools instead; see [gateway-responses.md](gateway-responses.md#hosted-tools).
+Use this to give an agent web search or image search. The Search API has two endpoints. Implement a search tool whose handler calls one of them, with any model or agent framework. The same endpoints also work anywhere else on the server, such as a search box or a research step.
+
+An app on the Gateway Responses API can instead declare Gateway's built-in `web_search` and `image_search` tools, and Gateway runs the searches itself; see [gateway-responses.md](gateway-responses.md#hosted-tools).
 
 Search needs `THESYS_API_KEY` on the server, created by the user (see [SKILL.md](../SKILL.md#never-handle-api-keys)). Call it from the server, never from the browser.
 
@@ -50,17 +52,44 @@ Errors look like `{ error: { message, type, param } }`:
 - `429`: the organization is out of credits, has reached its spend limit, or has billing suspended. Retrying does not help; tell the user to add credits.
 - `500`: the search provider failed. Nothing is charged; retry once.
 
-## Use the results
+## Use as a tool
 
-- **Grounding a model:** put each result's `title`, `url`, and trimmed `text` into the prompt, and ask the model to cite the URLs it uses.
-- **Showing images:** show `thumbnail_url` (or `image_url` when there is no thumbnail) and link it to `page_url`. The image belongs to that page's site.
+Declare a function tool and run it with `search()` when the model calls it:
+
+```ts
+const searchWebTool = {
+  type: "function",
+  function: {
+    name: "search_web",
+    description: "Search the web for current information.",
+    parameters: {
+      type: "object",
+      properties: { query: { type: "string", description: "What to search for" } },
+      required: ["query"],
+    },
+  },
+} as const;
+
+async function runSearchWeb({ query }: { query: string }) {
+  const { results } = await search("web", { query, num_results: 5 });
+  return JSON.stringify(
+    results.map(({ title, url, text }) => ({ title, url, text: text?.slice(0, 1500) })),
+  );
+}
+```
+
+- Run the tool in the app's tool loop; with Gateway Chat Completions, see [gateway.md](gateway.md#run-function-tools).
+- Return `title`, `url`, and trimmed `text`, and tell the model to cite the URLs it uses.
+- For an image search tool, return `title`, `image_url` (or `thumbnail_url`), and `page_url`, so the model can show each image and link to the page it comes from.
+- Do not start the tool name with `thesys_`; Gateway uses that prefix for its own calls.
 
 ## Verify
 
-1. A web search returns `200` with results and `usage.search_units` set to 1.
-2. An image search returns `image_url`, `page_url`, and `source` for each result.
-3. A body with `num_results: 20` returns `400`, and the app shows a useful error.
-4. `THESYS_API_KEY` appears in no client file.
+1. Asked about something recent, the model calls the search tool and cites the returned URLs.
+2. A web search returns `200` with results and `usage.search_units` set to 1.
+3. An image search returns `image_url`, `page_url`, and `source` for each result.
+4. A body with `num_results: 20` returns `400`, and the app shows a useful error.
+5. `THESYS_API_KEY` appears in no client file.
 
 ## Sources
 

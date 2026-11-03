@@ -100,7 +100,7 @@ tools: [
 
 The casts are needed while image search and MCP are missing from the OpenAI SDK's tool types.
 
-- **Search without a model:** when the app needs search results in its own code rather than in the model's answer, call the Search API instead; see [search.md](search.md).
+- **Your own search tools:** to implement web or image search as the app's own function tools, call the Search API; see [search.md](search.md).
 - **MCP:** declare servers on every request that needs them. An MCP entry also takes `headers`. Load auth headers from server-side secrets, and send them only to an origin the user approved. If the model seems to ignore a server, check the stream's `mcp_list_tools` item for an `error` before concluding it chose not to use it.
 - **Function tools:** the model emits a `function_call`; the app runs it on the server and continues with a matching `function_call_output`, until the model answers with OpenUI Lang. This is not the Chat Completions loop; there are no `role: "tool"` messages.
   - Run only tools the app declared. Never run Gateway-owned calls (names starting with `thesys_`).
