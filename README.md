@@ -28,6 +28,7 @@ Once installed, try prompts such as:
 | [`gateway-responses.md`](skills/openui/references/gateway-responses.md) | Apps that already use the Responses API: history models and hosted tools |
 | [`direct-provider.md`](skills/openui/references/direct-provider.md) | Apps that call their own model provider directly: provider client, full prompt, app-owned storage |
 | [`autofix.md`](skills/openui/references/autofix.md) | Correcting OpenUI Lang when inference stays with the user's provider |
+| [`search.md`](skills/openui/references/search.md) | The Search API: web and image results in the app's code, without a model |
 | [`component-library.md`](skills/openui/references/component-library.md) | Defining and extending libraries, generating the spec, and keeping stored responses compatible |
 | [`agent-interface.md`](skills/openui/references/agent-interface.md) | Agent Interface: stream adapters, storage, shell slots, and navigation |
 | [`artifacts.md`](skills/openui/references/artifacts.md) | Tool output as artifacts: renderers, parser inputs, and storage |
