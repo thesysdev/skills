@@ -30,6 +30,7 @@ OpenUI turns model output into user interfaces. The model writes **OpenUI Lang**
 | Define or change the components the model can use | [references/component-library.md](references/component-library.md) |
 | Customize the Agent Interface chat UI: layout, slots, storage, adapters | [references/agent-interface.md](references/agent-interface.md) |
 | Show tool output as artifacts in Agent Interface | [references/artifacts.md](references/artifacts.md) |
+| Build live dashboards that an agent creates and edits, and that load fresh data every time they open | [references/dashboards.md](references/dashboards.md) |
 | Change colors, fonts, or light/dark mode | [references/theming.md](references/theming.md) |
 | Fix broken or blank renders, or monitor errors in production | [references/reliability.md](references/reliability.md) |
 | Ship the app to a URL | [references/deploy.md](references/deploy.md) |
