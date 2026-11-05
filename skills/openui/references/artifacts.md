@@ -1,6 +1,8 @@
 # Show tool output as artifacts
 
-Use this when an agent produces something the user should preview, open, revisit, or edit in Agent Interface: a document, an HTML app, a presentation, a dashboard. An artifact is a tool result plus a renderer the app supplies. Agent Interface provides the inline preview slot, the side panel, and, with storage, an artifact browser. Agent Interface itself is covered in [agent-interface.md](agent-interface.md).
+Use this when an agent produces something the user should preview, open, revisit, or edit in Agent Interface: a document, an HTML app, a presentation. An artifact is a tool result plus a renderer the app supplies. Agent Interface provides the inline preview slot, the side panel, and, with storage, an artifact browser. Agent Interface itself is covered in [agent-interface.md](agent-interface.md).
+
+For live dashboards that an agent creates and edits, and that load fresh data every time they open, follow [dashboards.md](dashboards.md) instead.
 
 ## How it fits together
 
