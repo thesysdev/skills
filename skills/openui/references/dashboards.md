@@ -59,7 +59,7 @@ export const dashboards = openui.defineDashboard({
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
 - `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key).
 
-Generate the spec from a file that re-exports only `library`, and run it before `dev` and `build`. Exporting anything else from that file, such as `promptOptions`, makes `openui generate` fail:
+Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
 
 ```ts title="lib/dashboard-library.ts"
 export { library } from "@openuidev/dashboard-library";
