@@ -112,4 +112,5 @@ The casts are needed while image search and MCP are missing from the OpenAI SDK'
 - [Responses API](https://www.openui.com/docs/gateway/api/responses)
 - [Hosted tools](https://www.openui.com/docs/gateway/api/responses/hosted-tools)
 - [Conversations API](https://www.openui.com/docs/gateway/api/conversations)
-- [Search API](https://www.openui.com/docs/gateway/api/search)
+- [Web Search API](https://www.openui.com/docs/gateway/api/web-search)
+- [Image Search API](https://www.openui.com/docs/gateway/api/image-search)

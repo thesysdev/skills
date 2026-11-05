@@ -93,6 +93,7 @@ async function runSearchWeb({ query }: { query: string }) {
 
 ## Sources
 
-- [Search API](https://www.openui.com/docs/gateway/api/search)
+- [Web Search API](https://www.openui.com/docs/gateway/api/web-search)
+- [Image Search API](https://www.openui.com/docs/gateway/api/image-search)
 - [Hosted tools](https://www.openui.com/docs/gateway/api/responses/hosted-tools)
 - [Pricing](https://www.openui.com/docs/gateway/pricing-credits)
