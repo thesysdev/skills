@@ -44,7 +44,7 @@ export const openui = new OpenUIClient(); // reads THESYS_API_KEY
 
 export const dashboards = openui.defineDashboard({
   library: spec,
-  model: "anthropic/claude-sonnet-4.6",
+  model: "anthropic/claude-sonnet-5.5",
   tools: dataTools,
   promptOptions: {
     preamble: "You build dashboards about the store's orders, customers, and refunds.",
@@ -55,7 +55,7 @@ export const dashboards = openui.defineDashboard({
 ```
 
 - `library`: the library's JSON spec. `tools`, `mcp`, or both are required.
-- `model`: `provider/model`. See https://www.openui.com/docs/gateway/models.
+- `model`: `provider/model`. Use `anthropic/claude-sonnet-5.5`, which builds the best dashboards, unless the user picks another. See https://www.openui.com/docs/gateway/models.
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
 - `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key).
 
