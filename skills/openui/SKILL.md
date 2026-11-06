@@ -1,6 +1,6 @@
 ---
 name: openui
-description: "Generative UI with OpenUI: build apps and agents whose model responses render as live interfaces. Use when the task involves OpenUI, OpenUI Lang, `@openuidev/*` packages, OpenUI Gateway, Autofix, or the `@openuidev/cli` (create, generate, deploy), or when the user wants a generative UI chat, agent, or dashboard."
+description: "Generative UI with OpenUI: build apps and agents whose model responses render as live interfaces. Use when the task involves OpenUI, OpenUI Lang, `@openuidev/*` packages, OpenUI Gateway, Autofix, the Search API, or the `@openuidev/cli` (create, generate, deploy), or when the user wants a generative UI chat, agent, or dashboard."
 ---
 
 # OpenUI
@@ -27,6 +27,7 @@ OpenUI turns model output into user interfaces. The model writes **OpenUI Lang**
 | Add generative UI to an app they already have | [references/existing-app.md](references/existing-app.md) |
 | Connect a backend to OpenUI Gateway | [references/gateway.md](references/gateway.md) |
 | Keep an app that already uses the Responses API | [references/gateway-responses.md](references/gateway-responses.md) |
+| Add web search or image search tools to an agent | [references/search.md](references/search.md) |
 | Define or change the components the model can use | [references/component-library.md](references/component-library.md) |
 | Customize the Agent Interface chat UI: layout, slots, storage, adapters | [references/agent-interface.md](references/agent-interface.md) |
 | Show tool output as artifacts in Agent Interface | [references/artifacts.md](references/artifacts.md) |
