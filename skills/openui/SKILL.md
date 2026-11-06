@@ -106,4 +106,4 @@ npx @openuidev/cli@latest feedback --category bug "<approved text>"
 
 ## Scaffolding & Updating this guide
 
-A copy of this guide can be added to a project's AGENT.md file using the command `npx @openuidev/cli@latest setup-agent`. The guide can be updated to its latest version using the same command.
+A copy of this guide can be added to a project's AGENTS.md file using the command `npx @openuidev/cli@latest setup-agent`. The guide can be updated to its latest version using the same command.
