@@ -103,3 +103,13 @@ npx @openuidev/cli@latest feedback --category bug "<approved text>"
 ```
 
 `--category` is `bug`, `feature`, `docs`, or `other`.
+
+## Updating this guide
+
+If this guide is in the project's `AGENTS.md`, refresh it to the latest version with:
+
+```bash
+npx @openuidev/cli@latest setup-agent
+```
+
+It replaces only the OpenUI section, so keep project notes outside it.
