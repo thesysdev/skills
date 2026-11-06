@@ -103,3 +103,7 @@ npx @openuidev/cli@latest feedback --category bug "<approved text>"
 ```
 
 `--category` is `bug`, `feature`, `docs`, or `other`.
+
+## Scaffolding & Updating this guide
+
+A copy of this guide can be added to a project's AGENTS.md file using the command `npx @openuidev/cli@latest setup-agent`. The guide can be updated to its latest version using the same command.
