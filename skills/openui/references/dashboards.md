@@ -2,7 +2,7 @@
 
 Use this when the user wants an agent that builds dashboards from a chat request: a layout of charts, tables, metrics, and filters that loads fresh data every time it opens. The agent builds a dashboard once. The user then reopens, filters, and refreshes it without another model call.
 
-Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
+Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Use `@openuidev/server` 0.4.0 or later and `@openuidev/react-ui` / `@openuidev/react-headless` 0.18.4 or later: earlier `react-ui` versions can't read the tool result, and the card never renders. Check the installed versions before writing code.
 
 ## How it fits together
 
@@ -22,7 +22,7 @@ When the user has no app yet, scaffold the dashboards example:
 npx @openuidev/cli@latest create --example assistant-ui-dashboards
 ```
 
-It builds a chat app whose agent creates dashboards about npm packages and GitHub repositories. Have the user add the API key as in [new-app.md](new-app.md#3-have-the-user-add-the-api-key), then replace the example's data tools, `preamble`, and agent system prompt with the user's domain.
+It builds an assistant-ui + Vercel AI SDK chat app whose agent creates dashboards about npm packages and GitHub repositories, with a saved-dashboards sidebar (open, pin, delete) already in place. It creates a new folder (`--name`, default `openui-agent`) and fails on an existing one. Have the user add the API key as in [new-app.md](new-app.md#3-have-the-user-add-the-api-key), then replace the example's data tools, `preamble`, and agent system prompt with the user's domain.
 
 ## Add dashboards to an existing app
 
@@ -30,7 +30,10 @@ Install the packages with the project's package manager:
 
 ```bash
 npm install @openuidev/server @openuidev/react-ui @openuidev/react-headless @openuidev/react-lang @openuidev/dashboard-library
+npm install --save-dev @openuidev/cli
 ```
+
+Add the agent SDK's packages too: `ai @ai-sdk/openai zod` for the Vercel AI SDK, or `openai`.
 
 ### 1. Define dashboards
 
@@ -59,7 +62,7 @@ export const dashboards = openui.defineDashboard({
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
 - `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key).
 
-Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
+Generate the spec from a file that re-exports the library alone (re-exporting `promptOptions` puts it in the spec, and the server rejects it), and run it before `dev` and `build`:
 
 ```ts title="lib/dashboard-library.ts"
 export { library } from "@openuidev/dashboard-library";
@@ -74,6 +77,8 @@ export { library } from "@openuidev/dashboard-library";
   }
 }
 ```
+
+`predev` runs only through `npm run dev`; run `npm run generate` first when starting `next dev` directly.
 
 Start with `@openuidev/dashboard-library`. To use the app's own design system, build an OpenUI library ([component-library.md](component-library.md)), generate its spec the same way, and pass the same library to the renderer.
 
@@ -90,6 +95,13 @@ const ordersByDay = z.object({
   status: z.enum(["paid", "refunded", "all"]).optional(),
 });
 
+// Lenient: "" and null mean unset, and out-of-range days are clamped.
+function readOrdersByDay(args: Record<string, unknown>) {
+  const days = Math.min(365, Math.max(1, Math.trunc(Number(args.days)) || 30));
+  const status = args.status === "paid" || args.status === "refunded" ? args.status : "all";
+  return { days, status };
+}
+
 type Context = { userId: string; accountId: string };
 
 export const dataTools: Record<string, DataTool<Context>> = {
@@ -103,7 +115,7 @@ export const dataTools: Record<string, DataTool<Context>> = {
       ],
     },
     execute: async (args, context, { signal }) => {
-      const { days, status = "all" } = ordersByDay.parse(args);
+      const { days, status } = readOrdersByDay(args);
       return { days: await db.ordersByDay({ days, status, accountId: context.accountId, signal }) };
     },
   },
@@ -111,7 +123,7 @@ export const dataTools: Record<string, DataTool<Context>> = {
 ```
 
 - `output` is a static example the model reads to bind components to fields. Match the real shape exactly. Defining dashboards never calls a tool.
-- Read arguments leniently: an unpicked filter arrives as `""` or `null`. Treat it as unset, and clamp limits instead of rejecting them.
+- Read arguments leniently: an unpicked filter arrives as `""` or `null`. Treat it as unset, and clamp limits instead of rejecting them. A strict `parse` throws on these and the dashboard shows an error. Keep the lenient reading out of the `parameters` schema: `z.toJSONSchema` can't convert `preprocess` or `transform`.
 - Scope data with `context`, which `execute` receives unchanged from the interpreter route.
 - Return only what the dashboard shows: results go to the browser as is.
 - Honor `signal`, and prefer read-only tools: queries run on every view, and scripts can call any listed tool.
@@ -122,7 +134,7 @@ To offer an MCP server's tools, pass a connected client as `mcp: { client, outpu
 ### 3. Add the interpreter route
 
 ```ts title="app/api/interpreter/route.ts"
-import { OpenUIApiError, ToolExecutionError } from "@openuidev/server";
+import { type InterpreterRequest, OpenUIApiError, ToolExecutionError } from "@openuidev/server";
 import { dashboards } from "@/lib/openui";
 import { getSession } from "@/lib/auth"; // the app's session lookup
 
@@ -130,29 +142,39 @@ export async function POST(request: Request) {
   const session = await getSession(request);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
+  let body: InterpreterRequest;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json(
+      { error: { code: "invalid_input", message: "The request body must be JSON." } },
+      { status: 400 },
+    );
+  }
+
   try {
     const result = await dashboards.interpreter.execute(
-      await request.json(),
+      body,
       { userId: session.user.id },
       { signal: request.signal },
     );
     return Response.json({ result });
   } catch (error) {
     const known = error instanceof ToolExecutionError || error instanceof OpenUIApiError;
+    const code = known ? error.code : "internal_error";
     return Response.json(
-      {
-        error: {
-          code: known ? error.code : "internal_error",
-          message: error instanceof Error ? error.message : String(error),
-        },
-      },
-      { status: known ? (error.status ?? 500) : 500 },
+      { error: { code, message: error instanceof Error ? error.message : String(error) } },
+      { status: known ? (error.status ?? (code === "invalid_input" ? 400 : 500)) : 500 },
     );
   }
 }
 ```
 
 Without this route, dashboards render but load no data. `timeoutMs` (default 60000) sets the total time budget.
+
+- The renderer sends `{ name, arguments }`, plus the dashboard's `id` and `version` for a generated script.
+- `invalid_input` (no `name`, non-object `arguments`) carries no status, so the route maps it to 400. An unknown tool is `tool_not_found` with 404. An error thrown by a data tool is `internal_error` with 500.
+- Scripts run only for the dashboard's owner, but data tools are not tied to a dashboard: any signed-in user can call one by name with any arguments. Scope every data tool by `context`.
 
 ### 4. Add the frontend token route and provider
 
@@ -217,7 +239,7 @@ export function dashboardTools(context: { userId: string }) {
       description:
         "Change a dashboard in place, such as adding a chart or a section. Returns as soon as the change has started.",
       inputSchema: z.object({
-        id: z.string().min(1).describe("The dashboard's id, from its tool result."),
+        id: z.string().min(1).describe("The dashboard's id, art_…, from its tool result."),
         prompt: z.string().min(1).describe("The change to make."),
       }),
       execute: ({ id, prompt }, { abortSignal }) =>
@@ -227,9 +249,11 @@ export function dashboardTools(context: { userId: string }) {
 }
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id })`. With the OpenAI SDK, declare the same two function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`). Keep the agent's existing model and tools.
+Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id })`. With the OpenAI SDK, declare the same two function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`). Catch a tool's error and push `Error: <message>` as the content instead of failing the turn. Keep the agent's existing model and tools.
 
-The tool result must reach the browser. Check the stream format in [artifacts.md](artifacts.md#use-a-stream-that-carries-tool-results): Chat Completions SSE does not carry tool results.
+A dashboard takes one generation at a time: `edit` rejects with "This dashboard is still generating; edit it once it finishes" while a create or earlier edit is running. The Vercel AI SDK turns a throwing `execute` into an error result for the model on its own.
+
+The tool result must reach the browser. Check the stream format in [artifacts.md](artifacts.md#use-a-stream-that-carries-tool-results): Chat Completions SSE does not carry tool results, so stream with the Vercel AI SDK (`result.toUIMessageStreamResponse()`) for any chat UI below.
 
 Add guidance to the agent's system prompt:
 
@@ -239,7 +263,8 @@ Dashboards load their own data from these tools every time they open:
 
 - When the user asks for a dashboard, call create_dashboard with a short title and a prompt describing the sections, metrics, charts, tables, and filters, and which data each shows. Don't put numbers in the prompt.
 - To change a dashboard, call edit_dashboard with the id from the tool result that created it. "It" means the latest dashboard. Create a new one only when asked.
-- The user watches the dashboard being built. Don't repeat the tool result.
+- The user watches the dashboard being built. Don't repeat the tool result, and don't say it's finished: the tool returns when it starts.
+- If a tool result starts with "Error:", or edit_dashboard says the dashboard is still generating, tell the user in one sentence and offer to try again.
 - After a tool call, reply in one or two sentences: what the dashboard shows and one change they could ask for.
 - You can't see the data, so don't state numbers.
 ```
@@ -247,6 +272,8 @@ Dashboards load their own data from these tools every time they open:
 List the data tools in the prompt so the agent knows what dashboards can show.
 
 ### 6. Render the tool result
+
+With AI SDK `useChat` (`@ai-sdk/react`, `new DefaultChatTransport({ api: "/api/chat" })`), render the message parts:
 
 ```tsx
 import { library } from "@openuidev/dashboard-library";
@@ -275,7 +302,35 @@ if (part.type === "tool-create_dashboard" || part.type === "tool-edit_dashboard"
 
 Save the tool result with the message. The card renders again when the chat reloads, with the latest version.
 
+### Chat frontends
+
+Each chat UI renders the same tool result with `LiveArtifactRenderer`, inside `OpenUICloudProvider`. Docs: https://www.openui.com/docs/dashboards/add-to-your-agent#chat-frontends.
+
+- **AgentInterface** (`@openuidev/react-ui`): read the Vercel AI SDK route with `fetchLLM({ url: "/api/chat", streamAdapter: vercelAIAdapter(), messageFormat: vercelAIMessageFormat })`. Register a renderer and pass cloud storage:
+
+  ```tsx
+  const dashboardRenderer = defineArtifactRenderer({
+    type: "dashboard",
+    toolName: ["create_dashboard", "edit_dashboard"],
+    parser: ({ response }) =>
+      typeof response === "string" && response ? { props: { response }, meta: null } : null,
+    preview: ({ response }) => <LiveArtifactRenderer response={response} library={library} interpreter={interpreter} />,
+    actual: ({ response }) => (
+      <LiveArtifactRenderer response={response} library={library} interpreter={interpreter} preview={false} />
+    ),
+  });
+
+  const storage = useOpenuiCloudStorage({ token: "/api/frontend-token" });
+  <AgentInterface llm={llm} storage={storage} artifactRenderers={[dashboardRenderer]} />;
+  ```
+
+  Without `storage`, AgentInterface's own storage context hides the provider's, and `useArtifactList` inside it throws "No artifact storage is configured". `openAIAdapter()` never emits tool results, so the renderer never gets a `response`.
+- **assistant-ui**: `useChatRuntime({ transport: new AssistantChatTransport({ api: "/api/chat" }) })` on the Vercel AI SDK route. Register the tool UI with `<MessagePrimitive.Parts components={{ tools: { by_name: { create_dashboard: DashboardToolUI, edit_dashboard: DashboardToolUI } } }} />`, where `DashboardToolUI` (`ToolCallMessagePartProps`) renders `LiveArtifactRenderer` with `response={result}` once `result` is a string. The AI SDK `part.type` checks above don't apply to assistant-ui.
+- **CopilotKit**: in a catch-all route `app/api/copilotkit/[[...slug]]/route.ts`, build a `BuiltInAgent` per request, with `defineTool` tools from `@copilotkit/runtime/v2` that close over the session user, then `createCopilotRuntimeHandler({ runtime, basePath: "/api/copilotkit" })(request)`. A module-level agent can't see the user. Render with `useRenderTool({ name: "create_dashboard", parameters, render: ({ status, result }) => … })` for each tool, showing `LiveArtifactRenderer` once `status === "complete"`. The runtime needs `ai@6` and `@ai-sdk/openai@3`.
+
 ## List saved dashboards
+
+Import from `@openuidev/react-ui/cloud`: the `useArtifactList` in `@openuidev/react-ui` is a different hook, for one chat thread's artifacts. Inside AgentInterface, pass `storage` (see above).
 
 ```tsx
 import { useArtifactList } from "@openuidev/react-ui/cloud";
@@ -304,7 +359,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 
 ## Rules
 
-- **Take `userId` from the session**, never from the request body. Use the same id in `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. Only the owner can open, edit, or run a dashboard.
+- **Take `userId` from the session**, never from the request body. Use the same id in `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. Only the owner can open, edit, or list a dashboard or run its scripts; data tools run for any signed-in user, so scope them by `context`.
 - **Treat the `create` and `edit` response as opaque.** Return it unchanged as the tool result, and pass it unchanged to `LiveArtifactRenderer`. Don't parse it or build it by hand.
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
@@ -314,7 +369,9 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 
 1. The spec generates, and the app builds.
 2. Asking for a dashboard calls `create_dashboard`, and the card appears and fills in.
-3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
-4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
+3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log. A body without `name` gets 400, not 500.
+4. Once the dashboard finishes generating, a follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
 6. A second user can't open the first user's dashboard.
+
+Without a browser, check the saved dashboards with a frontend token from the token route: `GET https://api.thesys.dev/v1/artifacts?kind=dashboard` with the token in the `x-thesys-frontend-token` header. `Authorization: Bearer` fails with 401, and `type=` is ignored.
