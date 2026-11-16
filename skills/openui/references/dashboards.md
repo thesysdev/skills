@@ -9,7 +9,7 @@ Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev
 1. **Set up:** the server defines dashboards once with a component library, a model, and data tools.
 2. **Generate:** the agent's `create_dashboard` tool calls `dashboards.create()`. It returns a response right away, and the agent returns it as the tool result.
 3. **Render:** the chat passes the tool result to `LiveArtifactRenderer`, which shows the dashboard as it's built.
-4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's interpreter with secure execution.
+4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's JS interpreter with secure execution.
 5. **Edit:** the agent's `edit_dashboard` tool calls `dashboards.edit()` with the dashboard's id. Only the parts the prompt describes change.
 
 The agent never calls the data tools itself. They belong to the dashboard definition.
