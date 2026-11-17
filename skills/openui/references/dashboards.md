@@ -296,7 +296,7 @@ Actions have their own hooks, each returning `isPending` and `error` for its las
 | `useArtifactUpdate()` | `update(id, { title })`, which renames the dashboard |
 | `useArtifactDelete()` | `deleteArtifact(id)` (owner only) |
 | `useArtifactShares(id)` | `shares`, `isLoading`, `error`, `refresh` |
-| `useArtifactShare()` | `share(id, { type: "user" \| "group", id, access: "view" \| "edit" })`, or `{ type: "app", access }` for everyone in the app |
+| `useArtifactShare()` | `share(id, { type: "user" \| "group", id, access: "view" \| "edit" })` |
 | `useArtifactUnshare()` | `unshare(id, { type, id })` |
 
 The actions update every list and renderer right away and revert if the request fails. After pinning or unpinning across separate pinned and unpinned lists, `refresh` both. A deleted dashboard can't be restored: add a confirmation step before `deleteArtifact`. Show delete only when `isOwner`, and rename, edit and share only when `isEditable`; a viewer's attempt fails with 403.
@@ -307,7 +307,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 
 ## Rules
 
-- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. A dashboard belongs to the user who made it; others can open it only once it's shared with them, one of their `groupIds`, or their app, and edit it only with `edit` access. Data tools always run as the signed-in user, so a shared dashboard shows each viewer their own data.
+- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. A dashboard belongs to the user who made it; others can open it only once it's shared with them or one of their `groupIds`, and edit it only with `edit` access. There's no "everyone" share: share with a group everyone is in. Data tools always run as the signed-in user, so a shared dashboard shows each viewer their own data.
 - **Treat the `create` and `edit` response as opaque.** Return it unchanged as the tool result, and pass it unchanged to `LiveArtifactRenderer`. Don't parse it or build it by hand.
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
@@ -320,4 +320,4 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
-6. A second user can't open the first user's dashboard unless it's shared with them, one of their groups, or their app; a viewer can't rename, edit or delete it.
+6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups; a viewer can't rename, edit or delete it.
