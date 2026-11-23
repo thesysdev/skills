@@ -25,7 +25,7 @@ Once installed, try prompts such as:
 | [`SKILL.md`](skills/openui/SKILL.md) | What OpenUI is, which reference to read for each job, the rules every task follows, and the package map |
 | [`new-app.md`](skills/openui/references/new-app.md) | Scaffolding with `npx @openuidev/cli@latest create`, the API key handoff, the default scaffold, customizing, and verifying |
 | [`existing-app.md`](skills/openui/references/existing-app.md) | Adding a component library, pointing the backend at Gateway, and rendering in assistant-ui, CopilotKit, or a custom chat |
-| [`gateway.md`](skills/openui/references/gateway.md) | Gateway with Chat Completions: client setup, BYOK, the system prompt, conversation storage, tools, and security |
+| [`gateway.md`](skills/openui/references/gateway.md) | Gateway with Chat Completions: client setup, free models, BYOK, the system prompt, conversation storage, tools, and security |
 | [`gateway-responses.md`](skills/openui/references/gateway-responses.md) | Apps that already use the Responses API: history models and hosted tools |
 | [`direct-provider.md`](skills/openui/references/direct-provider.md) | Apps that call their own model provider directly: provider client, full prompt, app-owned storage |
 | [`autofix.md`](skills/openui/references/autofix.md) | Correcting OpenUI Lang when inference stays with the user's provider |
