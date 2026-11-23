@@ -57,7 +57,7 @@ export const dashboards = openui.defineDashboard({
 - `library`: the library's JSON spec. `tools`, `mcp`, or both are required.
 - `model`: `provider/model`. Use `anthropic/claude-sonnet-5.5`, which builds the best dashboards, unless the user picks another. See https://www.openui.com/docs/gateway/models.
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
-- `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key).
+- `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key). Dashboards belong to the client's app: a client without `appId` only reaches dashboards made without one, so keep `appId` once users have dashboards made with it.
 
 Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
 
@@ -285,7 +285,7 @@ const { artifacts, isLoading, error, hasMore, loadMore, refresh } = useArtifactL
 });
 ```
 
-Each item has `id`, `title`, `type`, `updatedAt`, `pinned` (by this user), `isOwner`, and `isEditable`; editors also get `shares`. The list holds the user's own dashboards and the ones shared with them: `isOwner: true` keeps only theirs, `false` only shared ones. Open one with `<LiveArtifactRenderer id={id} … />`. A dashboard joins the list once generation finishes; call `refresh` when a renderer's `isStreaming` turns false to show it right away.
+Each item has `id`, `title`, `type`, `updatedAt`, `pinned` (by this user), `isOwner`, and `isEditable`; editors also get `shares`. The list holds the user's own dashboards and the ones shared with them: `isOwner: true` keeps only theirs, `false` only shared ones. Open one with `<LiveArtifactRenderer id={id} … />`. A dashboard joins the list once generation finishes; call `refresh` when a renderer's `isStreaming` turns false to show it right away. Pins are per user.
 
 Actions have their own hooks, each returning `isPending` and `error` for its last call:
 
@@ -295,11 +295,40 @@ Actions have their own hooks, each returning `isPending` and `error` for its las
 | `useArtifactUnpin()` | `unpin(id)` |
 | `useArtifactUpdate()` | `update(id, { title })`, which renames the dashboard |
 | `useArtifactDelete()` | `deleteArtifact(id)` (owner only) |
-| `useArtifactShares(id)` | `shares`, `isLoading`, `error`, `refresh` |
-| `useArtifactShare()` | `share(id, { type: "user" \| "group", id, access: "view" \| "edit" })` |
-| `useArtifactUnshare()` | `unshare(id, { type, id })` |
 
-The actions update every list and renderer right away and revert if the request fails. After pinning or unpinning across separate pinned and unpinned lists, `refresh` both. A deleted dashboard can't be restored: add a confirmation step before `deleteArtifact`. Show delete only when `isOwner`, and rename, edit and share only when `isEditable`; a viewer's attempt fails with 403.
+The actions update every list and renderer right away and revert if the request fails. After pinning or unpinning across separate pinned and unpinned lists, `refresh` both. A deleted dashboard can't be restored: add a confirmation step before `deleteArtifact`. Show delete only when `isOwner`, and rename only when `isEditable` (see [Share dashboards](#share-dashboards)).
+
+## Share dashboards
+
+Needs `@openuidev/server` 0.4.4 or later and `@openuidev/react-ui` 0.18.10 or later.
+
+A dashboard is private to the user who made it. Its owner, and users it's shared with to edit, can share it with a user (`{ type: "user", id }`, the id passed as `userId`) or a group (`{ type: "group", id }`: every user whose `groupIds` include it), at `view` or `edit` access. Groups are the app's own: pass the user's groups as `groupIds` next to `userId` on the frontend token and in every server call, for example `{ userId: session.user.id, groupIds: session.user.teamIds }`. There's no "everyone" share: share with a group everyone is in.
+
+```tsx
+import { useArtifactShare, useArtifactShares, useArtifactUnshare } from "@openuidev/react-ui/cloud";
+
+const { shares, isLoading, error, refresh } = useArtifactShares(id);
+const { share } = useArtifactShare();
+const { unshare } = useArtifactUnshare();
+
+await share(id, { type: "group", id: "team:sales", access: "view" });
+await unshare(id, { type: "group", id: "team:sales" });
+```
+
+- Data tools run with the viewer's own `context`, so a shared dashboard shows each viewer their own data.
+- Show delete only when `isOwner`, and rename, edit and share only when `isEditable`. A user who can open a dashboard but lacks the access gets 403 `insufficient_access`. One who can't open it gets 404, as if it didn't exist.
+- Shares are part of the dashboard, and only users with `isEditable` see them. For others, `shares` is empty and changes fail.
+- Sharing with a target that's already shared changes its access. Sharing with the owner is refused.
+- Anyone who can share can remove any share, including their own, which is how an editor leaves a dashboard.
+- Removing a share takes effect on the next request, and unpins the dashboard for users who pinned it only through that share.
+- Groups ride on the frontend token, so a user removed from a group keeps its dashboards until their next token (up to 15 minutes).
+
+| Limit | Value | Error |
+| --- | --- | --- |
+| Groups per user (`groupIds`) | 10 | 400 `invalid_input` |
+| Length of a user or group id | 1–64 characters | 400 `invalid_input` |
+| Shares per dashboard | 100, at most 10 of them groups | 409 `share_limit_reached` |
+| Pins per user | 500 | 409 `pin_limit_reached` |
 
 ## Auto-refresh and filters
 
@@ -307,7 +336,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 
 ## Rules
 
-- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. A dashboard belongs to the user who made it; others can open it only once it's shared with them or one of their `groupIds`, and edit it only with `edit` access. There's no "everyone" share: share with a group everyone is in. Data tools always run as the signed-in user, so a shared dashboard shows each viewer their own data.
+- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `interpreter.execute`, and `createFrontendToken`.
 - **Treat the `create` and `edit` response as opaque.** Return it unchanged as the tool result, and pass it unchanged to `LiveArtifactRenderer`. Don't parse it or build it by hand.
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
@@ -320,4 +349,4 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
-6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups; a viewer can't rename, edit or delete it.
+6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups. A viewer can't rename, edit or delete it (403). Removing the share hides it from them on their next request and drops any pin they made through it.
