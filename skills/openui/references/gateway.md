@@ -28,9 +28,6 @@ export const gateway = new OpenAI({
 These models are promotionally free: Gateway does not charge for their tokens. Use one when the user has no Gateway credits or provider subscription.
 
 - Get the current list of free model ids from https://www.openui.com/cloud/gateway/models#free-models. The list changes, so fetch that page instead of relying on ids you remember.
-- Only the ids on that page are free. Adding `-free` to any other model id does not make it free.
-- Each request still uses an API call from the plan. Free models are rate limited, and each organization has a limited usage quota for them, so switch to the paid model before production traffic.
-- Request data for free models may be used for training. Do not send sensitive data to them.
 
 ## Use the user's provider account (BYOK)
 
