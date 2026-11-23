@@ -33,7 +33,7 @@ Once installed, try prompts such as:
 | [`component-library.md`](skills/openui/references/component-library.md) | Defining and extending libraries, generating the spec, and keeping stored responses compatible |
 | [`agent-interface.md`](skills/openui/references/agent-interface.md) | Agent Interface: stream adapters, storage, shell slots, and navigation |
 | [`artifacts.md`](skills/openui/references/artifacts.md) | Tool output as artifacts: renderers, parser inputs, and storage |
-| [`dashboards.md`](skills/openui/references/dashboards.md) | Live dashboards: `defineDashboard`, data tools, the interpreter route, create and edit tools, rendering, and listing, pinning, renaming, and deleting |
+| [`dashboards.md`](skills/openui/references/dashboards.md) | Live dashboards: `defineDashboard`, data tools, the interpreter route, create, edit, and get tools, rendering, listing, pinning, renaming, sharing, and deleting, and managing dashboards from the server |
 | [`theming.md`](skills/openui/references/theming.md) | `ThemeProvider`, tokens, and light/dark/system mode |
 | [`reliability.md`](skills/openui/references/reliability.md) | DevTools, Reliability Monitoring, and fixing generation errors |
 | [`deploy.md`](skills/openui/references/deploy.md) | `npx @openuidev/cli@latest deploy` and its options |
