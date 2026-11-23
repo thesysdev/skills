@@ -300,8 +300,6 @@ The actions update every list and renderer right away and revert if the request 
 
 ## Share dashboards
 
-Needs `@openuidev/server` 0.4.4 or later and `@openuidev/react-ui` 0.18.10 or later.
-
 A dashboard is private to the user who made it. Its owner, and users it's shared with to edit, can share it with a user (`{ type: "user", id }`, the id passed as `userId`) or a group (`{ type: "group", id }`: every user whose `groupIds` include it), at `view` or `edit` access. Groups are the app's own: pass the user's groups as `groupIds` next to `userId` on the frontend token and in every server call, for example `{ userId: session.user.id, groupIds: session.user.teamIds }`. There's no "everyone" share: share with a group everyone is in.
 
 ```tsx
