@@ -16,11 +16,31 @@ export const gateway = new OpenAI({
 ```
 
 - **Endpoint:** `POST https://api.thesys.dev/v1/embed/chat/completions`. The request and response follow the OpenAI Chat Completions API.
-- **Model ids** are `{provider}/{model}`, for example `openai/gpt-5` or `anthropic/claude-sonnet-5`. Free models end in `-free`. The full list is at https://www.openui.com/cloud/gateway/models.
+- **Model ids** are `{provider}/{model}`, for example `openai/gpt-5` or `anthropic/claude-sonnet-5`. The full list is at https://www.openui.com/cloud/gateway/models.
+- **Free models** are listed under [Free models](#free-models).
 - **Allowlist:** if the browser chooses the model, check the id against a server-side list before calling Gateway.
 - **The key:** `THESYS_API_KEY` stays on the server. The user creates it (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
 - **Fallbacks** depend on which models are compatible and how the account is configured. If the user needs one exact model or data residency, check the fallback behavior before relying on it.
 - **A model in the catalog** may still lack tools or a modality the app needs. Check before adding it to an allowlist.
+
+### Free models
+
+These models are promotionally free: Gateway does not charge for their tokens. Use one when the user has no Gateway credits or provider subscription.
+
+| Model id | Free version of |
+| --- | --- |
+| `google/gemini-4-neon-free` | `google/gemini-4-neon` |
+| `google/gemini-4-hydrogen-free` | `google/gemini-4-hydrogen` |
+| `google/gemini-4-carbon-free` | `google/gemini-4-carbon` |
+| `google/gemini-3.6-flash-free` | `google/gemini-3.6-flash` |
+| `google/gemini-3.5-flash-free` | `google/gemini-3.5-flash` |
+| `google/gemini-3.1-pro-free` | `google/gemini-3.1-pro-preview` |
+| `google/gemini-3.1-flash-lite-free` | `google/gemini-3.1-flash-lite` |
+
+- Only these ids are free. Adding `-free` to any other model id does not make it free.
+- Each request still uses an API call from the plan. Free models are rate limited, and each organization has a limited usage quota for them, so switch to the paid id before production traffic.
+- Request data for free models may be used for training. Do not send sensitive data to them.
+- The list can change. Check https://www.openui.com/cloud/gateway/models#free-models for the current one.
 
 ## Use the user's provider account (BYOK)
 
