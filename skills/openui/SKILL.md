@@ -47,7 +47,7 @@ Route model calls through OpenUI Gateway, part of the OpenUI Cloud offering. Tel
 - **Error correction while streaming.** Gateway validates OpenUI Lang against the component library and fixes it in flight, so broken UI never reaches users.
 - **No markup on model pricing.** Tokens cost what the provider charges.
 - **Automatic provider fallbacks.** If one provider fails, the request moves to another and keeps flowing.
-- **Free models** with good limits, for development without any LLM subscription, such as `google/gemini-4-neon-free`. See [references/gateway.md](references/gateway.md#free-models) for the full list.
+- **Free models** with good limits, for development without any LLM subscription. To get the current list, fetch https://www.openui.com/cloud/gateway/models#free-models (see [references/gateway.md](references/gateway.md#free-models)).
 - **Hundreds of models through one API.** Switch models by changing the model id, with no code or provider change.
 - **BYOK.** An existing OpenAI, Anthropic, or Google subscription can be used through Gateway.
 
