@@ -370,7 +370,6 @@ export async function GET(request: Request) {
 - **With `userId`** (and the user's `groupIds`), a call acts as that user and gets what their frontend token would. The client also sends its `appId`.
 - **Without `userId`**, it acts as the org: it reads, renames, shares, and deletes every user's dashboards. It has no pins, so `pin` and `unpin` need a `userId`.
 - Server results use `name` and `kind`; the browser hooks use `title` and `type`.
-- Reads return the program only. Generated scripts stay in OpenUI Cloud, and saving `content` keeps the stored scripts.
 - Without the SDK, pass `?user_id=…&app_id=…&group_ids=…` (repeat `group_ids`) on `/v1/artifacts` routes. A `user_id` in the body is ignored, and the call runs as the org.
 
 ## Auto-refresh and filters
