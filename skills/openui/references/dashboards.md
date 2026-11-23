@@ -2,7 +2,7 @@
 
 Use this when the user wants an agent that builds dashboards from a chat request: a layout of charts, tables, metrics, and filters that loads fresh data every time it opens. The agent builds a dashboard once. The user then reopens, filters, and refreshes it without another model call.
 
-Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
+Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
 
 ## How it fits together
 
@@ -11,6 +11,7 @@ Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev
 3. **Render:** the chat passes the tool result to `LiveArtifactRenderer`, which shows the dashboard as it's built.
 4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's JS interpreter with secure execution.
 5. **Edit:** the agent's `edit_dashboard` tool calls `dashboards.edit()` with the dashboard's id. Only the parts the prompt describes change.
+6. **Read:** the agent's `get_dashboard` tool calls `dashboards.get()` to see what a dashboard shows before explaining or changing it.
 
 The agent never calls the data tools itself. They belong to the dashboard definition.
 
@@ -198,7 +199,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { dashboards } from "./openui";
 
-export function dashboardTools(context: { userId: string }) {
+export function dashboardTools(context: { userId: string; groupIds?: string[] }) {
   return {
     create_dashboard: tool({
       description:
@@ -223,11 +224,25 @@ export function dashboardTools(context: { userId: string }) {
       execute: ({ id, prompt }, { abortSignal }) =>
         dashboards.edit({ id, prompt }, context, { signal: abortSignal }),
     }),
+    get_dashboard: tool({
+      description: "Read a dashboard the user can open, to see what it shows.",
+      inputSchema: z.object({
+        id: z.string().min(1).describe("The dashboard's id, from its tool result."),
+      }),
+      execute: async ({ id }, { abortSignal }) => {
+        const { name, content, isEditable } = await dashboards.get({ id }, context, {
+          signal: abortSignal,
+        });
+        return { name, content, isEditable };
+      },
+    }),
   };
 }
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id })`. With the OpenAI SDK, declare the same two function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`). Keep the agent's existing model and tools.
+Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
+
+`dashboards.get()` reads as the user in `context`: a dashboard they can't open throws `OpenUIApiError` with status 404. Return only what the model needs; the full dashboard also lists its shares.
 
 The tool result must reach the browser. Check the stream format in [artifacts.md](artifacts.md#use-a-stream-that-carries-tool-results): Chat Completions SSE does not carry tool results.
 
@@ -239,6 +254,7 @@ Dashboards load their own data from these tools every time they open:
 
 - When the user asks for a dashboard, call create_dashboard with a short title and a prompt describing the sections, metrics, charts, tables, and filters, and which data each shows. Don't put numbers in the prompt.
 - To change a dashboard, call edit_dashboard with the id from the tool result that created it. "It" means the latest dashboard. Create a new one only when asked.
+- To see what a dashboard shows, call get_dashboard with its id.
 - The user watches the dashboard being built. Don't repeat the tool result.
 - After a tool call, reply in one or two sentences: what the dashboard shows and one change they could ask for.
 - You can't see the data, so don't state numbers.
@@ -328,13 +344,44 @@ await unshare(id, { type: "group", id: "team:sales" });
 | Shares per dashboard | 100, at most 10 of them groups | 409 `share_limit_reached` |
 | Pins per user | 500 | 409 `pin_limit_reached` |
 
+## Manage dashboards from the server
+
+Use `openui.artifacts` where there's no browser: a route handler, a background job, an admin tool.
+
+```ts title="app/api/dashboards/route.ts"
+import { openui } from "@/lib/openui";
+import { getSession } from "@/lib/auth"; // your session lookup
+
+export async function GET(request: Request) {
+  const session = await getSession(request);
+  if (!session) return new Response("Unauthorized", { status: 401 });
+
+  const page = await openui.artifacts.list({
+    userId: session.user.id,
+    groupIds: session.user.teamIds,
+    kind: "dashboard",
+    signal: request.signal,
+  });
+  return Response.json(page.data.map(({ id, name, updatedAt }) => ({ id, name, updatedAt })));
+}
+```
+
+- `openui.artifacts` has `list`, `get`, `update`, `delete`, `pin`, `unpin`, `share`, and `unshare`.
+- **With `userId`** (and the user's `groupIds`), a call acts as that user and gets what their frontend token would. The client also sends its `appId`.
+- **Without `userId`**, it acts as the org: it reads, renames, shares, and deletes every user's dashboards. It has no pins, so `pin` and `unpin` need a `userId`.
+- Server results use `name` and `kind`; the browser hooks use `title` and `type`.
+- Reads return the program only. Generated scripts stay in OpenUI Cloud, and saving `content` keeps the stored scripts.
+- Without the SDK, pass `?user_id=…&app_id=…&group_ids=…` (repeat `group_ids`) on `/v1/artifacts` routes. A `user_id` in the body is ignored, and the call runs as the org.
+
 ## Auto-refresh and filters
 
 The model writes both from the prompt. Ask for them in the `create_dashboard` prompt or an edit, for example "refresh the open tickets every minute" or "add a status filter". Filters and refreshes reload data through the interpreter route without a model call.
 
 ## Rules
 
-- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `interpreter.execute`, and `createFrontendToken`.
+- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `get`, `interpreter.execute`, `createFrontendToken`, and any `openui.artifacts` call made for a user.
+- **Give the agent `dashboards.get()`, never `openui.artifacts`.** The model picks the id, so its reads must run as the signed-in user. `openui.artifacts` without a `userId` reads any dashboard in the org.
+- **A dashboard always has a user.** `create`, `edit`, `get`, and the interpreter refuse a context without `userId`. OpenUI Cloud answers a dashboard request from the API key alone with 400 `needs_user`.
 - **Treat the `create` and `edit` response as opaque.** Return it unchanged as the tool result, and pass it unchanged to `LiveArtifactRenderer`. Don't parse it or build it by hand.
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
@@ -348,3 +395,4 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
 6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups. A viewer can't rename, edit or delete it (403). Removing the share hides it from them on their next request and drops any pin they made through it.
+7. `get_dashboard` returns a dashboard for its owner and 404 for a user it isn't shared with. `openui.artifacts.list({ userId })` matches that user's `useArtifactList`.
