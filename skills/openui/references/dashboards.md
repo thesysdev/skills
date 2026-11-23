@@ -2,7 +2,7 @@
 
 Use this when the user wants an agent that builds dashboards from a chat request: a layout of charts, tables, metrics, and filters that loads fresh data every time it opens. The agent builds a dashboard once. The user then reopens, filters, and refreshes it without another model call.
 
-Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
+Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
 
 ## How it fits together
 
@@ -11,6 +11,7 @@ Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev
 3. **Render:** the chat passes the tool result to `LiveArtifactRenderer`, which shows the dashboard as it's built.
 4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's JS interpreter with secure execution.
 5. **Edit:** the agent's `edit_dashboard` tool calls `dashboards.edit()` with the dashboard's id. Only the parts the prompt describes change.
+6. **Read:** the agent's `get_dashboard` tool calls `dashboards.get()` to see what a dashboard shows before explaining or changing it.
 
 The agent never calls the data tools itself. They belong to the dashboard definition.
 
@@ -57,7 +58,7 @@ export const dashboards = openui.defineDashboard({
 - `library`: the library's JSON spec. `tools`, `mcp`, or both are required.
 - `model`: `provider/model`. Use `anthropic/claude-sonnet-5.5`, which builds the best dashboards, unless the user picks another. See https://www.openui.com/docs/gateway/models.
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
-- `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key).
+- `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key). Dashboards belong to the client's app: a client without `appId` only reaches dashboards made without one, so keep `appId` once users have dashboards made with it.
 
 Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
 
@@ -198,7 +199,7 @@ import { tool } from "ai";
 import { z } from "zod";
 import { dashboards } from "./openui";
 
-export function dashboardTools(context: { userId: string }) {
+export function dashboardTools(context: { userId: string; groupIds?: string[] }) {
   return {
     create_dashboard: tool({
       description:
@@ -223,11 +224,25 @@ export function dashboardTools(context: { userId: string }) {
       execute: ({ id, prompt }, { abortSignal }) =>
         dashboards.edit({ id, prompt }, context, { signal: abortSignal }),
     }),
+    get_dashboard: tool({
+      description: "Read a dashboard the user can open, to see what it shows.",
+      inputSchema: z.object({
+        id: z.string().min(1).describe("The dashboard's id, from its tool result."),
+      }),
+      execute: async ({ id }, { abortSignal }) => {
+        const { name, content, isEditable } = await dashboards.get({ id }, context, {
+          signal: abortSignal,
+        });
+        return { name, content, isEditable };
+      },
+    }),
   };
 }
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id })`. With the OpenAI SDK, declare the same two function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`). Keep the agent's existing model and tools.
+Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
+
+`dashboards.get()` reads as the user in `context`: a dashboard they can't open throws `OpenUIApiError` with status 404. Return only what the model needs; the full dashboard also lists its shares.
 
 The tool result must reach the browser. Check the stream format in [artifacts.md](artifacts.md#use-a-stream-that-carries-tool-results): Chat Completions SSE does not carry tool results.
 
@@ -239,6 +254,7 @@ Dashboards load their own data from these tools every time they open:
 
 - When the user asks for a dashboard, call create_dashboard with a short title and a prompt describing the sections, metrics, charts, tables, and filters, and which data each shows. Don't put numbers in the prompt.
 - To change a dashboard, call edit_dashboard with the id from the tool result that created it. "It" means the latest dashboard. Create a new one only when asked.
+- To see what a dashboard shows, call get_dashboard with its id.
 - The user watches the dashboard being built. Don't repeat the tool result.
 - After a tool call, reply in one or two sentences: what the dashboard shows and one change they could ask for.
 - You can't see the data, so don't state numbers.
@@ -281,11 +297,11 @@ Save the tool result with the message. The card renders again when the chat relo
 import { useArtifactList } from "@openuidev/react-ui/cloud";
 
 const { artifacts, isLoading, error, hasMore, loadMore, refresh } = useArtifactList({
-  filter: { type: "dashboard" }, // also pinned, search, limit
+  filter: { type: "dashboard" }, // also pinned, isOwner, search, limit
 });
 ```
 
-Each item has `id`, `title`, `type`, `updatedAt`, and `pinned`. Open one with `<LiveArtifactRenderer id={id} … />`. A dashboard joins the list once generation finishes; call `refresh` when a renderer's `isStreaming` turns false to show it right away.
+Each item has `id`, `title`, `type`, `updatedAt`, `pinned` (by this user), `isOwner`, and `isEditable`; editors also get `shares`. The list holds the user's own dashboards and the ones shared with them: `isOwner: true` keeps only theirs, `false` only shared ones. Open one with `<LiveArtifactRenderer id={id} … />`. A dashboard joins the list once generation finishes; call `refresh` when a renderer's `isStreaming` turns false to show it right away. Pins are per user.
 
 Actions have their own hooks, each returning `isPending` and `error` for its last call:
 
@@ -294,9 +310,67 @@ Actions have their own hooks, each returning `isPending` and `error` for its las
 | `useArtifactPin()` | `pin(id)` |
 | `useArtifactUnpin()` | `unpin(id)` |
 | `useArtifactUpdate()` | `update(id, { title })`, which renames the dashboard |
-| `useArtifactDelete()` | `deleteArtifact(id)` |
+| `useArtifactDelete()` | `deleteArtifact(id)` (owner only) |
 
-The actions update every list and renderer right away and revert if the request fails. After pinning or unpinning across separate pinned and unpinned lists, `refresh` both. A deleted dashboard can't be restored: add a confirmation step before `deleteArtifact`.
+The actions update every list and renderer right away and revert if the request fails. After pinning or unpinning across separate pinned and unpinned lists, `refresh` both. A deleted dashboard can't be restored: add a confirmation step before `deleteArtifact`. Show delete only when `isOwner`, and rename only when `isEditable` (see [Share dashboards](#share-dashboards)).
+
+## Share dashboards
+
+A dashboard is private to the user who made it. Its owner, and users it's shared with to edit, can share it with a user (`{ type: "user", id }`, the id passed as `userId`) or a group (`{ type: "group", id }`: every user whose `groupIds` include it), at `view` or `edit` access. Groups are the app's own: pass the user's groups as `groupIds` next to `userId` on the frontend token and in every server call, for example `{ userId: session.user.id, groupIds: session.user.teamIds }`. There's no "everyone" share: share with a group everyone is in.
+
+```tsx
+import { useArtifactShare, useArtifactShares, useArtifactUnshare } from "@openuidev/react-ui/cloud";
+
+const { shares, isLoading, error, refresh } = useArtifactShares(id);
+const { share } = useArtifactShare();
+const { unshare } = useArtifactUnshare();
+
+await share(id, { type: "group", id: "team:sales", access: "view" });
+await unshare(id, { type: "group", id: "team:sales" });
+```
+
+- Data tools run with the viewer's own `context`, so a shared dashboard shows each viewer their own data.
+- Show delete only when `isOwner`, and rename, edit and share only when `isEditable`. A user who can open a dashboard but lacks the access gets 403 `insufficient_access`. One who can't open it gets 404, as if it didn't exist.
+- Shares are part of the dashboard, and only users with `isEditable` see them. For others, `shares` is empty and changes fail.
+- Sharing with a target that's already shared changes its access. Sharing with the owner is refused.
+- Anyone who can share can remove any share, including their own, which is how an editor leaves a dashboard.
+- Removing a share takes effect on the next request, and unpins the dashboard for users who pinned it only through that share.
+- Groups ride on the frontend token, so a user removed from a group keeps its dashboards until their next token (up to 15 minutes).
+
+| Limit | Value | Error |
+| --- | --- | --- |
+| Groups per user (`groupIds`) | 10 | 400 `invalid_input` |
+| Length of a user or group id | 1–64 characters | 400 `invalid_input` |
+| Shares per dashboard | 100, at most 10 of them groups | 409 `share_limit_reached` |
+| Pins per user | 500 | 409 `pin_limit_reached` |
+
+## Manage dashboards from the server
+
+Use `openui.artifacts` where there's no browser: a route handler, a background job, an admin tool.
+
+```ts title="app/api/dashboards/route.ts"
+import { openui } from "@/lib/openui";
+import { getSession } from "@/lib/auth"; // your session lookup
+
+export async function GET(request: Request) {
+  const session = await getSession(request);
+  if (!session) return new Response("Unauthorized", { status: 401 });
+
+  const page = await openui.artifacts.list({
+    userId: session.user.id,
+    groupIds: session.user.teamIds,
+    kind: "dashboard",
+    signal: request.signal,
+  });
+  return Response.json(page.data.map(({ id, name, updatedAt }) => ({ id, name, updatedAt })));
+}
+```
+
+- `openui.artifacts` has `list`, `get`, `update`, `delete`, `pin`, `unpin`, `share`, and `unshare`.
+- **With `userId`** (and the user's `groupIds`), a call acts as that user and gets what their frontend token would. The client also sends its `appId`.
+- **Without `userId`**, it acts as the org: it reads, renames, shares, and deletes every user's dashboards. It has no pins, so `pin` and `unpin` need a `userId`.
+- Server results use `name` and `kind`; the browser hooks use `title` and `type`.
+- Without the SDK, pass `?user_id=…&app_id=…&group_ids=…` (repeat `group_ids`) on `/v1/artifacts` routes. A `user_id` in the body is ignored, and the call runs as the org.
 
 ## Auto-refresh and filters
 
@@ -304,7 +378,9 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 
 ## Rules
 
-- **Take `userId` from the session**, never from the request body. Use the same id in `create`, `edit`, `interpreter.execute`, and `createFrontendToken`. Only the owner can open, edit, or run a dashboard.
+- **Take `userId` and `groupIds` from the session**, never from the request body. Pass the same values everywhere: `create`, `edit`, `get`, `interpreter.execute`, `createFrontendToken`, and any `openui.artifacts` call made for a user.
+- **Give the agent `dashboards.get()`, never `openui.artifacts`.** The model picks the id, so its reads must run as the signed-in user. `openui.artifacts` without a `userId` reads any dashboard in the org.
+- **A dashboard always has a user.** `create`, `edit`, `get`, and the interpreter refuse a context without `userId`. OpenUI Cloud answers a dashboard request from the API key alone with 400 `needs_user`.
 - **Treat the `create` and `edit` response as opaque.** Return it unchanged as the tool result, and pass it unchanged to `LiveArtifactRenderer`. Don't parse it or build it by hand.
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
@@ -317,4 +393,5 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
-6. A second user can't open the first user's dashboard.
+6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups. A viewer can't rename, edit or delete it (403). Removing the share hides it from them on their next request and drops any pin they made through it.
+7. `get_dashboard` returns a dashboard for its owner and 404 for a user it isn't shared with. `openui.artifacts.list({ userId })` matches that user's `useArtifactList`.
