@@ -47,8 +47,8 @@ export const dashboards = openui.defineDashboard({
   library: spec,
   model: "anthropic/claude-sonnet-5.5",
   tools: dataTools,
+  instructions: "We run an online store. Revenue is in USD and excludes refunds.",
   promptOptions: {
-    preamble: "You build dashboards about the store's orders, customers, and refunds.",
     examples: promptOptions.examples,
     additionalRules: promptOptions.additionalRules,
   },
@@ -57,7 +57,7 @@ export const dashboards = openui.defineDashboard({
 
 - `library`: the library's JSON spec. `tools`, `mcp`, or both are required.
 - `model`: `provider/model`. Use `anthropic/claude-sonnet-5.5`, which builds the best dashboards, unless the user picks another. See https://www.openui.com/docs/gateway/models.
-- `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
+- `instructions`: the business context (see [Business context and groups](#business-context-and-groups)). Keep the library's `promptOptions` (`examples`, `additionalRules`) unless the user wants a different style.
 - `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key). Dashboards belong to the client's app: a client without `appId` only reaches dashboards made without one, so keep `appId` once users have dashboards made with it.
 
 Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
@@ -344,6 +344,37 @@ await unshare(id, { type: "group", id: "team:sales" });
 | Shares per dashboard | 100, at most 10 of them groups | 409 `share_limit_reached` |
 | Pins per user | 500 | 409 `pin_limit_reached` |
 
+## Business context and groups
+
+Read the app first: what the business does, the words its UI and code use (labels, enum names, metric code), its company, team and membership tables, and its session.
+
+**Business context** goes in `instructions` on `defineDashboard`, as one string:
+
+- Include:
+  - what the business does;
+  - who reads the dashboards, and what they decide;
+  - the users' terms, and how key metrics are calculated, with thresholds and the tool that answers each;
+  - fiscal calendar, time zone, currency and rounding;
+  - how the business is split (regions, segments);
+  - the default range, comparison and lead metrics.
+- Leave out:
+  - anything about one user (dashboards get shared, and tools scope data with `context`);
+  - what one tool returns (that goes in its `description`);
+  - current numbers;
+  - layout and style (that's `promptOptions`);
+  - secrets and personal data.
+- Write facts, one per line, in the users' words, with numbers. Only define metrics the tools can produce.
+
+**Groups** go in `groupIds`, next to `userId` on the frontend token and in every server `context`:
+
+- Include the units people share with: teams, departments, and the company (`company:<id>` is "everyone"). Give each user every level above them.
+- Leave out permissions, feature flags, roles nobody shares with, and anything meant to limit data. Tools do that.
+- Ids:
+  - written `kind:id`, using stable ids, never names;
+  - up to 64 characters;
+  - at most 10 per user, built in a fixed order and cut the same way every time.
+- Apps that serve many companies need group and user ids that are unique across companies, and never one shared `everyone` group.
+
 ## Manage dashboards from the server
 
 Use `openui.artifacts` where there's no browser: a route handler, a background job, an admin tool.
@@ -385,6 +416,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 - **Use one library on both sides.** The spec passed to `defineDashboard` and the `library` passed to the renderer must come from the same library and version. Regenerate the spec after changing the library.
 - **Keep `THESYS_API_KEY` on the server.** The browser uses only the frontend token. The user creates the key (see [SKILL.md](../SKILL.md#never-handle-api-keys)).
 - **Keep numbers out of prompts.** Dashboards load data through tools; numbers in a prompt go stale.
+- **Nothing about one user in `instructions`.** Dashboards are shared and run with each viewer's `context`.
 
 ## Verify
 
@@ -395,3 +427,5 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
 6. A second user can't open the first user's dashboard unless it's shared with them or one of their groups. A viewer can't rename, edit or delete it (403). Removing the share hides it from them on their next request and drops any pin they made through it.
 7. `get_dashboard` returns a dashboard for its owner and 404 for a user it isn't shared with. `openui.artifacts.list({ userId })` matches that user's `useArtifactList`.
+8. A vague prompt ("How's this quarter going?") uses the business's fiscal quarter, terms and default comparison.
+9. Two users at different companies, in teams with the same name, don't see each other's group shares.
