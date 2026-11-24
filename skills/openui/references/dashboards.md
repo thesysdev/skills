@@ -286,7 +286,7 @@ if (part.type === "tool-create_dashboard" || part.type === "tool-edit_dashboard"
 - Side panel: pass the panel's element as `renderInHtmlElement`.
 - In place: `preview={false}`, for a full page or an app-managed panel.
 - `id` replaces `response` to open a saved dashboard.
-- Slots (`Preview`, `Chrome`, `ChromeTitle`, `EditedNotice`, `Content`, `Loading`, `Error`, …) are passed as children to change or replace each part. `useArtifactRenderer()` inside a slot returns `isStreaming`, `isFetching`, `error`, `retry`, `isOwner`, `isEditable`, and `justEdited`.
+- Slots (`Preview`, `Chrome`, `ChromeTitle`, `EditedNotice`, `Content`, `Loading`, `Error`, …) are passed as children to change or replace each part. `useArtifactRenderer()` inside a slot returns `isStreaming`, `isFetching`, `error`, `retry`, `isOwner`, `isEditable`, and `justUpdated`.
 - An open dashboard checks for changes every 30s (`pollInterval`, at least 10s, `false` to turn off): a new version (a save, or an AI edit as it generates) streams in live with filters kept, a rename or access change updates the title, `isOwner` and `isEditable`, and a delete or unshare shows an error and drops it from lists. Hide Edit and Share from `useArtifactRenderer().isEditable` so they react live.
 - `ThemeProvider` from `@openuidev/dashboard-library` sets `"light"` or `"dark"` mode. See [theming.md](theming.md) for the app's own theme.
 
