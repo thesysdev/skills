@@ -311,6 +311,7 @@ if (part.type === "tool-create_dashboard" || part.type === "tool-edit_dashboard"
 - In place: `preview={false}`, for a full page or an app-managed panel.
 - `id` replaces `response` to open a saved dashboard.
 - Slots (`Preview`, `Chrome`, `ChromeTitle`, `Content`, `Loading`, `Error`, …) are passed as children to change or replace each part. `useArtifactRenderer()` inside a slot returns `isStreaming`, `isFetching`, `error`, and `retry`.
+- Data sources: `enableProvenance` adds a Sources button and an inspect toggle to the bar. Clicking a number or a component shows the query behind it, its result, and the formula in between. Needs `@openuidev/react-ui` 0.19.0 or later.
 - `ThemeProvider` from `@openuidev/dashboard-library` sets `"light"` or `"dark"` mode. See [theming.md](theming.md) for the app's own theme.
 
 Save the tool result with the message. The card renders again when the chat reloads, with the latest version.
