@@ -2,18 +2,18 @@
 
 Use this when the user wants an agent that builds dashboards from a chat request: a layout of charts, tables, metrics, and filters that loads fresh data every time it opens. The agent builds a dashboard once. The user then reopens, filters, and refreshes it without another model call.
 
-Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code.
+Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code. Tool rounds, `{ stream: true }`, `maxToolRounds`, and `reasoningEffort` need `@openuidev/server` 0.5.2 or later, and the renderer's build steps need `@openuidev/react-ui` 0.19.0 or later.
 
 ## How it fits together
 
 1. **Set up:** the server defines dashboards once with a component library, a model, and data tools.
-2. **Generate:** the agent's `create_dashboard` tool calls `dashboards.create()`. It returns a response right away, and the agent returns it as the tool result.
+2. **Generate:** the agent's `create_dashboard` tool calls `dashboards.create()`. The model first calls the data tools and checks its scripts, so the call returns after these tool rounds, once the dashboard starts generating: typically 20-45 s. The agent returns the response as the tool result.
 3. **Render:** the chat passes the tool result to `LiveArtifactRenderer`, which shows the dashboard as it's built.
 4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's JS interpreter with secure execution.
 5. **Edit:** the agent's `edit_dashboard` tool calls `dashboards.edit()` with the dashboard's id. Only the parts the prompt describes change.
 6. **Read:** the agent's `get_dashboard` tool calls `dashboards.get()` to see what a dashboard shows before explaining or changing it.
 
-The agent never calls the data tools itself. They belong to the dashboard definition.
+The agent never calls the data tools itself. They belong to the dashboard definition, and the model that builds a dashboard calls them to see their real output.
 
 ## Start a new app
 
@@ -58,6 +58,8 @@ export const dashboards = openui.defineDashboard({
 - `library`: the library's JSON spec. `tools`, `mcp`, or both are required.
 - `model`: `provider/model`. Use `anthropic/claude-sonnet-5.5`, which builds the best dashboards, unless the user picks another. See https://www.openui.com/docs/gateway/models.
 - `preamble`: describe the domain. Keep the library's `examples` and `additionalRules` unless the user wants a different style.
+- `maxToolRounds`: how many rounds of tool calls the model may make before it must write the dashboard. Default on OpenUI Cloud: 20. With `0` the model calls no data tool directly, but still saves and runs its scripts.
+- `reasoningEffort`: how much the model thinks, for models that can: `"minimal"`, `"low"`, `"medium"`, or `"high"`.
 - `OpenUIClient` also takes `apiKey`, `baseUrl`, and `appId` (separates apps that share one key). Dashboards belong to the client's app: a client without `appId` only reaches dashboards made without one, so keep `appId` once users have dashboards made with it.
 
 Generate the spec from a file that re-exports the library, and run it before `dev` and `build`:
@@ -112,10 +114,11 @@ export const dataTools: Record<string, DataTool<Context>> = {
 ```
 
 - `output` is a static example the model reads to bind components to fields. Match the real shape exactly. Defining dashboards never calls a tool.
+- Tools are called during the build, without a prompt: keep them read-only, return small results or accept a limit parameter, and answer within 60 s. A slower call is cut off.
 - Read arguments leniently: an unpicked filter arrives as `""` or `null`. Treat it as unset, and clamp limits instead of rejecting them.
 - Scope data with `context`, which `execute` receives unchanged from the interpreter route.
 - Return only what the dashboard shows: results go to the browser as is.
-- Honor `signal`, and prefer read-only tools: queries run on every view, and scripts can call any listed tool.
+- Honor `signal`: queries run on every view, and scripts can call any listed tool.
 - Type the context with `defineDashboard<Context>()` and `DataTool<Context>`.
 
 To offer an MCP server's tools, pass a connected client as `mcp: { client, outputs }`. Only tools marked `readOnlyHint` are offered unless `include` lists others. `connect: (context) => client` creates a client with the user's credentials. Pass an array for several servers.
@@ -192,7 +195,14 @@ When the token route needs custom headers, such as an `Authorization` header, pa
 
 ### 5. Give the agent the tools
 
-With the Vercel AI SDK:
+The create and edit tools return after the build's tool rounds. Give the chat route a timeout long enough for them, for example on Vercel:
+
+```ts title="app/api/chat/route.ts"
+// The dashboard tools wait for the build's tool rounds.
+export const maxDuration = 300;
+```
+
+With the Vercel AI SDK, stream each tool's output with `{ stream: true }`. It yields two responses: one right away, as soon as the dashboard has an id ("Started…" for a new dashboard), so the renderer shows it building, and a last one, "Created…", "Edited…", or "Couldn't…", once it's saved or failed. The model reads the last one. It's also how you learn that a build failed.
 
 ```ts title="lib/dashboard-tools.ts"
 import { tool } from "ai";
@@ -203,7 +213,7 @@ export function dashboardTools(context: { userId: string; groupIds?: string[] })
   return {
     create_dashboard: tool({
       description:
-        "Create a live dashboard. It loads its data every time it opens, so describe which data to show and how, without numbers. Returns as soon as the dashboard has an id.",
+        "Create a live dashboard. It loads its data every time it opens, so describe which data to show and how, without numbers. Returns once the dashboard starts generating.",
       inputSchema: z.object({
         title: z.string().min(1).describe('A short title, such as "Orders, last 30 days".'),
         prompt: z
@@ -211,18 +221,30 @@ export function dashboardTools(context: { userId: string; groupIds?: string[] })
           .min(1)
           .describe("What to build: the sections, metrics, charts, tables, and filters, and which data each shows."),
       }),
-      execute: ({ title, prompt }, { abortSignal }) =>
-        dashboards.create({ title, prompt }, context, { signal: abortSignal }),
+      async *execute({ title, prompt }, { abortSignal }) {
+        for await (const message of dashboards.create({ title, prompt }, context, {
+          stream: true,
+          signal: abortSignal,
+        })) {
+          yield message;
+        }
+      },
     }),
     edit_dashboard: tool({
       description:
-        "Change a dashboard in place, such as adding a chart or a section. Returns as soon as the change has started.",
+        "Change a dashboard in place, such as adding a chart or a section. Returns once the change starts.",
       inputSchema: z.object({
         id: z.string().min(1).describe("The dashboard's id, from its tool result."),
         prompt: z.string().min(1).describe("The change to make."),
       }),
-      execute: ({ id, prompt }, { abortSignal }) =>
-        dashboards.edit({ id, prompt }, context, { signal: abortSignal }),
+      async *execute({ id, prompt }, { abortSignal }) {
+        for await (const message of dashboards.edit({ id, prompt }, context, {
+          stream: true,
+          signal: abortSignal,
+        })) {
+          yield message;
+        }
+      },
     }),
     get_dashboard: tool({
       description: "Read a dashboard the user can open, to see what it shows.",
@@ -240,7 +262,7 @@ export function dashboardTools(context: { userId: string; groupIds?: string[] })
 }
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
+Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. Where the framework can't stream tool output, drop `stream: true` and return the one response: it arrives once the dashboard starts generating and won't report a later failure. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
 
 `dashboards.get()` reads as the user in `context`: a dashboard they can't open throws `OpenUIApiError` with status 404. Return only what the model needs; the full dashboard also lists its shares.
 
@@ -282,6 +304,8 @@ if (part.type === "tool-create_dashboard" || part.type === "tool-edit_dashboard"
 }
 ```
 
+- With the streamed tools, `output-available` fires for the first response and again for the last one. Keep `key={part.toolCallId}` so the same renderer gets each one.
+- Until the dashboard starts streaming, the renderer says what the build is doing: "Reading your data" while the model calls tools, "Preparing your data" while it saves scripts.
 - Default: a card in the chat that opens the dashboard under it.
 - Side panel: pass the panel's element as `renderInHtmlElement`.
 - In place: `preview={false}`, for a full page or an app-managed panel.
@@ -389,7 +413,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 ## Verify
 
 1. The spec generates, and the app builds.
-2. Asking for a dashboard calls `create_dashboard`, and the card appears and fills in.
+2. Asking for a dashboard calls `create_dashboard`, the card appears and shows the build steps, then fills in. The chat route doesn't time out during the tool rounds.
 3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
