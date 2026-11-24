@@ -2,12 +2,12 @@
 
 Use this when the user wants an agent that builds dashboards from a chat request: a layout of charts, tables, metrics, and filters that loads fresh data every time it opens. The agent builds a dashboard once. The user then reopens, filters, and refreshes it without another model call.
 
-Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`). The browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code. Tool rounds, `{ stream: true }`, `maxToolRounds`, and `reasoningEffort` need `@openuidev/server` 0.5.2 or later, and the renderer's build steps need `@openuidev/react-ui` 0.19.0 or later.
+Docs: https://www.openui.com/docs/dashboards. The server APIs are in `@openuidev/server` (`OpenUIClient`, `defineDashboard`, `openui.artifacts`), and the browser APIs are in `@openuidev/react-ui/cloud` (`OpenUICloudProvider`, `LiveArtifactRenderer`, `useArtifactList`). Check that the installed versions export them before writing code. Tool rounds, `{ stream: true }`, `maxToolRounds` and `reasoningEffort` need `@openuidev/server` 0.5.2 or later; the build steps in the renderer need `@openuidev/react-ui` 0.19.0 or later.
 
 ## How it fits together
 
 1. **Set up:** the server defines dashboards once with a component library, a model, and data tools.
-2. **Generate:** the agent's `create_dashboard` tool calls `dashboards.create()`. The model first calls the data tools and checks its scripts, so the call returns after these tool rounds, once the dashboard starts generating: typically 20-45 s. The agent returns the response as the tool result.
+2. **Generate:** the agent's `create_dashboard` tool calls `dashboards.create()` with `{ stream: true }`, so the dashboard shows while it's being built. The first response arrives as soon as the dashboard has an id, and the renderer shows it building, with its steps. The last arrives once the dashboard is saved, and the agent returns it as the tool result. Without `stream`, the call resolves once the dashboard starts generating, after the model has checked the data.
 3. **Render:** the chat passes the tool result to `LiveArtifactRenderer`, which shows the dashboard as it's built.
 4. **Load data:** each time the dashboard opens, the renderer sends its queries to an interpreter route on the app's server. The route runs the data tools, and generated scripts run in OpenUI's JS interpreter with secure execution.
 5. **Edit:** the agent's `edit_dashboard` tool calls `dashboards.edit()` with the dashboard's id. Only the parts the prompt describes change.
@@ -114,7 +114,7 @@ export const dataTools: Record<string, DataTool<Context>> = {
 ```
 
 - `output` is a static example the model reads to bind components to fields. Match the real shape exactly. Defining dashboards never calls a tool.
-- Tools are called during the build, without a prompt: keep them read-only, return small results or accept a limit parameter, and answer within 60 s. A slower call is cut off.
+- Tools are called during the build, without asking the user: keep them read-only, return small results or accept a limit parameter, and answer within 60 s. A slower call is cut off.
 - Read arguments leniently: an unpicked filter arrives as `""` or `null`. Treat it as unset, and clamp limits instead of rejecting them.
 - Scope data with `context`, which `execute` receives unchanged from the interpreter route.
 - Return only what the dashboard shows: results go to the browser as is.
@@ -195,14 +195,14 @@ When the token route needs custom headers, such as an `Authorization` header, pa
 
 ### 5. Give the agent the tools
 
-The create and edit tools return after the build's tool rounds. Give the chat route a timeout long enough for them, for example on Vercel:
+The dashboard tools run the build inside the chat request, with `stream: true` until the dashboard is saved, so the route needs a timeout long enough for it. `maxDuration` is how Vercel sets it; other hosts have their own setting:
 
 ```ts title="app/api/chat/route.ts"
-// The dashboard tools wait for the build's tool rounds.
+// The dashboard tools run the build inside this request; give it time to finish.
 export const maxDuration = 300;
 ```
 
-With the Vercel AI SDK, stream each tool's output with `{ stream: true }`. It yields two responses: one right away, as soon as the dashboard has an id ("Started…" for a new dashboard), so the renderer shows it building, and a last one, "Created…", "Edited…", or "Couldn't…", once it's saved or failed. The model reads the last one. It's also how you learn that a build failed.
+With the Vercel AI SDK, stream each tool's output with `{ stream: true }`. Each call yields two responses: the first as soon as the dashboard has an id ("Started…" for a new dashboard), so the renderer shows it building, and the last, "Created…", "Edited…", or "Couldn't…", once it's saved or failed. The model reads the last one, which also says whether the build failed.
 
 ```ts title="lib/dashboard-tools.ts"
 import { tool } from "ai";
@@ -262,7 +262,7 @@ export function dashboardTools(context: { userId: string; groupIds?: string[] })
 }
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. Where the framework can't stream tool output, drop `stream: true` and return the one response: it arrives once the dashboard starts generating and won't report a later failure. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
+Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. Where the framework can't stream tool output, drop `stream: true` and return the one response: it arrives once the dashboard starts generating, after the model has checked the data, and doesn't report a later failure. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
 
 `dashboards.get()` reads as the user in `context`: a dashboard they can't open throws `OpenUIApiError` with status 404. Return only what the model needs; the full dashboard also lists its shares.
 
@@ -413,7 +413,7 @@ The model writes both from the prompt. Ask for them in the `create_dashboard` pr
 ## Verify
 
 1. The spec generates, and the app builds.
-2. Asking for a dashboard calls `create_dashboard`, the card appears and shows the build steps, then fills in. The chat route doesn't time out during the tool rounds.
+2. Asking for a dashboard calls `create_dashboard`: the card appears at once, shows the build steps, then the dashboard fills in, and the chat route doesn't time out.
 3. The dashboard shows data, and the interpreter route returns `{ result }` with no errors in the server log.
 4. A follow-up ("add a table of the largest orders") calls `edit_dashboard` with the same id, and the open dashboard updates.
 5. After a reload, the chat shows the dashboard again, and it appears in `useArtifactList`.
