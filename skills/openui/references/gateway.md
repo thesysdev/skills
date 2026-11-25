@@ -171,10 +171,18 @@ Three parts:
    - `user_id` must be a stable account id, never a display name or an email that can change.
    - `app_id` is optional. Give each product its own fixed value when one organization serves several. Never derive it from the API key: rotating the key would change it.
    - Conversation `metadata` is for app data, never for deciding who owns a thread.
-3. **Chat route:** the browser storage does not write messages. After a turn completes, the chat route saves the **new turn only** (never the replayed history) with `@openuidev/server`. Do not save a cancelled or failed turn. A route that relays Chat Completions SSE collects the text as it streams and saves after the last chunk:
+3. **Chat route:** the browser storage does not write messages. After a turn completes, the chat route saves the **new turn only** (never the replayed history) with `@openuidev/server` 0.6.0 or later, as the signed-in user. Do not save a cancelled or failed turn. A route that relays Chat Completions SSE collects the text as it streams and saves after the last chunk:
 
    ```ts
-   import { storeChatCompletionHistory } from "@openuidev/server/openai";
+   // lib/openui.ts
+   import { OpenUIClient } from "@openuidev/server";
+
+   // Reads THESYS_API_KEY. Use the same app id the frontend-token route mints with.
+   export const openui = new OpenUIClient({ appId: process.env.APP_ID || undefined });
+   ```
+
+   ```ts
+   import { openui } from "@/lib/openui";
 
    export async function POST(request: Request) {
      const userId = await getAuthenticatedUserId(request);
@@ -202,11 +210,9 @@ Three parts:
            controller.error(error);
            return;                                                // cancelled or failed: save nothing
          }
-         await storeChatCompletionHistory({
-           apiKey: process.env.THESYS_API_KEY!,
-           conversationId: threadId,
-           messages: [messages.at(-1), { role: "assistant", content: assistantText }],
-         }).catch(() => console.error("[chat] failed to save turn")); // never log message contents
+         await openui.chat.conversations.items
+           .create(threadId, [messages.at(-1), { role: "assistant", content: assistantText }], { userId })
+           .catch(() => console.error("[chat] failed to save turn")); // never log message contents
        },
      });
      return new Response(body, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
@@ -214,41 +220,38 @@ Three parts:
    ```
 
    - Pass the user message as the browser sent it (`openAIMessageFormat` already produces a Chat Completions message); content parts are fine.
-   - If the app runs a tool loop, save the assistant tool-call message and every `role: "tool"` result of the turn too, in order.
+   - If the app runs a tool loop, save the assistant tool-call message and every `role: "tool"` result of the turn too, in order. A tool call is saved only together with its result, so a turn stopped mid tool call leaves the thread valid.
+   - To load the thread on the server instead of trusting the browser's replay, `openui.chat.conversations.items.list(threadId, { userId })` returns all of it, oldest first, as Chat Completions messages.
 
-   For a LangGraph agent, `storeLangGraphHistory` from `@openuidev/server/langgraph` takes the turn's `BaseMessage[]` and saves the user message, assistant messages, tool calls, and tool results in one call. The default scaffold calls it from an `afterAgent` middleware with `state.messages.slice(state.turnStart)`. System and developer messages are skipped. `chatCompletionMessagesToItems` converts messages to conversation items without saving them.
+   For a LangGraph agent, `openui.langgraph.conversations.items.create(threadId, messages, { userId })` takes the turn's `BaseMessage[]` and saves the user message, assistant messages, tool calls, and tool results in one call. The default scaffold saves `state.messages.slice(state.turnStart)` from an `afterAgent` middleware. `items.list` returns `{ role, content }` messages that `graph.invoke({ messages })` takes. System and developer messages are skipped.
+
+   `storeChatCompletionHistory` and `storeLangGraphHistory` are deprecated: they save as the organization, with no ownership check. Where the app or scaffold calls them, switch to the calls above with the user's id.
 
 The chat route still sends the full history to Chat Completions on every turn.
 
 ### Check who owns a thread
 
-The chat route holds the organization key, so a `threadId` from the browser is not proof of ownership. Keep a server-side record of `conversationId → userId`:
-
-- When a thread id first reaches the chat route, confirm it belongs to the signed-in user: mint a frontend token for that user and `GET https://api.thesys.dev/v1/conversations/{id}` with the header `x-thesys-frontend-token: <token>` (not `Authorization`, which always means the organization key). A frontend token reaches only its own user's conversations. Then record the owner.
-- On later turns, reject the request (404) if the record names a different user.
-- Store the record wherever the app keeps user data. An in-memory map is enough for a local demo only.
-- Never record ownership because the browser claims it. If ownership cannot be established, keep the route disabled for production and tell the user.
+The chat route holds the organization key, so a `threadId` from the browser is not proof of ownership. Pass the signed-in user's id as `userId` on every `openui.conversations` call: the call then acts as that user, like their frontend token, and a thread that isn't theirs fails with a 404.
 
 ```ts
-import { mintFrontendToken } from "@/lib/frontend-token";
+import { OpenUIApiError } from "@openuidev/server";
+import { openui } from "@/lib/openui";
 
 export async function assertThreadOwner(userId: string, threadId: string) {
-  const owner = await db.threadOwners.get(threadId);
-  if (owner) {
-    if (owner !== userId) throw new HttpError(404, "Thread not found");
-    return;
+  try {
+    await openui.conversations.get(threadId, { userId });
+  } catch (error) {
+    if (error instanceof OpenUIApiError && error.status === 404) throw new HttpError(404, "Thread not found");
+    throw error;
   }
-  const { token } = await mintFrontendToken(userId);
-  const res = await fetch(`https://api.thesys.dev/v1/conversations/${encodeURIComponent(threadId)}`, {
-    headers: { "x-thesys-frontend-token": token },
-    cache: "no-store",
-  });
-  if (!res.ok) throw new HttpError(404, "Thread not found");
-  await db.threadOwners.set(threadId, userId);
 }
 ```
 
-`db.threadOwners` and `HttpError` stand for the app's own store and error handling.
+- Without `userId`, a call acts as the organization and skips this check.
+- `OpenUIClient` must use the same `appId` as the frontend-token route, or the threads the browser made 404.
+- Never take `userId` from the request body, and never decide ownership from conversation `metadata`.
+
+`HttpError` stands for the app's own error handling.
 
 ### Apps without sign-in
 
@@ -261,18 +264,18 @@ Never take the user id from the request body.
 
 ### Conversations API
 
-The browser hook and the history helpers call this API. Call it directly for anything else, with the OpenAI SDK at base URL `https://api.thesys.dev/v1`:
+The browser hook and `@openuidev/server` call this API:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` / `POST` | `/v1/conversations` | List or create conversations |
 | `GET` / `POST` / `DELETE` | `/v1/conversations/{conversation_id}` | Retrieve, update, or delete a conversation |
 | `GET` / `POST` | `/v1/conversations/{conversation_id}/items` | List or add items |
-| `GET` / `DELETE` | `/v1/conversations/{conversation_id}/items/{item_id}` | Retrieve or delete one item |
+| `GET` / `POST` | `/v1/conversations/{conversation_id}/items/{item_id}` | Retrieve or update one item |
 
-- **Server calls** authenticate with `Authorization: Bearer $THESYS_API_KEY`.
+- **Server calls** authenticate with `Authorization: Bearer $THESYS_API_KEY`. Use `openui.conversations` rather than raw HTTP: `list`, `create`, `get`, `update`, `delete`, and `items.list` / `create` / `get` / `update`. Each takes `{ userId }` to act as that user; `create` requires it, so the user's browser can read the thread.
+- **`openui.chat.conversations` / `openui.langgraph.conversations`** are the same calls, but `items.create` takes Chat Completions or LangChain messages, and `items.list` reads the whole thread back as them.
 - **Frontend-token calls** send the token in the `x-thesys-frontend-token` header and reach only that user's conversations. `useOpenuiCloudStorage` does this itself.
-- Prefer the OpenAI SDK's `conversations` methods over raw HTTP. `items.list(id, { order: "asc", limit: 100 })` pages through a thread.
 
 Moving existing threads into Gateway conversations is a separate data migration. Keep old threads readable where they are, keep a mapping from old thread ids, and never claim history was imported unless a verified import ran.
 
@@ -317,5 +320,6 @@ Hosted tools (`web_search`, `image_search`, remote MCP) work only with the Respo
 - [Conversations API](https://www.openui.com/docs/gateway/api/conversations)
 - [Authentication](https://www.openui.com/docs/gateway/authentication)
 - [BYOK](https://www.openui.com/docs/gateway/byok)
+- [Manage conversations from your server](https://www.openui.com/docs/gateway/conversations-from-server)
 - [`@openuidev/server`](https://www.openui.com/docs/api-reference/server)
 - [Pricing](https://www.openui.com/docs/gateway/pricing-credits)

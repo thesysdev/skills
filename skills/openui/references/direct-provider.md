@@ -39,7 +39,7 @@ controller.close();
 await threadStore.append(userId, threadId, [messages.at(-1), { role: "assistant", content: assistantText }]);
 ```
 
-In the LangGraph scaffold, replace the `storeLangGraphHistory` middleware with one that writes the same turn (`state.messages.slice(state.turnStart)`) to the app's store, converted to the browser's `messageFormat`. `threadStore` stands for the app's own store; check that the signed-in user owns the thread on every read and write.
+In the LangGraph scaffold, replace the `afterAgent` middleware that saves to Gateway with one that writes the same turn (`state.messages.slice(state.turnStart)`) to the app's store, converted to the browser's `messageFormat`. `threadStore` stands for the app's own store; check that the signed-in user owns the thread on every read and write.
 
 ## Build the system prompt
 
@@ -86,7 +86,7 @@ In the default (LangGraph) scaffold:
 1. `src/agent.ts`:
    - Build `ChatOpenAI` with `apiKey: process.env.OPENAI_API_KEY` and no `configuration.baseURL`.
    - Replace the prompt with `generateSystemPrompt({ library, promptOptions })`.
-   - Remove the `storeLangGraphHistory` middleware.
+   - Remove the `afterAgent` middleware that saves the turn to Gateway.
 2. `src/lib/models.tsx`: use the provider's model ids, and remove the free-model entries.
 3. `src/components/cloud-chat.tsx`: remove `useOpenuiCloudStorage`, and pass `restStorage(...)`, a custom `ChatStorage`, or no `storage`.
 4. Delete `src/app/api/frontend-token/route.ts`, and remove `@openuidev/server` with the package manager.

@@ -53,7 +53,7 @@ The default scaffold is a Next.js app. The model calls go through OpenUI Gateway
 
 | File | What it does |
 | --- | --- |
-| `src/agent.ts` | The LangGraph agent. `ChatOpenAI` points at `https://api.thesys.dev/v1/embed`. The system prompt is `generateSystemPrompt({ cloud: true, library })`. After each run, `storeLangGraphHistory` saves the turn to a Gateway conversation. |
+| `src/agent.ts` | The LangGraph agent. `ChatOpenAI` points at `https://api.thesys.dev/v1/embed`. The system prompt is `generateSystemPrompt({ cloud: true, library })`. After each run, an `afterAgent` middleware saves the turn to a Gateway conversation. |
 | `src/app/api/chat/route.ts` | Validates the request and streams the agent's LangGraph events. |
 | `src/app/api/frontend-token/route.ts` | Mints the short-lived browser token for conversation storage. |
 | `src/components/cloud-chat.tsx` | `AgentInterface`, wired with `fetchLLM`, `langGraphAdapter()`, `langGraphMessageFormat`, and `useOpenuiCloudStorage`. |
