@@ -208,9 +208,9 @@ Three parts:
    - Pass the user message as the browser sent it (`openAIMessageFormat` already produces a Chat Completions message); content parts are fine.
    - If the app runs a tool loop, save the assistant tool-call message and every `role: "tool"` result of the turn too, in order. A tool call is saved only together with its result, so a turn stopped mid tool call leaves the thread valid.
    - `items.list` returns the whole thread, oldest first, as Chat Completions messages, with each tool call next to its result.
-   - `chatCompletionsConverter` and `langGraphConverter` convert between messages and conversation items without storing (`toItems`, `fromItems`).
+   - `items.create` resolves with the turn as stored, in the same Chat Completions messages: without system messages, or a tool call cut off by a stop.
 
-   For a LangGraph agent, `openui.langgraph.conversations.items.create(threadId, messages)` takes the turn's `BaseMessage[]` and saves the user message, assistant messages, tool calls, and tool results in one call. The default scaffold saves `state.messages.slice(state.turnStart)` from an `afterAgent` middleware. `items.list` returns `{ role, content }` messages that `graph.invoke({ messages })` takes. System and developer messages are skipped.
+   For a LangGraph agent, `openui.langgraph.conversations.items.create(threadId, messages)` takes the turn's `BaseMessage[]`, or the plain messages `items.list` returns, and saves the user message, assistant messages, tool calls, and tool results in one call. The default scaffold saves `state.messages.slice(state.turnStart)` from an `afterAgent` middleware. `items.list` returns `{ role, content }` messages that `graph.invoke({ messages })` takes. System and developer messages are skipped.
 
    `storeChatCompletionHistory` and `storeLangGraphHistory` are deprecated: they save as the organization, with no ownership check. Where the app or scaffold calls them, switch to the calls above.
 
