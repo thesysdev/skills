@@ -85,7 +85,7 @@ OpenUI ships JavaScript packages. For a Python backend, read the matching JavaSc
 | `@openuidev/react-lang` | React `defineComponent`, `createLibrary`, `<Renderer />` |
 | `@openuidev/react-ui` | Built-in libraries (`openuiLibrary`, `openuiChatLibrary`), `AgentInterface`, `ThemeProvider`, styles. Re-exports `@openuidev/react-headless`. |
 | `@openuidev/react-headless` | Chat state, adapters, and storage without OpenUI's visual components |
-| `@openuidev/server` | Server helpers: dashboards (`OpenUIClient`, `openui.artifacts`), Autofix, and Gateway conversations as a user (`openui.conversations`, `openui.chat.conversations`) |
+| `@openuidev/server` | Server helpers: dashboards (`OpenUIClient`, `openui.artifacts`) and their agent tools or MCP server, Autofix, and Gateway conversations (`openui.conversations`, `openui.chat.conversations`) |
 | `@openuidev/vue-lang`, `@openuidev/svelte-lang`, `@openuidev/angular-lang` | Renderers for Vue 3, Svelte 5, and Angular |
 | `@openuidev/langchain` | LangChain / LangGraph Agent Server over AG-UI (not an in-process LangGraph agent) |
 | `@openuidev/assistant-ui` | Rendering OpenUI tool calls in assistant-ui |
