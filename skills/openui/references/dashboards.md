@@ -192,55 +192,36 @@ When the token route needs custom headers, such as an `Authorization` header, pa
 
 ### 5. Give the agent the tools
 
-With the Vercel AI SDK:
+`dashboards.tools(context)` returns `create_dashboard`, `edit_dashboard`, and `get_dashboard`, with descriptions tuned for the model (`@openuidev/server` 0.6.0 or later). Pass the signed-in user, or a function that finds them per call:
 
-```ts title="lib/dashboard-tools.ts"
-import { tool } from "ai";
-import { z } from "zod";
-import { dashboards } from "./openui";
+```ts
+import { dashboards } from "@/lib/openui";
 
-export function dashboardTools(context: { userId: string; groupIds?: string[] }) {
-  return {
-    create_dashboard: tool({
-      description:
-        "Create a live dashboard. It loads its data every time it opens, so describe which data to show and how, without numbers. Returns as soon as the dashboard has an id.",
-      inputSchema: z.object({
-        title: z.string().min(1).describe('A short title, such as "Orders, last 30 days".'),
-        prompt: z
-          .string()
-          .min(1)
-          .describe("What to build: the sections, metrics, charts, tables, and filters, and which data each shows."),
-      }),
-      execute: ({ title, prompt }, { abortSignal }) =>
-        dashboards.create({ title, prompt }, context, { signal: abortSignal }),
-    }),
-    edit_dashboard: tool({
-      description:
-        "Change a dashboard in place, such as adding a chart or a section. Returns as soon as the change has started.",
-      inputSchema: z.object({
-        id: z.string().min(1).describe("The dashboard's id, from its tool result."),
-        prompt: z.string().min(1).describe("The change to make."),
-      }),
-      execute: ({ id, prompt }, { abortSignal }) =>
-        dashboards.edit({ id, prompt }, context, { signal: abortSignal }),
-    }),
-    get_dashboard: tool({
-      description: "Read a dashboard the user can open, to see what it shows.",
-      inputSchema: z.object({
-        id: z.string().min(1).describe("The dashboard's id, from its tool result."),
-      }),
-      execute: async ({ id }, { abortSignal }) => {
-        const { name, content, isEditable } = await dashboards.get({ id }, context, {
-          signal: abortSignal,
-        });
-        return { name, content, isEditable };
-      },
-    }),
-  };
-}
+const tools = await dashboards.tools({ userId: session.user.id, groupIds: session.user.teamIds });
 ```
 
-Build the tools per request with the signed-in user: `dashboardTools({ userId: session.user.id, groupIds: session.user.teamIds })`. With the OpenAI SDK, declare the same three function tools and, for each call, push `{ role: "tool", tool_call_id, content: await dashboards.create(...) }` (or `edit`; for `get`, the picked fields as JSON). Keep the agent's existing model and tools.
+- **Vercel AI SDK:** pass them as they are: `streamText({ model, messages, tools: { ...tools, ...appTools } })`.
+- **LangChain or LangGraph:** `Object.values(tools).map((t) => tool(t.execute, { name: t.name, description: t.description, schema: t.inputSchema }))`.
+- **OpenAI SDK:** declare each as `{ type: "function", function: { name, description, parameters: inputSchema } }`, and answer each call with `{ role: "tool", tool_call_id, content: await tools[name].execute(JSON.parse(args)) }`.
+
+`execute` resolves with OpenUI Cloud's response for create and edit (return it as is: the renderer reads it) and with the dashboard as JSON for get. A failure throws a sentence the model can relay. Keep the agent's existing model and tools.
+
+Over MCP, with `@modelcontextprotocol/server` installed (and `@modelcontextprotocol/client` for `transport()`):
+
+```ts
+// A route, for agents elsewhere: resolve finds the user per request, and null answers 401.
+export const POST = dashboards.mcpHandler(async (request) => {
+  const session = await getSession(request);
+  return session ? { userId: session.user.id } : null;
+}).fetch;
+
+// An MCP client in this process, such as the AI SDK's createMCPClient.
+const mcp = dashboards.mcpHandler({ userId });
+const client = await createMCPClient({ transport: await mcp.transport() });
+
+// SDKs that take an MCP server, such as the Claude Agent SDK.
+const server = await dashboards.mcpServer({ userId });
+```
 
 `dashboards.get()` reads as the user in `context`: a dashboard they can't open throws `OpenUIApiError` with status 404. Return only what the model needs; the full dashboard also lists its shares.
 
@@ -286,6 +267,7 @@ if (part.type === "tool-create_dashboard" || part.type === "tool-edit_dashboard"
 - Side panel: pass the panel's element as `renderInHtmlElement`.
 - In place: `preview={false}`, for a full page or an app-managed panel.
 - `id` replaces `response` to open a saved dashboard.
+- An MCP tool result (`{ content: [...] }`) works as `response` too, from the `@openuidev/react-ui` release after 0.20.1.
 - Slots (`Preview`, `Chrome`, `ChromeTitle`, `Content`, `Loading`, `Error`, …) are passed as children to change or replace each part. `useArtifactRenderer()` inside a slot returns `isStreaming`, `isFetching`, `error`, and `retry`.
 - `ThemeProvider` from `@openuidev/dashboard-library` sets `"light"` or `"dark"` mode. See [theming.md](theming.md) for the app's own theme.
 
